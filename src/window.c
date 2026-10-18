@@ -18,19 +18,21 @@ static RECT cap_btn_rect(int i) { /* i = 1 min, 2 max, 3 close; 46x32 at top rig
     return r;
 }
 
+/* the live caption button under pt: 1 min or 3 close. Maximize (2) is drawn disabled (fixed-size
+   window) and is plain title bar: it never hovers or presses, and drags like the rest. */
 static int cap_btn_at(POINT pt) {
-    for (int i = 1; i <= 3; i++) {
+    for (int i = 1; i <= 3; i += 2) {
         RECT r = cap_btn_rect(i);
         if (PtInRect(&r, pt)) return i;
     }
     return 0;
 }
 
-/* caption buttons answer hit-tests as the system's own (HTMINBUTTON, HTMAXBUTTON, HTCLOSE) */
-static const LRESULT CAP_HT[4] = { HTNOWHERE, HTMINBUTTON, HTMAXBUTTON, HTCLOSE };
+/* the live buttons answer hit-tests as the system's own (HTMINBUTTON, HTCLOSE); never HTMAXBUTTON,
+   which on Windows 11 would offer the Snap Layouts flyout for a window that can't resize */
+static const LRESULT CAP_HT[4] = { HTCAPTION, HTMINBUTTON, HTCAPTION, HTCLOSE };
 static int cap_btn_of_ht(WPARAM ht) {
-    for (int i = 1; i <= 3; i++) if ((WPARAM)CAP_HT[i] == ht) return i;
-    return 0;
+    return ht == HTMINBUTTON ? 1 : ht == HTCLOSE ? 3 : 0;
 }
 
 static void invalidate_title(void) {
@@ -616,7 +618,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_NCLBUTTONDOWN: case WM_NCLBUTTONDBLCLK: {
         int b = cap_btn_of_ht(wp);
         if (!b) break;
-        if (b != 2) { G.cap_down = b; G.cap_hover = b; SetCapture(hwnd); invalidate_title(); } /* up: WM_LBUTTONUP */
+        G.cap_down = b; G.cap_hover = b; SetCapture(hwnd); invalidate_title(); /* up: WM_LBUTTONUP */
         return 0;
     }
     case WM_NCLBUTTONUP:
@@ -662,7 +664,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_LBUTTONDOWN: {
         POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
         int b = cap_btn_at(pt);
-        if (b && b != 2) { G.cap_down = b; SetCapture(hwnd); invalidate_title(); }
+        if (b) { G.cap_down = b; SetCapture(hwnd); invalidate_title(); }
         return 0;
     }
     case WM_LBUTTONUP: {
