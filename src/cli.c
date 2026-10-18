@@ -1,4 +1,4 @@
-/* PowerOff: headless scheduler and command line. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: headless scheduler and command line. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ headless (CLI) */
 
@@ -9,22 +9,22 @@ static void run_headless(Plan *plan) {
     wchar_t desc[256];
     const wchar_t *err = rt_start(&r, desc, 256);
     if (err) {
-        fwprintf(stderr, L"PowerOff: %ls\n", err);
+        fwprintf(stderr, L"PowerNapp: %ls\n", err);
         exit(2);
     }
-    wprintf(L"PowerOff: %ls\n", desc);
+    wprintf(L"PowerNapp: %ls\n", desc);
     for (;;) {
         rt_apply_signals(&r);
         if (!r.active) {
-            wprintf(L"PowerOff: cancelled.\n");
+            wprintf(L"PowerNapp: cancelled.\n");
             break;
         }
         long long rem = rt_remaining(&r);
         if (rem <= 0) {
             if (do_task_ex(r.plan.task, r.plan.force)) {
-                wprintf(L"PowerOff: executed '%ls'.\n", TASK_NAMES[r.plan.task]);
+                wprintf(L"PowerNapp: executed '%ls'.\n", TASK_NAMES[r.plan.task]);
             } else {
-                fwprintf(stderr, L"PowerOff: failed to execute '%ls'.\n",
+                fwprintf(stderr, L"PowerNapp: failed to execute '%ls'.\n",
                     TASK_NAMES[r.plan.task]);
                 exit(3);
             }
@@ -52,7 +52,7 @@ static void run_headless(Plan *plan) {
                 rem <= (long long)r.plan.remind_min * 60 && rem > 5) {
             wchar_t dur[32];
             fmt_dur(rem, dur, 32);
-            wprintf(L"PowerOff: '%ls' in %ls \x2026\n", TASK_NAMES[r.plan.task], dur);
+            wprintf(L"PowerNapp: '%ls' in %ls \x2026\n", TASK_NAMES[r.plan.task], dur);
             r.reminded = true;
         }
         Sleep(1000);
@@ -65,7 +65,7 @@ static void snooze_mark(long long until) { /* read by the window (refresh_from_t
     wchar_t path[MAX_PATH], v[24];
     ini_path(path, MAX_PATH);
     StringCchPrintfW(v, 24, L"%lld", until);
-    WritePrivateProfileStringW(L"PowerOff", L"snooze_until", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"snooze_until", v, path);
 }
 static void rm_done_cli(int result) { g_rm_result = result; PostQuitMessage(0); }
 
@@ -82,21 +82,21 @@ static void warn_then_fire(Task task, unsigned warn_secs, bool force) {
             DispatchMessageW(&msg);
         }
         if (g_rm_result == RM_STOP) {
-            wprintf(L"PowerOff: stopped by user.\n");
+            wprintf(L"PowerNapp: stopped by user.\n");
             snooze_mark(0);
             return;
         }
         if (g_rm_result != RM_SNOOZE) break; /* now, or the countdown ran out */
-        wprintf(L"PowerOff: snoozed for 10 minutes.\n");
+        wprintf(L"PowerNapp: snoozed for 10 minutes.\n");
         snooze_mark(local_now_secs() + RM_SNOOZE_SECS); /* the window shows the new time */
         warn_secs = REMIND_MIN * 60;
         Sleep((RM_SNOOZE_SECS - warn_secs) * 1000);
     }
     snooze_mark(0);
     if (do_task_ex(task, force)) {
-        wprintf(L"PowerOff: executed '%ls'.\n", TASK_NAMES[task]);
+        wprintf(L"PowerNapp: executed '%ls'.\n", TASK_NAMES[task]);
     } else {
-        fwprintf(stderr, L"PowerOff: failed to execute '%ls'.\n", TASK_NAMES[task]);
+        fwprintf(stderr, L"PowerNapp: failed to execute '%ls'.\n", TASK_NAMES[task]);
         exit(3);
     }
 }
@@ -105,27 +105,27 @@ static void warn_then_fire(Task task, unsigned warn_secs, bool force) {
 
 static void print_help(void) {
     wprintf(
-        L"PowerOff " APP_VERSION L" \x2014 tiny auto shutdown (native Win32, C)\n"
+        L"PowerNapp " APP_VERSION L" \x2014 tiny auto shutdown (native Win32, C)\n"
         L"\n"
         L"GUI (no args, defaults to Sleep / at 11:00 PM):\n"
-        L"  PowerOff.exe [--tray] [--dark|--light]\n"
+        L"  PowerNapp.exe [--tray] [--dark|--light]\n"
         L"\n"
         L"Headless scheduler (runs in console until the task fires):\n"
-        L"  PowerOff.exe --task sleep --daily 23:00\n"
-        L"  PowerOff.exe --task shutdown --once \"2026-10-05 23:00\"\n"
-        L"  PowerOff.exe --task sleep --in 3600 | --countdown 1:00:00\n"
-        L"  PowerOff.exe --task lock --idle 15 | --task sleep --every 60\n"
-        L"  PowerOff.exe --task sleep --weekly 23:00 Mon,Tue,Wed,Thu,Fri\n"
+        L"  PowerNapp.exe --task sleep --daily 23:00\n"
+        L"  PowerNapp.exe --task shutdown --once \"2026-10-05 23:00\"\n"
+        L"  PowerNapp.exe --task sleep --in 3600 | --countdown 1:00:00\n"
+        L"  PowerNapp.exe --task lock --idle 15 | --task sleep --every 60\n"
+        L"  PowerNapp.exe --task sleep --weekly 23:00 Mon,Tue,Wed,Thu,Fri\n"
         L"\n"
         L"Turn the display on after a timer wake (used by the wake task):\n"
-        L"  PowerOff.exe --wake\n"
+        L"  PowerNapp.exe --wake\n"
         L"\n"
         L"Fire immediately (for Task Scheduler / scripts):\n"
-        L"  PowerOff.exe --task sleep --fire-now [--warn-secs 60]\n"
+        L"  PowerNapp.exe --task sleep --fire-now [--warn-secs 60]\n"
         L"\n"
         L"Daily 11 PM sleep that survives reboot (recommended):\n"
-        L"  PowerOff.exe --install-daily 23:00 --task sleep\n"
-        L"  PowerOff.exe --uninstall\n"
+        L"  PowerNapp.exe --install-daily 23:00 --task sleep\n"
+        L"  PowerNapp.exe --uninstall\n"
         L"\n"
         L"Tasks: shutdown restart sleep hibernate logoff lock display\n");
 }
@@ -161,7 +161,7 @@ static bool task_from_arg(const wchar_t *s, Task *out) {
     if (!wcscmp(clean, L"reboot")) { *out = T_RESTART; return true; }
     if (!wcscmp(clean, L"logout")) { *out = T_LOGOFF; return true; }
     if (!wcscmp(clean, L"signout")) { *out = T_LOGOFF; return true; }
-    if (!wcscmp(clean, L"poweroff")) { *out = T_SHUTDOWN; return true; }
+    if (!wcscmp(clean, L"powernapp")) { *out = T_SHUTDOWN; return true; }
     if (!wcscmp(clean, L"monitoroff")) { *out = T_DISPLAY; return true; }
     if (!wcscmp(clean, L"suspend")) { *out = T_SLEEP; return true; }
     return false;
@@ -217,9 +217,13 @@ int wmain(int argc, wchar_t **argv) {
         print_help();
         return 0;
     }
+    if (has_flag(argc, argv, L"--migrate")) { /* the installer, upgrading from PowerOff 1.x */
+        migrate_from_poweroff();
+        return 0;
+    }
     if (has_flag(argc, argv, L"--uninstall")) {
         ts_delete(WTS_DAILY);
-        wprintf(L"PowerOff: Removed '" WTS_DAILY L"' scheduled task.\n");
+        wprintf(L"PowerNapp: Removed '" WTS_DAILY L"' scheduled task.\n");
         return 0;
     }
     {
@@ -228,12 +232,12 @@ int wmain(int argc, wchar_t **argv) {
             Task task = T_SLEEP;
             const wchar_t *tn = arg_val(argc, argv, L"--task");
             if (tn && !task_from_arg(tn, &task)) {
-                fwprintf(stderr, L"PowerOff: unknown task '%ls'.\n", tn);
+                fwprintf(stderr, L"PowerNapp: unknown task '%ls'.\n", tn);
                 return 2;
             }
             unsigned h, m;
             if (!parse_hhmm(st, &h, &m)) {
-                fwprintf(stderr, L"PowerOff: use HH:MM, e.g. 23:00\n");
+                fwprintf(stderr, L"PowerNapp: use HH:MM, e.g. 23:00\n");
                 return 2;
             }
             /* the 60 s reminder card starts a minute early, so the action is at HH:MM */
@@ -245,11 +249,11 @@ int wmain(int argc, wchar_t **argv) {
                 L"<ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay></CalendarTrigger>", start);
             StringCchPrintfW(args, 96, L"--task %ls --fire-now --warn-secs 60", TASK_CLI[task]);
             if (wts_create(WTS_DAILY, trig, L"", args)) {
-                wprintf(L"PowerOff: Scheduled '%ls' daily at %02u:%02u (Task Scheduler: '" WTS_DAILY L"').\n",
+                wprintf(L"PowerNapp: Scheduled '%ls' daily at %02u:%02u (Task Scheduler: '" WTS_DAILY L"').\n",
                     TASK_NAMES[task], h, m);
                 return 0;
             }
-            fwprintf(stderr, L"PowerOff: couldn't create the scheduled task.\n");
+            fwprintf(stderr, L"PowerNapp: couldn't create the scheduled task.\n");
             return 1;
         }
     }
@@ -259,12 +263,12 @@ int wmain(int argc, wchar_t **argv) {
     bool have_task = false;
     if (task_raw) {
         if (!task_from_arg(task_raw, &task_opt)) {
-            fwprintf(stderr, L"PowerOff: unknown task '%ls'. Tasks: shutdown restart sleep hibernate logoff lock display\n", task_raw);
+            fwprintf(stderr, L"PowerNapp: unknown task '%ls'. Tasks: shutdown restart sleep hibernate logoff lock display\n", task_raw);
             return 2;
         }
         have_task = true;
     }
-    if (has_flag(argc, argv, L"--wake")) { /* run by the "PowerOff wake" task */
+    if (has_flag(argc, argv, L"--wake")) { /* run by the "PowerNapp wake" task */
         /* Timer wakes are "unattended": the display stays off and Windows sleeps again
          * after ~2 minutes. Synthetic input marks the wake as attended and lights the screen. */
         SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
@@ -279,7 +283,7 @@ int wmain(int argc, wchar_t **argv) {
     }
     if (has_flag(argc, argv, L"--fire-now")) {
         if (!have_task) {
-            fwprintf(stderr, L"PowerOff: --fire-now needs --task <name>\n");
+            fwprintf(stderr, L"PowerNapp: --fire-now needs --task <name>\n");
             return 2;
         }
         const wchar_t *w = arg_val(argc, argv, L"--warn-secs"), *at = arg_val(argc, argv, L"--at");
@@ -317,7 +321,7 @@ int wmain(int argc, wchar_t **argv) {
         case M_DAILY: {
             unsigned h, m;
             if (!parse_hhmm(raw, &h, &m)) {
-                fwprintf(stderr, L"PowerOff: --daily needs HH:MM\n");
+                fwprintf(stderr, L"PowerNapp: --daily needs HH:MM\n");
                 return 2;
             }
             plan.h = (int)h; plan.m = (int)m;
@@ -338,13 +342,13 @@ int wmain(int argc, wchar_t **argv) {
                 sp = L"daily";
             }
             if (!parse_hhmm(hhmm, &h, &m)) {
-                fwprintf(stderr, L"PowerOff: --weekly needs \"HH:MM Mon,Tue,...\"\n");
+                fwprintf(stderr, L"PowerNapp: --weekly needs \"HH:MM Mon,Tue,...\"\n");
                 return 2;
             }
             plan.h = (int)h; plan.m = (int)m;
             plan.days = days_from_list(sp);
             if (!plan.days) {
-                fwprintf(stderr, L"PowerOff: no valid days in '%ls'\n", sp);
+                fwprintf(stderr, L"PowerNapp: no valid days in '%ls'\n", sp);
                 return 2;
             }
             break;
@@ -352,7 +356,7 @@ int wmain(int argc, wchar_t **argv) {
         case M_ONCE: {
             const wchar_t *sp = wcschr(raw, L' ');
             if (!sp) {
-                fwprintf(stderr, L"PowerOff: --once needs \"YYYY-MM-DD HH:MM\"\n");
+                fwprintf(stderr, L"PowerNapp: --once needs \"YYYY-MM-DD HH:MM\"\n");
                 return 2;
             }
             StringCchCopyNW(plan.p1, 64, raw, (size_t)(sp - raw));
@@ -366,7 +370,7 @@ int wmain(int argc, wchar_t **argv) {
                 m = ph; s = pm;
             } else if (wcschr(raw, L':')) {
                 if (swscanf_s(raw, L"%lld:%lld:%lld", &h, &m, &s) != 3) {
-                    fwprintf(stderr, L"PowerOff: --countdown needs seconds or H:M:S\n");
+                    fwprintf(stderr, L"PowerNapp: --countdown needs seconds or H:M:S\n");
                     return 2;
                 }
             } else {
@@ -376,12 +380,12 @@ int wmain(int argc, wchar_t **argv) {
                 for (; *p2; p2++)
                     if (*p2 < L'0' || *p2 > L'9') { alld = false; break; }
                 if (!alld || s <= 0) {
-                    fwprintf(stderr, L"PowerOff: bad countdown '%ls'\n", raw);
+                    fwprintf(stderr, L"PowerNapp: bad countdown '%ls'\n", raw);
                     return 2;
                 }
             }
             if (h < 0 || m < 0 || (s <= 0 && h == 0 && m == 0)) {
-                fwprintf(stderr, L"PowerOff: bad countdown '%ls'\n", raw);
+                fwprintf(stderr, L"PowerNapp: bad countdown '%ls'\n", raw);
                 return 2;
             }
             plan.cd = (int)(h * 3600 + m * 60 + s) / 60;
@@ -400,11 +404,12 @@ int wmain(int argc, wchar_t **argv) {
         return 0;
     }
     if (have_task) {
-        fwprintf(stderr, L"PowerOff: --task needs a timing flag (see --help).\n");
+        fwprintf(stderr, L"PowerNapp: --task needs a timing flag (see --help).\n");
         return 2;
     }
 
     /* GUI path */
+    migrate_from_poweroff(); /* once: PowerOff 1.x settings, tasks and startup entry */
     read_theme();
     if (has_flag(argc, argv, L"--dark")) G.dark = true;
     if (has_flag(argc, argv, L"--light")) G.dark = false;

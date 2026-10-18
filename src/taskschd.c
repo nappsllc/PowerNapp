@@ -1,18 +1,18 @@
-/* PowerOff: Windows Task Scheduler integration. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: Windows Task Scheduler integration. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ Task Scheduler
- * The "PowerOff" scheduled task IS the schedule: Start registers it, edits update it,
+ * The "PowerNapp" scheduled task IS the schedule: Start registers it, edits update it,
  * Cancel deletes it, and the window reads it back (ts_load_plan) on start and whenever
  * it is activated, so edits made in Task Scheduler show up here. Windows runs it even
- * when PowerOff isn't running; it starts remind_min early with
+ * when PowerNapp isn't running; it starts remind_min early with
  * "--task X --fire-now --warn-secs N [--force]" (the reminder card, then the action).
  * Idle mode can't be a task (Task Scheduler's idle trigger has no custom minutes) and
  * stays in-process. Talks to the Task Scheduler COM API (ITaskService) directly. */
 
-#define WTS_NAME L"PowerOff"
-#define WTS_WAKE L"PowerOff wake"
-#define WTS_DAILY L"PowerOff daily" /* --install-daily */
-#define WTS_STARTUP L"PowerOff startup" /* Start with Windows, Store build */
+#define WTS_NAME L"PowerNapp"
+#define WTS_WAKE L"PowerNapp wake"
+#define WTS_DAILY L"PowerNapp daily" /* --install-daily */
+#define WTS_STARTUP L"PowerNapp startup" /* Start with Windows, Store build */
 
 static void iso_local(long long secs, wchar_t *out, size_t n) {
     int y; unsigned mo, d;
@@ -144,8 +144,8 @@ static bool wts_create(const wchar_t *name, const wchar_t *trig, const wchar_t *
     StringCchPrintfW(xml, 4096,
         L"<?xml version=\"1.0\" encoding=\"UTF-16\"?>"
         L"<Task version=\"1.2\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">"
-        L"<RegistrationInfo><Date>%ls</Date><Author>PowerOff</Author>"
-        L"<Description>Created by PowerOff. Change or cancel it in PowerOff.</Description></RegistrationInfo>"
+        L"<RegistrationInfo><Date>%ls</Date><Author>PowerNapp</Author>"
+        L"<Description>Created by PowerNapp. Change or cancel it in PowerNapp.</Description></RegistrationInfo>"
         L"<Triggers>%ls</Triggers>"
         L"<Principals><Principal id=\"Author\"><LogonType>InteractiveToken</LogonType>"
         L"<RunLevel>LeastPrivilege</RunLevel></Principal></Principals>"
@@ -185,7 +185,7 @@ static bool wts_schedulable(Mode m) {
     return m == M_DAILY || m == M_WEEKLY || m == M_COUNTDOWN || m == M_ONCE;
 }
 
-/* Plan -> "PowerOff" task (created or replaced). */
+/* Plan -> "PowerNapp" task (created or replaced). */
 static bool wts_register(const Runtime *r) {
     const Plan *p = &r->plan;
     long long now = local_now_secs();
@@ -255,7 +255,7 @@ static bool wts_register(const Runtime *r) {
 
 static void wts_delete(void) { ts_delete(WTS_NAME); }
 
-/* "PowerOff" task -> runtime. Fills r->plan (action, force, reminder, time, days or
+/* "PowerNapp" task -> runtime. Fills r->plan (action, force, reminder, time, days or
  * countdown) and the timing; false if there is no task or it has nothing left to run. */
 static bool ts_load_plan(Runtime *r) {
     static TaskInfo ti; /* 16 KB of XML: off the stack */
@@ -313,7 +313,7 @@ static bool ts_load_plan(Runtime *r) {
         r->fire_at = 0;
         r->span = p->mode == M_DAILY ? 86400 : 7 * 86400;
     } else {
-        return false; /* a trigger PowerOff doesn't make (edited by hand): not ours to show */
+        return false; /* a trigger PowerNapp doesn't make (edited by hand): not ours to show */
     }
     r->active = true;
     return true;
@@ -343,10 +343,10 @@ static void set_startup(bool on) {
             wchar_t exe[MAX_PATH], cmd[MAX_PATH + 16];
             GetModuleFileNameW(NULL, exe, MAX_PATH);
             StringCchPrintfW(cmd, MAX_PATH + 16, L"\"%s\" --tray", exe);
-            RegSetValueExW(hk, L"PowerOff", 0, REG_SZ,
+            RegSetValueExW(hk, L"PowerNapp", 0, REG_SZ,
                 (const BYTE *)cmd, (DWORD)((wcslen(cmd) + 1) * sizeof(wchar_t)));
         } else {
-            RegDeleteValueW(hk, L"PowerOff");
+            RegDeleteValueW(hk, L"PowerNapp");
         }
         RegCloseKey(hk);
     }
@@ -363,8 +363,74 @@ static bool get_startup(void) {
             L"Software\\Microsoft\\Windows\\CurrentVersion\\Run",
             0, KEY_QUERY_VALUE, &hk) == ERROR_SUCCESS) {
         DWORD type = 0, cb = 0;
-        ok = RegQueryValueExW(hk, L"PowerOff", NULL, &type, NULL, &cb) == ERROR_SUCCESS;
+        ok = RegQueryValueExW(hk, L"PowerNapp", NULL, &type, NULL, &cb) == ERROR_SUCCESS;
         RegCloseKey(hk);
     }
     return ok;
+}
+
+/* ------------------------------------------------------------------ upgrade from PowerOff 1.x
+ * 2.0 renamed the app. Once per user: carry the settings over, re-create the old tasks under
+ * the new names (running this exe), move the startup entry; the old ones are removed. */
+
+static void wcs_replace_all(wchar_t *s, size_t n, const wchar_t *from, const wchar_t *to) {
+    static wchar_t tmp[8192];
+    size_t fl = wcslen(from), o = 0;
+    for (const wchar_t *p = s; *p && o + 1 < 8192;) {
+        if (!wcsncmp(p, from, fl)) {
+            for (const wchar_t *t = to; *t && o + 1 < 8192; t++) tmp[o++] = *t;
+            p += fl;
+        } else {
+            tmp[o++] = *p++;
+        }
+    }
+    tmp[o] = 0;
+    StringCchCopyW(s, n, tmp);
+}
+
+static void migrate_from_poweroff(void) {
+    wchar_t path[MAX_PATH], dir[MAX_PATH], base[MAX_PATH], old[MAX_PATH];
+    ini_path(path, MAX_PATH);
+    if (GetPrivateProfileIntW(L"PowerNapp", L"migrated", 0, path)) return;
+    StringCchCopyW(dir, MAX_PATH, path);
+    wchar_t *bs = wcsrchr(dir, L'\\');
+    if (bs) { *bs = L'\0'; CreateDirectoryW(dir, NULL); }
+
+    /* settings: the old file's [PowerOff] section becomes [PowerNapp], unless 2.x already saved some */
+    DWORD len = GetEnvironmentVariableW(L"APPDATA", base, MAX_PATH);
+    if (len && len < MAX_PATH && GetPrivateProfileIntW(L"PowerNapp", L"task", -1, path) == -1) {
+        static wchar_t sec[4096];
+        StringCchPrintfW(old, MAX_PATH, L"%s\\PowerOff\\poweroff.ini", base);
+        if (GetPrivateProfileSectionW(L"PowerOff", sec, 4096, old) > 0)
+            WritePrivateProfileSectionW(L"PowerNapp", sec, path);
+    }
+
+    /* tasks: same triggers and settings, new name, this exe */
+    static const wchar_t *OLD[] = { L"PowerOff", L"PowerOff wake", L"PowerOff daily", L"PowerOff startup" };
+    static const wchar_t *NEW[] = { WTS_NAME, WTS_WAKE, WTS_DAILY, WTS_STARTUP };
+    static TaskInfo ti;
+    wchar_t exe[MAX_PATH], exe_x[MAX_PATH * 2];
+    app_exe(exe, MAX_PATH);
+    xml_escape(exe, exe_x, MAX_PATH * 2);
+    for (int i = 0; i < 4; i++) {
+        if (!ts_read(OLD[i], &ti)) continue;
+        wcs_replace_all(ti.xml, 8192, L"PowerOff", L"PowerNapp"); /* author, description */
+        wchar_t *c = wcsstr(ti.xml, L"<Command>"), *e = c ? wcsstr(c, L"</Command>") : NULL;
+        if (c && e) {
+            static wchar_t xml[8192];
+            StringCchPrintfW(xml, 8192, L"%.*ls<Command>%ls%ls", (int)(c - ti.xml), ti.xml, exe_x, e);
+            if (ts_register(NEW[i], xml)) ts_delete(OLD[i]);
+        }
+    }
+
+    /* startup entry */
+    HKEY hk;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+            0, KEY_SET_VALUE | KEY_QUERY_VALUE, &hk) == ERROR_SUCCESS) {
+        bool had = RegQueryValueExW(hk, L"PowerOff", NULL, NULL, NULL, NULL) == ERROR_SUCCESS;
+        if (had) RegDeleteValueW(hk, L"PowerOff");
+        RegCloseKey(hk);
+        if (had) set_startup(true);
+    }
+    WritePrivateProfileStringW(L"PowerNapp", L"migrated", L"1", path);
 }

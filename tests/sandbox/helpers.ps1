@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Continue'
 $T = 'C:\Test'; $R = "$T\results"
 New-Item -ItemType Directory -Force $R | Out-Null
 $log = "$R\results.md"
-Set-Content $log "# PowerOff sandbox test run`n`nStarted $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`n"
+Set-Content $log "# PowerNapp sandbox test run`n`nStarted $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`n"
 function Log($s) { Add-Content $log $s }
 $script:pass = 0; $script:fail = 0
 function Note($s) { $script:d += " $s" }
@@ -54,18 +54,18 @@ public static class H {
 }
 '@
 
-$exe = "$env:LOCALAPPDATA\Programs\PowerOff\poweroff.exe"
-$ini = "$env:APPDATA\PowerOff\poweroff.ini"
-$lnk = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\PowerOff.lnk"
-$ukey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\PowerOff'
+$exe = "$env:LOCALAPPDATA\Programs\PowerNapp\powernapp.exe"
+$ini = "$env:APPDATA\PowerNapp\powernapp.ini"
+$lnk = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\PowerNapp.lnk"
+$ukey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\PowerNapp'
 $WM_COMMAND = 0x0111; $WM_CLOSE = 0x0010; $WM_KEYDOWN = 0x0100; $WM_KEYUP = 0x0101
 
-function StopApp { Get-Process poweroff -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 700 }
+function StopApp { Get-Process powernapp -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 700 }
 function StartApp([string[]]$a = @()) {
     if ($a.Count) { Start-Process $exe -ArgumentList $a | Out-Null } else { Start-Process $exe | Out-Null }
-    for ($i = 0; $i -lt 30 -and [H]::F('PowerOffWnd') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 300 }
+    for ($i = 0; $i -lt 30 -and [H]::F('PowerNappWnd') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 300 }
     Start-Sleep -Milliseconds 800
-    $m = [H]::F('PowerOffWnd')
+    $m = [H]::F('PowerNappWnd')
     # keys only after the window really is in front: a late activation closes an open picker
     for ($i = 0; $m -ne [IntPtr]::Zero -and $i -lt 30 -and [H]::GetForegroundWindow() -ne $m; $i++) { [H]::SetForegroundWindow($m) | Out-Null; Start-Sleep -Milliseconds 200 }
     $m
@@ -73,13 +73,13 @@ function StartApp([string[]]$a = @()) {
 function Ini($k) { if (-not (Test-Path $ini)) { return $null }; $l = Get-Content $ini | Where-Object { $_ -match "^$k=" } | Select-Object -First 1; if ($l) { $l.Substring($k.Length + 1) } }
 function SetIni($k, $v) {
     New-Item -ItemType Directory -Force (Split-Path $ini) | Out-Null
-    if (-not (Test-Path $ini)) { Set-Content $ini '[PowerOff]' }
+    if (-not (Test-Path $ini)) { Set-Content $ini '[PowerNapp]' }
     $c = @(Get-Content $ini)
     if ($c -match "^$k=") { $c = $c -replace "^$k=.*", "$k=$v" } else { $c += "$k=$v" }
     Set-Content $ini $c
 }
-function Cmd($id) { $m = [H]::F('PowerOffWnd'); [H]::PostMessage($m, $WM_COMMAND, [IntPtr]$id, [H]::GetDlgItem($m, $id)) | Out-Null; Start-Sleep -Milliseconds 700 }
-function Key($vk) { $m = [H]::F('PowerOffWnd'); $t = [H]::Focus($m); if ($t -eq [IntPtr]::Zero) { $t = $m }
+function Cmd($id) { $m = [H]::F('PowerNappWnd'); [H]::PostMessage($m, $WM_COMMAND, [IntPtr]$id, [H]::GetDlgItem($m, $id)) | Out-Null; Start-Sleep -Milliseconds 700 }
+function Key($vk) { $m = [H]::F('PowerNappWnd'); $t = [H]::Focus($m); if ($t -eq [IntPtr]::Zero) { $t = $m }
     [H]::PostMessage($t, $WM_KEYDOWN, [IntPtr]$vk, [IntPtr]1) | Out-Null; [H]::PostMessage($t, $WM_KEYUP, [IntPtr]$vk, [IntPtr]0xC0000001) | Out-Null; Start-Sleep -Milliseconds 350 }
 function TaskExists($n) { schtasks /query /tn $n 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
 function TaskXml($n) { [xml](schtasks /query /tn $n /xml 2>$null | Out-String) }

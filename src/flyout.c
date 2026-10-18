@@ -1,8 +1,8 @@
-/* PowerOff: dropdown flyout. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: dropdown flyout. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ flyout (custom WinUI-style dropdown) */
 
-#define FLY_CLASS L"PowerOffFly"
+#define FLY_CLASS L"PowerNappFly"
 
 typedef struct {
     const wchar_t *label;

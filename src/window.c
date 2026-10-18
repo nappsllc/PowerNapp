@@ -1,4 +1,4 @@
-/* PowerOff: title bar, main window, GUI startup. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: title bar, main window, GUI startup. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ main window proc */
 
@@ -257,7 +257,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
             wchar_t path[MAX_PATH];
             G.tray_on = !G.tray_on;
             ini_path(path, MAX_PATH);
-            WritePrivateProfileStringW(L"PowerOff", L"tray", G.tray_on ? L"1" : L"0", path);
+            WritePrivateProfileStringW(L"PowerNapp", L"tray", G.tray_on ? L"1" : L"0", path);
             if (!G.tray_on && G.tray) DestroyWindow(G.tray);
             InvalidateRect(hwnd, &G.rc_tray, FALSE);
             return 0;
@@ -271,7 +271,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                     G.wake_on = false;
                     wake_save();
                     MessageBoxW(hwnd, L"Couldn't create the wake task in Task Scheduler.",
-                        L"PowerOff", MB_OK | MB_ICONWARNING);
+                        L"PowerNapp", MB_OK | MB_ICONWARNING);
                 }
             } else {
                 wts_wake_delete();
@@ -304,9 +304,9 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_CREATE: {
         G.main = hwnd;
         g_dpi = GetDpiForWindow(hwnd);
-        { /* testing aid: render at another scale, e.g. POWEROFF_TEST_DPI=144 for 150% */
+        { /* testing aid: render at another scale, e.g. POWERNAPP_TEST_DPI=144 for 150% */
             wchar_t t[8];
-            if (GetEnvironmentVariableW(L"POWEROFF_TEST_DPI", t, 8)) g_dpi = _wtoi(t) >= 96 ? _wtoi(t) : g_dpi;
+            if (GetEnvironmentVariableW(L"POWERNAPP_TEST_DPI", t, 8)) g_dpi = _wtoi(t) >= 96 ? _wtoi(t) : g_dpi;
         }
         theme_dpi_reset();
         make_ui_fonts();
@@ -649,7 +649,7 @@ static void show_main(void) {
     /* estimate size: layout needs a window; create then resize in WM_CREATE */
     RECT adj = { 0, 0, 640, 700 };
     AdjustWindowRect(&adj, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, FALSE);
-    HWND hwnd = CreateWindowExW(0, L"PowerOffWnd", APP_NAME,
+    HWND hwnd = CreateWindowExW(0, L"PowerNappWnd", APP_NAME,
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN,
         CW_USEDEFAULT, CW_USEDEFAULT, adj.right - adj.left, adj.bottom - adj.top,
         NULL, NULL, GetModuleHandleW(NULL), NULL);
@@ -694,7 +694,7 @@ static LRESULT CALLBACK tray_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
 static void ensure_tray(void) {
     if (G.tray) return;
-    G.tray = CreateWindowExW(0, L"PowerOffTray", L"", WS_POPUP, 0, 0, 0, 0,
+    G.tray = CreateWindowExW(0, L"PowerNappTray", L"", WS_POPUP, 0, 0, 0, 0,
         NULL, NULL, GetModuleHandleW(NULL), NULL);
     if (G.tray) { add_tray(G.tray); set_tray_tip(); }
 }
@@ -706,12 +706,12 @@ static void CALLBACK timer_proc(HWND h, UINT m, UINT_PTR id, DWORD t) {
 
 static void run_gui(bool tray) {
     { /* single instance: hand the request to a running copy */
-        HWND other = FindWindowW(L"PowerOffWnd", NULL);
+        HWND other = FindWindowW(L"PowerNappWnd", NULL);
         if (other) {
             if (!tray) { ShowWindow(other, SW_SHOWNORMAL); SetForegroundWindow(other); }
             return;
         }
-        other = FindWindowW(L"PowerOffTray", NULL);
+        other = FindWindowW(L"PowerNappTray", NULL);
         if (other) {
             if (!tray) { AllowSetForegroundWindow(ASFW_ANY); PostMessageW(other, WM_COMMAND, IDM_SHOW, 0); }
             return;
@@ -726,7 +726,7 @@ static void run_gui(bool tray) {
     wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
     wc.hbrBackground = NULL;
     wc.hIcon = LoadIconW(hi, MAKEINTRESOURCEW(1)); /* small title-bar size is picked from the same resource */
-    wc.lpszClassName = L"PowerOffWnd";
+    wc.lpszClassName = L"PowerNappWnd";
     RegisterClassW(&wc);
 
     memset(&wc, 0, sizeof(wc));
@@ -754,7 +754,7 @@ static void run_gui(bool tray) {
     memset(&wc, 0, sizeof(wc));
     wc.lpfnWndProc = tray_proc;
     wc.hInstance = hi;
-    wc.lpszClassName = L"PowerOffTray";
+    wc.lpszClassName = L"PowerNappTray";
     RegisterClassW(&wc);
     g_taskbar_created = RegisterWindowMessageW(L"TaskbarCreated");
 
@@ -766,12 +766,12 @@ static void run_gui(bool tray) {
     {
         wchar_t path[MAX_PATH];
         ini_path(path, MAX_PATH);
-        G.tray_on = GetPrivateProfileIntW(L"PowerOff", L"tray", 1, path) != 0;
-        G.wake_on = GetPrivateProfileIntW(L"PowerOff", L"wake", 0, path) != 0;
-        G.wake_h = GetPrivateProfileIntW(L"PowerOff", L"wake_h", 7, path) % 24;
-        G.wake_m = GetPrivateProfileIntW(L"PowerOff", L"wake_m", 0, path) % 60;
+        G.tray_on = GetPrivateProfileIntW(L"PowerNapp", L"tray", 1, path) != 0;
+        G.wake_on = GetPrivateProfileIntW(L"PowerNapp", L"wake", 0, path) != 0;
+        G.wake_h = GetPrivateProfileIntW(L"PowerNapp", L"wake_h", 7, path) % 24;
+        G.wake_m = GetPrivateProfileIntW(L"PowerNapp", L"wake_m", 0, path) % 60;
     }
-    { /* the "PowerOff" task is the schedule: show what it says */
+    { /* the "PowerNapp" task is the schedule: show what it says */
         Runtime r = G.rt;
         if (ts_load_plan(&r)) {
             G.rt = r;

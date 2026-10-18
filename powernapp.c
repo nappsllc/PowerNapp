@@ -1,4 +1,4 @@
-/* PowerOff: tiny auto shutdown / sleep scheduler for Windows (C, plain Win32).
+/* PowerNapp: tiny auto shutdown / sleep scheduler for Windows (C, plain Win32).
  *
  * The window copies the design (Windows 11 Settings page): Schedule hero card, Task
  * rows (Action / Schedule / Time), Options toggles, Related settings cards, Fluent
@@ -6,7 +6,7 @@
  * toggles or flyouts, so every control is an owner-drawn BUTTON painted with GDI
  * (anti-aliased by hand), DPI-scaled, keyboard-navigable and annotated for screen
  * readers. Scheduled jobs are handed to Windows Task Scheduler, so the app itself can
- * exit. Build with build.bat (MSVC); poweroff.c includes the parts in src/.
+ * exit. Build with build.bat (MSVC); powernapp.c includes the parts in src/.
  */
 #define UNICODE
 #define _UNICODE

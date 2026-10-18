@@ -1,17 +1,17 @@
-# Runs a PowerOff test script in a fresh Windows Sandbox and prints its results.
+# Runs a PowerNapp test script in a fresh Windows Sandbox and prints its results.
 #
 #   powershell -File tests\sandbox\Run-Sandbox.ps1                     # end-to-end suite (~11 min)
 #   powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         # Store package (~1 min)
 #   powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  # README screenshots
 #
 # Needs the Windows Sandbox feature. Build first: build.bat and makensis (main, screenshots),
-# or tools\make-msix.ps1 (msix). Files are staged in %TEMP%\poweroff-sandbox and mapped into
+# or tools\make-msix.ps1 (msix). Files are staged in %TEMP%\powernapp-sandbox and mapped into
 # the sandbox as C:\Test; results (results.md, screenshots) land in its results folder.
-# The main suite ends with a real forced shutdown of the sandbox, run by PowerOff itself.
+# The main suite ends with a real forced shutdown of the sandbox, run by PowerNapp itself.
 param([ValidateSet('main', 'msix', 'screenshots')][string]$Suite = 'main', [int]$TimeoutMinutes = 25)
 $ErrorActionPreference = 'Stop'
 $root  = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$stage = Join-Path $env:TEMP 'poweroff-sandbox'
+$stage = Join-Path $env:TEMP 'powernapp-sandbox'
 $script = @{ main = 'run-tests.ps1'; msix = 'msix-tests.ps1'; screenshots = 'screenshots.ps1' }[$Suite]
 
 if (Get-Process WindowsSandboxRemoteSession -ErrorAction SilentlyContinue) { throw 'Windows Sandbox is already running: close it first' }
@@ -23,13 +23,17 @@ if ($Suite -eq 'msix') {
     if (-not (Test-Path (Join-Path $layout 'AppxManifest.xml'))) { throw 'build\msix not found: run tools\make-msix.ps1 first' }
     Copy-Item -Recurse $layout (Join-Path $stage 'layout')
 } else {
-    foreach ($f in 'poweroff.exe', 'PowerOff-setup.exe') {
+    foreach ($f in 'powernapp.exe', 'PowerNapp-setup.exe') {
         if (-not (Test-Path (Join-Path $root $f))) { throw "$f not found: run build.bat and makensis first" }
         Copy-Item (Join-Path $root $f) $stage
     }
+    if ($Suite -eq 'main') { # the upgrade test installs the last release under the old name first
+        gh release download v1.0.1 --repo nappsllc/PowerNapp --pattern PowerOff-setup.exe --output (Join-Path $stage 'PowerOff-1.0.1-setup.exe')
+        if ($LASTEXITCODE) { throw 'could not download PowerOff 1.0.1 (gh release download)' }
+    }
 }
 
-$wsb = Join-Path $stage 'poweroff.wsb'
+$wsb = Join-Path $stage 'powernapp.wsb'
 @"
 <Configuration>
   <VGpu>Enable</VGpu>

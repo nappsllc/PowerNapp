@@ -1,4 +1,4 @@
-/* PowerOff: accessibility. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: accessibility. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ accessibility
  * Every control is an owner-drawn BUTTON, so a screen reader would hear unnamed

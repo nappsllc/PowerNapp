@@ -1,4 +1,4 @@
-/* PowerOff: theme tokens, GDI drawing helpers, icons. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: theme tokens, GDI drawing helpers, icons. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ theme (artifact tokens) */
 
@@ -76,7 +76,7 @@ static void apply_dark_mode(HWND hwnd) {
 
 /* ------------------------------------------------------------------ DPI
  * Geometry is written in the design's 96-DPI pixels and scaled to the window's
- * monitor (per-monitor DPI aware, see poweroff.exe.manifest): S() for whole pixels,
+ * monitor (per-monitor DPI aware, see powernapp.exe.manifest): S() for whole pixels,
  * SF() for the anti-aliased shapes. Hairlines stay 1 px until 200%, like WinUI. */
 
 static int g_dpi = 96;
@@ -234,7 +234,7 @@ static void glyph_at(HDC hdc, wchar_t g, RECT rc, int px, COLORREF c) { /* px: d
     glyph_px(hdc, g, rc, S(px), c);
 }
 
-/* Full-color Fluent icons from the design (icons\*_48.png, embedded by poweroff.rc as
+/* Full-color Fluent icons from the design (icons\*_48.png, embedded by powernapp.rc as
  * RCDATA 100+id). Decoded with WIC, scaled with the Fant filter to the exact device size
  * (20 px rows / 32 px hero times the DPI), premultiplied, drawn with AlphaBlend.
  * windowscodecs/msimg32 are delay-loaded, so only the window ever maps them. Missing

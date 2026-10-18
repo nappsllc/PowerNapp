@@ -1,21 +1,21 @@
-# Packages poweroff.exe as an MSIX for the Microsoft Store.
+# Packages powernapp.exe as an MSIX for the Microsoft Store.
 #
 #   powershell -File tools\make-msix.ps1 -Name <Package/Identity/Name> -Publisher "CN=<...>" `
 #       -PublisherDisplayName <...> [-Version 1.0.0.0]
 #
 # Take Name, Publisher and PublisherDisplayName from Partner Center (your app > Product
 # management > Product identity); the defaults are placeholders for local testing.
-# Output: PowerOff.msix, unsigned - the Store signs it on submission. For a local install,
+# Output: PowerNapp.msix, unsigned - the Store signs it on submission. For a local install,
 # sign it with a certificate whose subject equals -Publisher (-CertPfx), or register the
 # layout folder with Developer Mode on (Add-AppxPackage -Register build\msix\AppxManifest.xml).
 #
-# The tile and taskbar assets are generated from poweroff.ico into assets\msix the first time
+# The tile and taskbar assets are generated from powernapp.ico into assets\msix the first time
 # (or with -RegenerateAssets) and committed, so the build itself needs no image tools.
 param(
-    [string]$Name = 'PowerNapps.PowerOff',
+    [string]$Name = 'PowerNapps.PowerNapp',
     [string]$Publisher = 'CN=PowerNapps',
     [string]$PublisherDisplayName = 'PowerNapps',
-    [string]$Version = '1.0.1.0',          # the Store requires the last part to be 0
+    [string]$Version = '2.0.0.0',          # the Store requires the last part to be 0
     [string]$CertPfx = '',
     [string]$CertPassword = '',
     [switch]$RegenerateAssets
@@ -24,21 +24,21 @@ $ErrorActionPreference = 'Stop'
 $root   = Split-Path $PSScriptRoot -Parent
 $assets = Join-Path $root 'assets\msix'
 $layout = Join-Path $root 'build\msix'
-$out    = Join-Path $root 'PowerOff.msix'
-$exe    = Join-Path $root 'poweroff.exe'
-if (-not (Test-Path $exe)) { throw 'poweroff.exe not found: run build.bat first' }
+$out    = Join-Path $root 'PowerNapp.msix'
+$exe    = Join-Path $root 'powernapp.exe'
+if (-not (Test-Path $exe)) { throw 'powernapp.exe not found: run build.bat first' }
 
 # newest Windows SDK that has the packaging tools
 $sdk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64\makeappx.exe" |
     Sort-Object { [version]$_.Directory.Parent.Name } | Select-Object -Last 1 | ForEach-Object { $_.DirectoryName }
 if (-not $sdk) { throw 'Windows SDK packaging tools (makeappx.exe) not found' }
 
-# ------------------------------------------------------------------ assets (from poweroff.ico)
+# ------------------------------------------------------------------ assets (from powernapp.ico)
 if ($RegenerateAssets -or -not (Test-Path $assets)) {
     Add-Type -AssemblyName System.Drawing
     New-Item -ItemType Directory -Force $assets | Out-Null
     # every frame of the .ico by size: PNG frames load directly, 32-bit DIB frames via Icon
-    $ico = [IO.File]::ReadAllBytes((Join-Path $root 'poweroff.ico'))
+    $ico = [IO.File]::ReadAllBytes((Join-Path $root 'powernapp.ico'))
     $frames = @{}
     for ($i = 0; $i -lt [BitConverter]::ToUInt16($ico, 4); $i++) {
         $e = 6 + 16 * $i; $w = if ($ico[$e]) { $ico[$e] } else { 256 }
@@ -98,7 +98,7 @@ $esc = { param($s) [Security.SecurityElement]::Escape($s) }
          IgnorableNamespaces="uap uap3 desktop rescap">
   <Identity Name="$(& $esc $Name)" Publisher="$(& $esc $Publisher)" Version="$Version" ProcessorArchitecture="x64" />
   <Properties>
-    <DisplayName>PowerNapps PowerOff</DisplayName>
+    <DisplayName>PowerNapp</DisplayName>
     <PublisherDisplayName>$(& $esc $PublisherDisplayName)</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>Shut down, restart or sleep your PC on a schedule.</Description>
@@ -110,14 +110,14 @@ $esc = { param($s) [Security.SecurityElement]::Escape($s) }
     <Resource Language="en-us" />
   </Resources>
   <Applications>
-    <Application Id="PowerOff" Executable="poweroff.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="PowerNapps PowerOff" Description="Shut down, restart or sleep your PC on a schedule."
+    <Application Id="PowerNapp" Executable="powernapp.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="PowerNapp" Description="Shut down, restart or sleep your PC on a schedule."
           BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" />
       <Extensions>
         <!-- Task Scheduler can't start an exe inside WindowsApps: the app's tasks run this alias -->
-        <uap3:Extension Category="windows.appExecutionAlias" Executable="poweroff.exe" EntryPoint="Windows.FullTrustApplication">
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="powernapp.exe" EntryPoint="Windows.FullTrustApplication">
           <uap3:AppExecutionAlias>
-            <desktop:ExecutionAlias Alias="poweroff.exe" />
+            <desktop:ExecutionAlias Alias="powernapp.exe" />
           </uap3:AppExecutionAlias>
         </uap3:Extension>
       </Extensions>

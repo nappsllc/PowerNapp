@@ -1,4 +1,4 @@
-/* PowerOff: About dialog. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: About dialog. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ about
  * ContentDialog-style box: icon + name, version, description, "Contact us", a link to
@@ -6,10 +6,10 @@
  * Modal to the window. Keyboard: Tab / arrows move between the controls, Enter / Space
  * press, Esc closes. Geometry in design pixels, scaled with S(). */
 
-#define ABOUT_CLASS L"PowerOffAbout"
-#define APP_VERSION L"1.0.1"
-#define RELEASES_URL L"https://github.com/nappsllc/PowerOff/releases/latest"
-#define CONTACT_URL L"mailto:hi@powernapps.net?subject=PowerNapps%20PowerOff"
+#define ABOUT_CLASS L"PowerNappAbout"
+#define APP_VERSION L"2.0.0"
+#define RELEASES_URL L"https://github.com/nappsllc/PowerNapp/releases/latest"
+#define CONTACT_URL L"mailto:hi@powernapps.net?subject=PowerNapps%20PowerNapp"
 #define SITE_URL L"https://powernapps.net"
 #define AB_DESC L"A tiny app that shuts down, restarts or sleeps your PC on a schedule. " \
     L"Windows Task Scheduler does the work, so it uses no memory once closed."

@@ -1,4 +1,4 @@
-/* PowerOff: notification-area icon. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: notification-area icon. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ tray */
 
@@ -11,8 +11,8 @@ static void add_tray(HWND hwnd) {
     nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     nid.uCallbackMessage = WM_TRAY;
     nid.hIcon = (HICON)LoadImageW(GetModuleHandleW(NULL), MAKEINTRESOURCEW(1), IMAGE_ICON,
-        GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0); /* poweroff.rc */
-    wcscpy_s(nid.szTip, 128, L"PowerOff");
+        GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0); /* powernapp.rc */
+    wcscpy_s(nid.szTip, 128, L"PowerNapp");
     Shell_NotifyIconW(NIM_ADD, &nid);
 }
 
@@ -35,7 +35,7 @@ static void set_tray_tip(void) {
     nid.uFlags = NIF_TIP;
     wchar_t d[96] = L"";
     if (G.rt.active) rt_describe(&G.rt, d, 96);
-    StringCchPrintfW(nid.szTip, 128, L"PowerOff%ls%ls%ls", d[0] ? L"\n" : L"", d,
+    StringCchPrintfW(nid.szTip, 128, L"PowerNapp%ls%ls%ls", d[0] ? L"\n" : L"", d,
         G.delegated ? L"\nScheduled in Windows Task Scheduler" : L"");
     Shell_NotifyIconW(NIM_MODIFY, &nid);
 }

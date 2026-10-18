@@ -1,4 +1,4 @@
-/* PowerOff: view strings and row painting. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: view strings and row painting. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ views */
 
@@ -66,11 +66,11 @@ static void time_row_sub(wchar_t *sub, size_t n) {
 static void wake_save(void) {
     wchar_t path[MAX_PATH], v[16];
     ini_path(path, MAX_PATH);
-    WritePrivateProfileStringW(L"PowerOff", L"wake", G.wake_on ? L"1" : L"0", path);
+    WritePrivateProfileStringW(L"PowerNapp", L"wake", G.wake_on ? L"1" : L"0", path);
     StringCchPrintfW(v, 16, L"%d", G.wake_h);
-    WritePrivateProfileStringW(L"PowerOff", L"wake_h", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"wake_h", v, path);
     StringCchPrintfW(v, 16, L"%d", G.wake_m);
-    WritePrivateProfileStringW(L"PowerOff", L"wake_m", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"wake_m", v, path);
 }
 
 /* re-register the wake task after the time changed */
@@ -79,7 +79,7 @@ static void wake_flush(void) {
     G.wake_dirty = false;
     wake_save();
     if (G.wake_on && !wts_wake_register(G.wake_h, G.wake_m))
-        MessageBoxW(G.main, L"Couldn't create the wake task in Task Scheduler.", L"PowerOff", MB_OK | MB_ICONWARNING);
+        MessageBoxW(G.main, L"Couldn't create the wake task in Task Scheduler.", L"PowerNapp", MB_OK | MB_ICONWARNING);
 }
 
 static void update_combo_texts(void) {
@@ -116,7 +116,7 @@ static void update_views(void) {
     }
 }
 
-/* Re-read the "PowerOff" task: it is the schedule (a task edited or deleted in Task
+/* Re-read the "PowerNapp" task: it is the schedule (a task edited or deleted in Task
  * Scheduler, a run that happened, a snooze from the reminder card all show up here). */
 static void ui_after_plan_change(void); /* window.c */
 
@@ -130,7 +130,7 @@ static void refresh_from_task(void) {
         G.force_on = r.plan.force;
         wchar_t path[MAX_PATH];
         ini_path(path, MAX_PATH);
-        G.snooze_until = GetPrivateProfileIntW(L"PowerOff", L"snooze_until", 0, path);
+        G.snooze_until = GetPrivateProfileIntW(L"PowerNapp", L"snooze_until", 0, path);
         if (G.snooze_until <= local_now_secs()) G.snooze_until = 0;
     } else if (G.delegated) { /* gone: deleted outside, or a countdown that ran */
         G.rt.active = false;
@@ -160,7 +160,7 @@ static void tick(void) {
             StringCchPrintfW(m, 256,
                 L"Failed to execute '%ls'. (Sleep/Hibernate may be disabled on this PC.)",
                 TASK_NAMES[task]);
-            MessageBoxW(G.main, m, L"PowerOff", MB_OK | MB_ICONERROR);
+            MessageBoxW(G.main, m, L"PowerNapp", MB_OK | MB_ICONERROR);
         }
         switch (mode) {
         case M_DAILY:
@@ -200,7 +200,7 @@ static void tick(void) {
 }
 
 /* Start, or an edit while scheduled: (re)compute the timing and put it in the
- * "PowerOff" task; idle mode, or a refused registration, runs in-process instead. */
+ * "PowerNapp" task; idle mode, or a refused registration, runs in-process instead. */
 static const wchar_t *schedule(void) {
     static Mode last_mode;
     static int last_cd;
@@ -249,7 +249,7 @@ static void toggle_start(void) {
     }
     save_current();
     const wchar_t *err = schedule();
-    if (err) MessageBoxW(G.main, err, L"PowerOff", MB_OK | MB_ICONWARNING);
+    if (err) MessageBoxW(G.main, err, L"PowerNapp", MB_OK | MB_ICONWARNING);
     update_views();
 }
 

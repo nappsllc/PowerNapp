@@ -1,11 +1,11 @@
-# Generates poweroff.ico from the design's app icon (icons\svg\app.svg: power symbol with
+# Generates powernapp.ico from the design's app icon (icons\svg\app.svg: power symbol with
 # a #29C3FF -> #2052CB gradient), 16..256 px, rendered by headless Edge.
-#   pwsh tools\make-icon.ps1   (writes poweroff.ico next to poweroff.c)
+#   pwsh tools\make-icon.ps1   (writes powernapp.ico next to powernapp.c)
 Add-Type -AssemblyName System.Drawing
 
 $root  = Split-Path $PSScriptRoot -Parent
 $svg   = Join-Path $root 'icons\svg\app.svg'
-$out   = Join-Path $root 'poweroff.ico'
+$out   = Join-Path $root 'powernapp.ico'
 $sizes = 16, 20, 24, 32, 40, 48, 64, 256
 $edge  = @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
            "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
@@ -20,7 +20,7 @@ for ($i = 0; $i -lt $sizes.Count; $i++) {
     $html += "<img src='$uri' style='position:absolute;left:$($xs[$i])px;top:0;width:$($sizes[$i])px;height:$($sizes[$i])px'>"
 }
 $html += '</body></html>'
-$tmp = Join-Path $env:TEMP 'poweroff-appicon'
+$tmp = Join-Path $env:TEMP 'powernapp-appicon'
 New-Item -ItemType Directory -Force $tmp | Out-Null
 $page = Join-Path $tmp 'sheet.html'; $shot = Join-Path $tmp 'sheet.png'
 Set-Content $page $html -Encoding utf8

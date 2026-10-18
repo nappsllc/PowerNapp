@@ -1,4 +1,4 @@
-# Rasterizes the Fluent color icons in icons\svg\ to the PNGs embedded in poweroff.exe.
+# Rasterizes the Fluent color icons in icons\svg\ to the PNGs embedded in powernapp.exe.
 # Uses headless Edge (always present on Windows 11) so SVG gradients render exactly as
 # in the design. Re-run only when an SVG changes; the PNGs are committed.
 #   pwsh tools\make-icons.ps1
@@ -24,7 +24,7 @@ for ($i = 0; $i -lt $jobs.Count; $i++) {
     $html += "<img src='$uri' style='position:absolute;left:${x}px;top:${y}px;width:$($j.size)px;height:$($j.size)px'>"
 }
 $html += '</body></html>'
-$tmp = Join-Path $env:TEMP 'poweroff-icons'
+$tmp = Join-Path $env:TEMP 'powernapp-icons'
 New-Item -ItemType Directory -Force $tmp | Out-Null
 $page = Join-Path $tmp 'sheet.html'; $shot = Join-Path $tmp 'sheet.png'
 Set-Content $page $html -Encoding utf8

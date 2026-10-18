@@ -1,4 +1,4 @@
-/* PowerOff: Plan/runtime model, time math, power actions, scheduler, settings. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: Plan/runtime model, time math, power actions, scheduler, settings. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ model */
 
@@ -27,7 +27,7 @@ static const int IDLES[] = { 5, 10, 15, 30, 60 };
 #define NIDLES 5
 static const wchar_t *DAYS[] = { L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat", L"Sun" };
 
-#define APP_NAME L"PowerNapps PowerOff"   /* shown name (v3 design) */
+#define APP_NAME L"PowerNapp"   /* shown name (v3 design) */
 #define LINK_POWER L"Power settings"
 #define LINK_ABOUT L"About"
 #define REMIND_MIN 1 /* the reminder comes 1 minute before, with a countdown */
@@ -114,7 +114,7 @@ typedef struct {
     bool kbd_nav;            /* last input was a key: show the focus ring (a click hides it) */
     bool wake_on, wake_dirty; /* daily wake task; dirty = time edited, not yet re-registered */
     int wake_h, wake_m;
-    bool delegated;   /* the active schedule is the "PowerOff" task: Windows runs it, we display it */
+    bool delegated;   /* the active schedule is the "PowerNapp" task: Windows runs it, we display it */
     long long snooze_until; /* reminder card snoozed the task's run to this time (local secs) */
 } Globals;
 static Globals G;
@@ -453,10 +453,10 @@ static void ini_path(wchar_t *out, size_t n) {
     wchar_t base[MAX_PATH];
     DWORD len = GetEnvironmentVariableW(L"APPDATA", base, MAX_PATH);
     if (len == 0 || len >= MAX_PATH) {
-        StringCchPrintfW(out, n, L".\\poweroff.ini");
+        StringCchPrintfW(out, n, L".\\powernapp.ini");
         return;
     }
-    StringCchPrintfW(out, n, L"%s\\PowerOff\\poweroff.ini", base);
+    StringCchPrintfW(out, n, L"%s\\PowerNapp\\powernapp.ini", base);
 }
 
 static void save_config(const Plan *p) {
@@ -467,23 +467,23 @@ static void save_config(const Plan *p) {
     if (bs) { *bs = L'\0'; CreateDirectoryW(dir, NULL); }
     wchar_t v[80];
     StringCchPrintfW(v, 80, L"%d", (int)p->task);
-    WritePrivateProfileStringW(L"PowerOff", L"task", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"task", v, path);
     StringCchPrintfW(v, 80, L"%d", (int)p->mode);
-    WritePrivateProfileStringW(L"PowerOff", L"mode", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"mode", v, path);
     StringCchPrintfW(v, 80, L"%d", p->h);
-    WritePrivateProfileStringW(L"PowerOff", L"h", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"h", v, path);
     StringCchPrintfW(v, 80, L"%d", p->m);
-    WritePrivateProfileStringW(L"PowerOff", L"m", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"m", v, path);
     StringCchPrintfW(v, 80, L"%d", p->cd);
-    WritePrivateProfileStringW(L"PowerOff", L"cd", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"cd", v, path);
     StringCchPrintfW(v, 80, L"%d", p->idle);
-    WritePrivateProfileStringW(L"PowerOff", L"idle", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"idle", v, path);
     StringCchPrintfW(v, 80, L"%d", p->days);
-    WritePrivateProfileStringW(L"PowerOff", L"days", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"days", v, path);
     StringCchPrintfW(v, 80, L"%d", p->remind_min);
-    WritePrivateProfileStringW(L"PowerOff", L"remind", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"remind", v, path);
     StringCchPrintfW(v, 80, L"%d", p->force ? 1 : 0);
-    WritePrivateProfileStringW(L"PowerOff", L"force", v, path);
+    WritePrivateProfileStringW(L"PowerNapp", L"force", v, path);
 }
 
 static void load_config(Plan *p) {
@@ -495,34 +495,34 @@ static void load_config(Plan *p) {
     ini_path(path, MAX_PATH);
     /* legacy file (pre-1.0 UI): task enum order differed and time lived in
      * p1/p2 — detect and translate instead of misreading it */
-    if (GetPrivateProfileIntW(L"PowerOff", L"h", -1, path) == -1) {
+    if (GetPrivateProfileIntW(L"PowerNapp", L"h", -1, path) == -1) {
         wchar_t p1[64], p2[64];
-        GetPrivateProfileStringW(L"PowerOff", L"p1", L"", p1, 64, path);
+        GetPrivateProfileStringW(L"PowerNapp", L"p1", L"", p1, 64, path);
         if (p1[0]) {
             static const Task LEG[] = { T_SHUTDOWN, T_RESTART, T_SHUTDOWN,
                 T_LOGOFF, T_LOCK, T_SLEEP, T_HIBERNATE };
-            int t = GetPrivateProfileIntW(L"PowerOff", L"task", 5, path);
+            int t = GetPrivateProfileIntW(L"PowerNapp", L"task", 5, path);
             if (t >= 0 && t < 7) p->task = LEG[t];
-            GetPrivateProfileStringW(L"PowerOff", L"p2", L"0", p2, 64, path);
+            GetPrivateProfileStringW(L"PowerNapp", L"p2", L"0", p2, 64, path);
             p->h = _wtoi(p1);
             p->m = _wtoi(p2);
             if (p->h < 0 || p->h > 23) p->h = 23;
             if (p->m < 0 || p->m > 59) p->m = 0;
-            p->remind_min = GetPrivateProfileIntW(L"PowerOff", L"remind", REMIND_MIN, path) ? REMIND_MIN : 0;
+            p->remind_min = GetPrivateProfileIntW(L"PowerNapp", L"remind", REMIND_MIN, path) ? REMIND_MIN : 0;
             return;
         }
     }
-    int t = GetPrivateProfileIntW(L"PowerOff", L"task", T_SLEEP, path);
-    int m = GetPrivateProfileIntW(L"PowerOff", L"mode", M_DAILY, path);
+    int t = GetPrivateProfileIntW(L"PowerNapp", L"task", T_SLEEP, path);
+    int m = GetPrivateProfileIntW(L"PowerNapp", L"mode", M_DAILY, path);
     if (t >= 0 && t < NTASKS) p->task = (Task)t;
     if (m >= 0 && m < NMODES_ALL) p->mode = (Mode)m;
-    p->h = GetPrivateProfileIntW(L"PowerOff", L"h", 23, path);
-    p->m = GetPrivateProfileIntW(L"PowerOff", L"m", 0, path);
-    p->cd = GetPrivateProfileIntW(L"PowerOff", L"cd", 60, path);
-    p->idle = GetPrivateProfileIntW(L"PowerOff", L"idle", 15, path);
-    p->days = GetPrivateProfileIntW(L"PowerOff", L"days", 0x7F, path) & 0x7F;
-    p->remind_min = GetPrivateProfileIntW(L"PowerOff", L"remind", REMIND_MIN, path) ? REMIND_MIN : 0;
-    p->force = GetPrivateProfileIntW(L"PowerOff", L"force", 0, path) != 0;
+    p->h = GetPrivateProfileIntW(L"PowerNapp", L"h", 23, path);
+    p->m = GetPrivateProfileIntW(L"PowerNapp", L"m", 0, path);
+    p->cd = GetPrivateProfileIntW(L"PowerNapp", L"cd", 60, path);
+    p->idle = GetPrivateProfileIntW(L"PowerNapp", L"idle", 15, path);
+    p->days = GetPrivateProfileIntW(L"PowerNapp", L"days", 0x7F, path) & 0x7F;
+    p->remind_min = GetPrivateProfileIntW(L"PowerNapp", L"remind", REMIND_MIN, path) ? REMIND_MIN : 0;
+    p->force = GetPrivateProfileIntW(L"PowerNapp", L"force", 0, path) != 0;
 }
 
 /* Store (MSIX) build: running from a package changes how Windows can start us */
@@ -538,7 +538,7 @@ static bool packaged(void) {
 /* The path Windows should launch: in a package, its app execution alias (Task Scheduler
  * can't start an exe inside WindowsApps directly); otherwise this exe. */
 static void app_exe(wchar_t *exe, DWORD n) {
-    if (!packaged() || !ExpandEnvironmentStringsW(L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\poweroff.exe", exe, n))
+    if (!packaged() || !ExpandEnvironmentStringsW(L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\powernapp.exe", exe, n))
         GetModuleFileNameW(NULL, exe, n);
 }
 

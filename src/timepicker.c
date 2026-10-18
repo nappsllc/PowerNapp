@@ -1,4 +1,4 @@
-/* PowerOff: time picker flyout. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: time picker flyout. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ time picker
  * WinUI TimePicker flyout as in the design: the 242x32 segmented button opens a
@@ -7,7 +7,7 @@
  * Right pick a column, Up / Down change it, Enter accepts, Esc cancels. Geometry is in
  * design pixels (TP_*), scaled with S(). */
 
-#define TP_CLASS L"PowerOffTimePick"
+#define TP_CLASS L"PowerNappTimePick"
 #define TP_W 242
 #define TP_ROW 40
 #define TP_COLS (7 * TP_ROW)        /* 280 */

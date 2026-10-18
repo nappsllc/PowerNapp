@@ -1,4 +1,4 @@
-/* PowerOff: control helpers, hover tracking, layout. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: control helpers, hover tracking, layout. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ children helpers */
 
@@ -84,7 +84,7 @@ static LRESULT CALLBACK button_hover_proc(HWND h, UINT m, WPARAM w, LPARAM l) {
  * owner draw) under our class name. UI Automation has a built-in handler for the
  * "Button" class that ignores the accessibility annotations and calls owner-drawn
  * buttons "Pane"; for an unknown class it reads MSAA, annotations included. */
-#define CTL_CLASS L"PowerOffCtl"
+#define CTL_CLASS L"PowerNappCtl"
 
 static void ensure_ctl_class(void) {
     static bool done;

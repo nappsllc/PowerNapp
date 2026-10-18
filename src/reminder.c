@@ -1,4 +1,4 @@
-/* PowerOff: reminder card. Part of the unity build: included by poweroff.c, in order. */
+/* PowerNapp: reminder card. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ reminder
  * Shown 1 minute before the action: a topmost card at the bottom right of the work
@@ -8,7 +8,7 @@
  * "--fire-now --warn-secs N" process Task Scheduler starts for a handed-off task.
  * Keyboard: Tab / arrows move, Enter / Space press, Esc stops. */
 
-#define RM_CLASS L"PowerOffReminder"
+#define RM_CLASS L"PowerNappReminder"
 #define RM_W 440
 #define RM_H 188
 #define RM_FOOT 116         /* footer band top */
@@ -27,13 +27,13 @@ static struct {
 } RM;
 
 static const wchar_t *RM_WHAT[] = { /* index-aligned with Task */
-    L"PowerOff will shut down the PC when the countdown ends.",
-    L"PowerOff will restart the PC when the countdown ends.",
-    L"PowerOff will put the PC to sleep when the countdown ends.",
-    L"PowerOff will hibernate the PC when the countdown ends.",
-    L"PowerOff will sign you out when the countdown ends.",
-    L"PowerOff will lock the PC when the countdown ends.",
-    L"PowerOff will turn off the display when the countdown ends.",
+    L"PowerNapp will shut down the PC when the countdown ends.",
+    L"PowerNapp will restart the PC when the countdown ends.",
+    L"PowerNapp will put the PC to sleep when the countdown ends.",
+    L"PowerNapp will hibernate the PC when the countdown ends.",
+    L"PowerNapp will sign you out when the countdown ends.",
+    L"PowerNapp will lock the PC when the countdown ends.",
+    L"PowerNapp will turn off the display when the countdown ends.",
 };
 
 static RECT rm_btn(int i) { /* primary 152 wide, the others 112, 8 apart, 24 margins */
@@ -208,7 +208,7 @@ static void reminder_show(Task task, unsigned secs, void (*done)(int result)) {
     mi.cbSize = sizeof(mi);
     GetMonitorInfoW(MonitorFromWindow(G.main, MONITOR_DEFAULTTOPRIMARY), &mi);
     int W = S(RM_W), H = S(RM_H);
-    RM.wnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, RM_CLASS, L"PowerOff reminder", WS_POPUP,
+    RM.wnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, RM_CLASS, L"PowerNapp reminder", WS_POPUP,
         mi.rcWork.right - W - S(12), mi.rcWork.bottom - H - S(12), W, H, NULL, NULL, GetModuleHandleW(NULL), NULL);
     if (!RM.wnd) return;
     DWORD corner = 2; /* DWMWCP_ROUND: rounded, shadowed, system border */

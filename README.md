@@ -1,21 +1,21 @@
-# PowerNapps PowerOff
+# PowerNapp
 
 **Shut down, restart or sleep your PC on a schedule — in an app that looks
 like it shipped with Windows 11, weighs ~160 KB and, once you close it,
 uses no memory at all.**
 
 <p>
-  <img src="docs/screenshot-light.png" width="49%" alt="PowerNapps PowerOff, light theme: Sleep at 11:00 PM every day, scheduled, with Wake up at 7:00 AM">
-  <img src="docs/screenshot-dark.png" width="49%" alt="PowerNapps PowerOff, dark theme">
+  <img src="docs/screenshot-light.png" width="49%" alt="PowerNapp, light theme: Sleep at 11:00 PM every day, scheduled, with Wake up at 7:00 AM">
+  <img src="docs/screenshot-dark.png" width="49%" alt="PowerNapp, dark theme">
 </p>
 
 - 🪶 **The only power-off app that eats 0 MB of RAM** (with Tray icon
   Off) — because it doesn't have to ;) Windows Task Scheduler does the
-  job; PowerOff is just the remote control you open once a month.
+  job; PowerNapp is just the remote control you open once a month.
   Keep the tray icon and it's **0.1 MB**; even with the window open it's
   only **2.3 MB** (Task Manager, Memory).
 - 🌅 **Wakes your PC on a timer — neat.** Most shutdown tools can only
-  put a PC to sleep. PowerOff also wakes it: sleep at 11 PM, and have it
+  put a PC to sleep. PowerNapp also wakes it: sleep at 11 PM, and have it
   up and ready at 7:00 the next morning, every day, using the same wake
   timers Windows Update uses.
 - ⚡ **Highly optimized, tiny, zero dependencies.** One ~160 KB exe in
@@ -26,7 +26,7 @@ uses no memory at all.**
 - ⏰ **1-minute heads-up.** A reminder card counts down the last minute:
   run now, snooze 10 minutes, or stop.
 - 🛡️ **Reliable by design.** The schedule *is* a Windows scheduled task,
-  so it fires after reboots, with the app closed, even if PowerOff
+  so it fires after reboots, with the app closed, even if PowerNapp
   crashed — there's nothing left running that could crash.
 - ♿ **Accessible and sharp everywhere.** Keyboard, Narrator, light/dark,
   per-monitor DPI.
@@ -58,7 +58,7 @@ minutes.
   *Sleep now* (or Shut down now, …), *Snooze 10 min*, *Stop*. Esc stops.
   Ignore it and the action runs on time.
 - **Force apps to close** — apps with unsaved work won't block a shut
-  down, restart or sign out. Off, PowerOff still closes hung apps.
+  down, restart or sign out. Off, PowerNapp still closes hung apps.
 - **Start with Windows** — run at sign-in.
 - **Tray icon** — keep a tiny tray icon after closing, or leave nothing
   running at all (see below).
@@ -87,9 +87,9 @@ minutes.
 
 ## 0 MB: how it runs
 
-PowerOff doesn't run your schedule. **Windows does.**
+PowerNapp doesn't run your schedule. **Windows does.**
 
-- **Start** registers a task named `PowerOff` in Task Scheduler (daily,
+- **Start** registers a task named `PowerNapp` in Task Scheduler (daily,
   weekly or one-shot). Changing an option while it's active updates the
   task; **Cancel** deletes it.
 - **The task is the single source of truth.** The app reads it back
@@ -97,10 +97,10 @@ PowerOff doesn't run your schedule. **Windows does.**
   and the app shows the new time; delete the task there and the app goes
   back to "Not scheduled".
 - With the reminder on, the task starts 1 minute early and runs
-  `poweroff.exe --fire-now`, which shows the reminder card and then
+  `powernapp.exe --fire-now`, which shows the reminder card and then
   performs the action. It runs on battery too, and one-shot tasks clean
   themselves up afterwards.
-- **Wake up** is a second task, `PowerOff wake`, with *Wake the computer
+- **Wake up** is a second task, `PowerNapp wake`, with *Wake the computer
   to run this task* set: Windows arms a hardware wake timer, so the PC
   wakes from sleep or hibernate on its own, with nothing running.
 - Idle is the one trigger Task Scheduler can't express, so it runs
@@ -136,7 +136,7 @@ Memory, as Task Manager shows it:
 
 - **Display scaling:** per-monitor DPI aware (v2). All geometry is in
   the design's 96-DPI pixels and scaled to the monitor; moving to another
-  monitor rebuilds fonts, icons and layout. `POWEROFF_TEST_DPI=144` tries
+  monitor rebuilds fonts, icons and layout. `POWERNAPP_TEST_DPI=144` tries
   150% on any screen.
 - **Keyboard:** Tab / Shift+Tab in reading order with the WinUI focus
   ring, Space / Enter to press, arrow keys in dropdowns and the time
@@ -149,26 +149,30 @@ Memory, as Task Manager shows it:
 
 ## Install
 
-Download `PowerOff-setup.exe` from
-[GitHub releases](https://github.com/nappsllc/PowerOff/releases/latest).
-It installs per user, **no admin rights**, to
-`%LOCALAPPDATA%\Programs\PowerOff` and adds a Start menu shortcut.
+> **Formerly PowerOff.** Version 2.0 renamed the app to PowerNapp. Installing
+> it over PowerOff 1.x upgrades in place: your settings, scheduled tasks and
+> startup entry carry over, and PowerOff is removed.
 
-Uninstall from Settings > Apps. That also removes PowerOff's scheduled
-tasks (`PowerOff`, `PowerOff wake`, `PowerOff daily`), its startup entry
-and its settings (`%APPDATA%\PowerOff\`).
+Download `PowerNapp-setup.exe` from
+[GitHub releases](https://github.com/nappsllc/PowerNapp/releases/latest).
+It installs per user, **no admin rights**, to
+`%LOCALAPPDATA%\Programs\PowerNapp` and adds a Start menu shortcut.
+
+Uninstall from Settings > Apps. That also removes PowerNapp's scheduled
+tasks (`PowerNapp`, `PowerNapp wake`, `PowerNapp daily`), its startup entry
+and its settings (`%APPDATA%\PowerNapp\`).
 
 ### Microsoft Store
 
-`PowerOff.msix` is the same app packaged for the Store (built by CI next to
-the installer). Inside a package Windows changes two things, and PowerOff
+`PowerNapp.msix` is the same app packaged for the Store (built by CI next to
+the installer). Inside a package Windows changes two things, and PowerNapp
 adapts when it detects one:
 
 - Task Scheduler can't start an exe inside the protected `WindowsApps`
-  folder, so the package declares a `poweroff.exe` app execution alias and
-  every task PowerOff creates runs that alias.
+  folder, so the package declares a `powernapp.exe` app execution alias and
+  every task PowerNapp creates runs that alias.
 - A package's registry writes are private, so **Start with Windows** is a
-  `PowerOff startup` task that runs at sign-in instead of a Run value.
+  `PowerNapp startup` task that runs at sign-in instead of a Run value.
 - **Check for updates** opens the app's Store page (the Store updates it).
 
 Windows removes a Store app without running any of its code, so tasks
@@ -178,24 +182,24 @@ left scheduled at uninstall stay in Task Scheduler (they just stop working).
 
 ```bat
 :: GUI
-PowerOff.exe [--tray] [--dark|--light]
+PowerNapp.exe [--tray] [--dark|--light]
 
 :: daily 11 PM sleep as a scheduled task, without opening the window
-PowerOff.exe --install-daily 23:00 --task sleep
-PowerOff.exe --uninstall
+PowerNapp.exe --install-daily 23:00 --task sleep
+PowerNapp.exe --uninstall
 
 :: headless scheduler (runs in the console until the task fires)
-PowerOff.exe --task sleep --daily 23:00
-PowerOff.exe --task sleep --weekly 23:00 Mon,Tue,Wed,Thu,Fri
-PowerOff.exe --task shutdown --once "2026-10-05 23:00"
-PowerOff.exe --task sleep --in 3600 | --countdown 1:00:00
-PowerOff.exe --task lock --idle 15 | --task sleep --every 60
+PowerNapp.exe --task sleep --daily 23:00
+PowerNapp.exe --task sleep --weekly 23:00 Mon,Tue,Wed,Thu,Fri
+PowerNapp.exe --task shutdown --once "2026-10-05 23:00"
+PowerNapp.exe --task sleep --in 3600 | --countdown 1:00:00
+PowerNapp.exe --task lock --idle 15 | --task sleep --every 60
 
 :: act now, after a 1-minute reminder (what the scheduled task runs)
-PowerOff.exe --task shutdown --fire-now [--warn-secs 60] [--force]
+PowerNapp.exe --task shutdown --fire-now [--warn-secs 60] [--force]
 
 :: turn the display on after a timer wake (used by the wake task)
-PowerOff.exe --wake
+PowerNapp.exe --wake
 ```
 
 Tasks: `shutdown restart sleep hibernate logoff lock display`.
@@ -210,10 +214,10 @@ Requires MSVC Build Tools + a Windows 10/11 SDK, and NSIS 3 for the
 installer:
 
 ```bat
-build.bat                                         :: -> poweroff.exe
-makensis /DVERSION=1.0.0 installer\poweroff.nsi   :: -> PowerOff-setup.exe
+build.bat                                         :: -> powernapp.exe
+makensis /DVERSION=1.0.0 installer\powernapp.nsi   :: -> PowerNapp-setup.exe
 powershell -File tools\make-msix.ps1 -Name <identity> -Publisher "CN=<...>" -PublisherDisplayName <name>
-                                                  :: -> PowerOff.msix (Microsoft Store)
+                                                  :: -> PowerNapp.msix (Microsoft Store)
 ```
 
 `build.bat` uses the current MSVC environment when `cl.exe` is on PATH,
@@ -225,15 +229,15 @@ request; pushing a `v*` tag publishes a GitHub release.
 package identity (Name, Publisher, PublisherDisplayName from Product
 management > Product identity) into the repository variables
 `MSIX_NAME`, `MSIX_PUBLISHER` and `MSIX_PUBLISHER_NAME` (or pass them to
-`make-msix.ps1`), and upload `PowerOff.msix`. It's unsigned: the Store
+`make-msix.ps1`), and upload `PowerNapp.msix`. It's unsigned: the Store
 signs it. The package declares `runFullTrust` (a desktop app), which the
 submission asks you to justify: "Schedules shutdown, restart and sleep with
 Windows Task Scheduler." Tile and taskbar images are generated from
-`poweroff.ico` into `assets/msix/` (committed).
+`powernapp.ico` into `assets/msix/` (committed).
 
 ### Source layout
 
-`poweroff.c` is a unity build: it includes `src/` in order, so the whole
+`powernapp.c` is a unity build: it includes `src/` in order, so the whole
 app is one translation unit (everything `static`, one `cl` call). Each
 part only uses what comes before it.
 
@@ -255,8 +259,8 @@ part only uses what comes before it.
 
 Assets: `icons/svg/` holds the design's Fluent color icons;
 `tools/make-icons.ps1` renders them to the embedded 48 px PNGs and
-`tools/make-icon.ps1` builds `poweroff.ico`, both with headless Edge;
-`tools/optimize-png.py` then squeezes them losslessly (`python tools/optimize-png.py icons/*.png poweroff.ico`).
+`tools/make-icon.ps1` builds `powernapp.ico`, both with headless Edge;
+`tools/optimize-png.py` then squeezes them losslessly (`python tools/optimize-png.py icons/*.png powernapp.ico`).
 The generated files are committed, so builds don't need Edge.
 
 ### Testing
