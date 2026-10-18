@@ -1,8 +1,8 @@
-# PowerOff in 35 languages: design
+# PowerNapp in 35 languages: design
 
 ## Intent
 
-PowerOff is meant to feel like part of Windows Settings. For people whose
+PowerNapp is meant to feel like part of Windows Settings. For people whose
 Windows isn't in English, that only holds if the app speaks their language,
 using the same words Windows itself uses ("Sleep", "Hibernate", "Sign out").
 It also makes the Microsoft Store listing reach people in their own language.
@@ -57,7 +57,7 @@ tiny and a translation can be added or fixed without touching code.
 - **Adding a language is just a file** (builder's call): the picker lists
   whatever valid files are in `lang`, reading each one's header, so the 35
   are the shipped set, not a hard-coded list.
-- **App:** `lang/<tag>.txt` next to `poweroff.exe`, for example
+- **App:** `lang/<tag>.txt` next to `powernapp.exe`, for example
   `lang/de.txt`. UTF-8, one `key = value` per line, `#` comments, `\n` for
   line breaks. A header gives the language's own name ("Deutsch", "日本語")
   and its direction (`rtl = 1` for Arabic and Hebrew). Keys are stable
@@ -76,7 +76,7 @@ tiny and a translation can be added or fixed without touching code.
   for its display name and description, and lists all 35 languages in its
   manifest so the Store shows them as supported.
 - The installer and the Store package ship the `lang` folder with the exe.
-  The portable `poweroff.exe` release works without it (English only), and
+  The portable `powernapp.exe` release works without it (English only), and
   the release should also offer the exe plus `lang` as a zip.
 
 ## Choosing the language
@@ -129,7 +129,7 @@ and numbers keep their left-to-right order. Mirroring the device context
   only the few strings it needs, or loads them lazily.
 - **Terminology:** use Microsoft's own Windows translations for power
   actions and common UI words in each language.
-- **The name stays "PowerNapps PowerOff" in every language**, including the
+- **The name stays "PowerNapp" in every language**, including the
   Store display name (builder's call), so only one name is reserved in
   Partner Center.
 - **Message boxes:** their buttons come from Windows in the Windows display
@@ -149,8 +149,8 @@ and numbers keep their left-to-right order. Mirroring the device context
 ## Anti-goals (failures even if it "works")
 
 - Clipped or overlapping text in any language.
-- Any untranslated English left in a translated UI (except the app's name,
-  "PowerNapps", and URLs).
+- Any untranslated English left in a translated UI (except the app's name
+  "PowerNapp", the company name "PowerNapps", and URLs).
 - A blank or broken window when a language file is missing or malformed.
 - A noticeably bigger exe or a heavier tray process.
 - English UI changing in any visible way, other than following the regional
