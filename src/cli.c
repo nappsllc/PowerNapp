@@ -414,7 +414,13 @@ int wmain(int argc, wchar_t **argv) {
     }
 
     /* GUI path */
-    migrate_from_poweroff(); /* once: PowerOff 1.x settings, tasks and startup entry */
+    { /* once: PowerOff 1.x settings, tasks and startup entry; only from the installed exe, never a portable/test copy */
+        wchar_t exe[MAX_PATH], la[MAX_PATH];
+        DWORD n = GetEnvironmentVariableW(L"LOCALAPPDATA", la, MAX_PATH);
+        if (n == 0 || n >= MAX_PATH) la[0] = 0;
+        app_exe(exe, MAX_PATH);
+        if (packaged() || is_installed_location(exe, la)) migrate_from_poweroff();
+    }
     lang_load_saved();       /* window and tray (and a reminder they show) */
     read_theme();
     if (has_flag(argc, argv, L"--dark")) G.dark = true;

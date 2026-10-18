@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "../../src/lang.c"
 #include "../../src/locale.c"
+#include "../../src/location.c"
 
 static int g_fail;
 #define CHECK(c) do { if (!(c)) { printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #c); g_fail++; } } while (0)
@@ -360,8 +361,25 @@ static void picker_items(void)
     lang_load(L"en");
 }
 
+static void installed_location(void)
+{
+    const wchar_t *la = L"C:\\Users\\Ann\\AppData\\Local";
+    CHECK(is_installed_location(L"C:\\Users\\Ann\\AppData\\Local\\Programs\\PowerNapp\\powernapp.exe", la));
+    CHECK(is_installed_location(L"c:\\users\\ann\\appdata\\local\\programs\\POWERNAPP\\PowerNapp.exe", la));
+    CHECK(is_installed_location(L"C:\\Users\\Ann\\AppData\\Local\\Programs\\PowerNapp\\powernapp.exe", L"C:\\Users\\Ann\\AppData\\Local\\"));
+    CHECK(is_installed_location(L"C:\\Users\\Ann\\AppData\\Local\\Programs\\PowerNapp\\powernapp.exe", L"C:\\Users\\Ann\\AppData\\Local\\\\"));
+    CHECK(!is_installed_location(L"C:\\Temp\\x\\powernapp.exe", la));
+    CHECK(!is_installed_location(L"C:\\Users\\Ann\\AppData\\Local\\Programs\\PowerNappX\\powernapp.exe", la));
+    CHECK(!is_installed_location(L"C:\\Users\\Ann\\AppData\\Local\\Programs\\PowerNapp\\sub\\powernapp.exe", la));
+    CHECK(!is_installed_location(L"C:\\Users\\Ann\\AppData\\Local\\Programs\\PowerNapp", la)); /* no file part */
+    CHECK(!is_installed_location(L"C:\\Users\\Ann\\AppData\\Local\\Programs\\PowerNapp\\powernapp.exe", L""));
+    CHECK(!is_installed_location(L"C:\\Users\\Ann\\AppData\\Local\\Programs\\PowerNapp\\powernapp.exe", NULL));
+    CHECK(!is_installed_location(NULL, la));
+}
+
 int main(void)
 {
+    installed_location();
     every_key_unique();
     en_template_matches();
     english_placeholders_valid();

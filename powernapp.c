@@ -54,6 +54,7 @@
  * single cl call. Order matters: each part uses only what comes before it. */
 #include "src/lang.c"     /* TR(): every UI string, so before everything that shows text */
 #include "src/locale.c"   /* regional clock, first day of week, day and AM/PM names */
+#include "src/location.c" /* is_installed_location(): installed exe vs portable copy */
 #include "src/model.c"
 #include "src/taskschd.c"
 #include "src/theme.c"
