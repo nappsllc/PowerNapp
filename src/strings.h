@@ -3,7 +3,8 @@
 #define STRINGS(X) \
     X(ACTION_TITLE, "action.title", L"Action") \
     X(TEST_LS,      "test.ls",      L"Hello %ls") \
-    X(TEST_D,       "test.d",       L"Count %d")
+    X(TEST_D,       "test.d",       L"Count %d") \
+    X(TEST_LSD,     "test.lsd",     L"a %ls b %d")
 
 typedef enum {
 #define X(id, k, e) L_##id,

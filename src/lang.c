@@ -34,24 +34,28 @@ static const wchar_t *TR(StrId id)
 static bool lang_rtl(void) { return g_lang_rtl; }
 static const wchar_t *lang_tag(void) { return g_lang_tag; }
 
-/* ---- placeholders: same multiset of %ls / %d / %lld as English ---- */
-static void lang_count_ph(const wchar_t *s, int c[3])
+/* ---- placeholders: same ORDERED sequence of %ls / %d / %lld as English ---- */
+static bool lang_ph_seq(const wchar_t *s, char *seq, int cap)
 {
-    c[0] = c[1] = c[2] = 0;
+    int n = 0;
     for (; *s; s++) {
         if (*s != L'%') continue;
         if (s[1] == L'%') { s++; continue; }
-        if (s[1] == L'l' && s[2] == L's') { c[0]++; s += 2; }
-        else if (s[1] == L'l' && s[2] == L'l' && s[3] == L'd') { c[2]++; s += 3; }
-        else if (s[1] == L'd') { c[1]++; s += 1; }
-        else c[0] += 1000;      /* unknown conversion: never matches English */
+        char c;
+        if (s[1] == L'l' && s[2] == L's') { c = 's'; s += 2; }
+        else if (s[1] == L'l' && s[2] == L'l' && s[3] == L'd') { c = 'q'; s += 3; }
+        else if (s[1] == L'd') { c = 'd'; s += 1; }
+        else return false;      /* unknown conversion */
+        if (n >= cap - 1) return false;
+        seq[n++] = c;
     }
+    seq[n] = 0;
+    return true;
 }
 static bool lang_ph_ok(const wchar_t *en, const wchar_t *tr)
 {
-    int a[3], b[3];
-    lang_count_ph(en, a); lang_count_ph(tr, b);
-    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2];
+    char a[32], b[32];
+    return lang_ph_seq(en, a, 32) && lang_ph_seq(tr, b, 32) && strcmp(a, b) == 0;
 }
 
 /* ---- parsing ---- */

@@ -95,6 +95,19 @@ static void placeholder_mismatch_falls_back(void)
     lang_load(L"en");
 }
 
+static void placeholder_reorder_falls_back(void)
+{
+    const char *s = "test.lsd = b %d a %ls\n";
+    write_lang_file(L"xx", s, strlen(s));
+    lang_load(L"xx");
+    CHECK(wcscmp(TR(L_TEST_LSD), L"a %ls b %d") == 0);
+    s = "test.lsd = x %ls y %d\n";
+    write_lang_file(L"xx", s, strlen(s));
+    lang_load(L"xx");
+    CHECK(wcscmp(TR(L_TEST_LSD), L"x %ls y %d") == 0);
+    lang_load(L"en");
+}
+
 static void garbage_file(void)
 {
     unsigned char buf[4096]; unsigned x = 12345;
@@ -130,6 +143,10 @@ static void resolve_rules(void)
     wchar_t tag[16];
     lang_resolve(L"en", tag, 16);
     CHECK(wcscmp(tag, L"en") == 0);
+    const char *de = "@name = Deutsch\naction.title = Aktion\n";
+    write_lang_file(L"de", de, strlen(de));
+    lang_resolve(L"de", tag, 16);
+    CHECK(wcscmp(tag, L"de") == 0);
     lang_resolve(L"", tag, 16);
     CHECK(tag[0] != 0);
 }
@@ -141,6 +158,7 @@ int main(void)
     escapes();
     missing_key_falls_back();
     placeholder_mismatch_falls_back();
+    placeholder_reorder_falls_back();
     garbage_file();
     resolve_rules();
     printf(g_fail ? "%d check(s) FAILED\n" : "all checks passed\n", g_fail);
