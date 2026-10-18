@@ -24,6 +24,10 @@ jobs:
         shell: cmd
         run: build.bat
 
+      - name: Unit tests
+        shell: cmd
+        run: tests\unit\build.bat
+
       - name: Smoke test CLI
         shell: pwsh
         run: |

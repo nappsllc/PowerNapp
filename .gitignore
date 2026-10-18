@@ -11,3 +11,4 @@
 # packaging
 /build/
 *.msix
+/tests/unit/out/
