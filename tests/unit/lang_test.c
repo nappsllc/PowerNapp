@@ -200,16 +200,22 @@ static void en_template_matches(void)
 static void clock_and_day_names(void)
 {
     wchar_t t[32];
-    g_clock_test = 2;                                   /* 24-hour, "HH:mm" */
+    g_clock_test = L"HH:mm";                            /* 24-hour */
     fmt_time(23, 5, t, 32); CHECK(wcscmp(t, L"23:05") == 0);
     fmt_time(9, 5, t, 32); CHECK(wcscmp(t, L"09:05") == 0);
     CHECK(clock_24h());
-    g_clock_test = 1;                                   /* 24-hour, "H:mm" */
+    g_clock_test = L"H.mm";
     fmt_time(9, 5, t, 32); CHECK(wcscmp(t, L"9:05") == 0);
-    g_clock_test = 0;                                   /* 12-hour */
+    g_clock_test = L"h:mm tt";                          /* 12-hour */
     CHECK(!clock_24h());
     lang_load(L"en");
     fmt_time(23, 5, t, 32); CHECK(wcscmp(t, L"11:05 PM") == 0);
+    /* the regional format's order and padding */
+    fmt_time_with(L"tt h:mm", 23, 5, t, 32); CHECK(wcscmp(t, L"PM 11:05") == 0);
+    fmt_time_with(L"h:mm tt", 23, 5, t, 32); CHECK(wcscmp(t, L"11:05 PM") == 0);
+    fmt_time_with(L"hh:mm tt", 9, 5, t, 32); CHECK(wcscmp(t, L"09:05 AM") == 0);
+    fmt_time_with(L"'tt' h:mm tt", 23, 5, t, 32); CHECK(wcscmp(t, L"11:05 PM") == 0);  /* quoted text ignored */
+    fmt_time_with(L"tt HH:mm", 23, 5, t, 32); CHECK(wcscmp(t, L"23:05") == 0);         /* 24-hour: no marker */
     fmt_time(0, 0, t, 32); CHECK(wcscmp(t, L"12:00 AM") == 0);
     fmt_time(12, 30, t, 32); CHECK(wcscmp(t, L"12:30 PM") == 0);
     day_name(0, false, t, 32); CHECK(wcscmp(t, L"Mon") == 0);
@@ -224,7 +230,7 @@ static void clock_and_day_names(void)
     ampm(false, t, 32); CHECK(t[0] != 0);
     day_name(7, true, t, 32); CHECK(t[0] == 0);         /* out of range: empty, no crash */
     lang_load(L"en");
-    g_clock_test = -1;                                  /* follows Windows */
+    g_clock_test = NULL;                                /* follows Windows */
     int f = first_day();
     CHECK(f >= 0 && f <= 6);
     fmt_time(23, 5, t, 32); CHECK(t[0] != 0);

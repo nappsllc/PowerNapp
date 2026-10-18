@@ -2,22 +2,41 @@
    Windows regional format, in every language; day and AM/PM names come from Windows' locale data
    for the chosen UI language (lang_tag()).  Days are Monday-based everywhere: 0 = Monday ... 6 = Sunday. */
 
-static int g_clock_test = -1;   /* tests: -1 follow Windows, 0 12-hour, 1 24-hour "H:mm", 2 24-hour "HH:mm" */
+static const wchar_t *g_clock_test;   /* tests: a time format to use instead of the user's ("HH:mm", "tt h:mm") */
 
-/* 0 = 12-hour, 1 = 24-hour, 2 = 24-hour with a leading zero (from the user's LOCALE_STIMEFORMAT) */
-static int clock_kind(void)
+/* What the clock looks like, read from a Windows time format string (LOCALE_STIMEFORMAT syntax):
+   H/HH = 24-hour, h/hh = 12-hour, doubled = leading zero, t/tt before the hour = AM/PM first. */
+typedef struct { bool h24, pad, ap_first; } ClockFmt;
+static ClockFmt clock_parse(const wchar_t *f)
 {
-    if (g_clock_test >= 0) return g_clock_test;
-    wchar_t f[80];
-    if (!GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_STIMEFORMAT, f, 80)) return 0;
-    bool quoted = false;
-    for (const wchar_t *p = f; *p; p++) {
+    ClockFmt c = { false, false, false };
+    bool quoted = false, ap = false;
+    for (const wchar_t *p = f ? f : L""; *p; p++) {
         if (*p == L'\'') quoted = !quoted;
-        else if (!quoted && *p == L'H') return p[1] == L'H' ? 2 : 1;
+        else if (quoted) continue;
+        else if (*p == L't') ap = true;
+        else if (*p == L'H' || *p == L'h') {
+            c.h24 = *p == L'H';
+            c.pad = p[1] == *p;
+            c.ap_first = ap && !c.h24;
+            break;
+        }
     }
-    return 0;
+    return c;
 }
-static bool clock_24h(void) { return clock_kind() != 0; }
+/* the user's regional time format */
+static void clock_fmt_str(wchar_t *f, int n)
+{
+    if (g_clock_test) StringCchCopyW(f, n, g_clock_test);
+    else if (!GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_STIMEFORMAT, f, n)) f[0] = 0;
+}
+static ClockFmt clock_fmt(void)
+{
+    wchar_t f[80];
+    clock_fmt_str(f, 80);
+    return clock_parse(f);
+}
+static bool clock_24h(void) { return clock_fmt().h24; }
 
 /* 0 = Monday ... 6 = Sunday (LOCALE_IFIRSTDAYOFWEEK uses the same numbering) */
 static int first_day(void)
@@ -51,20 +70,29 @@ static void ampm(bool pm, wchar_t *out, size_t n)
     locale_str(pm ? LOCALE_SPM : LOCALE_SAM, pm ? L"PM" : L"AM", out, n);
 }
 
-/* hour as shown in the time button / picker: "23", "09"/"9", or "11" (12-hour) */
-static void fmt_hour(int h, wchar_t *out, size_t n)
+static void fmt_hour_c(ClockFmt c, int h, wchar_t *out, size_t n)
 {
-    int k = clock_kind();
-    if (k == 0) StringCchPrintfW(out, n, L"%d", h % 12 ? h % 12 : 12);
-    else StringCchPrintfW(out, n, k == 2 ? L"%02d" : L"%d", h);
+    if (!c.h24) h = h % 12 ? h % 12 : 12;
+    StringCchPrintfW(out, n, c.pad ? L"%02d" : L"%d", h);
 }
+/* hour as shown in the time button / picker: "23", "09"/"9", or "11" (12-hour) */
+static void fmt_hour(int h, wchar_t *out, size_t n) { fmt_hour_c(clock_fmt(), h, out, n); }
 
-/* "23:05" or "11:05 PM" */
+/* time in the order of a Windows time format: "23:05", "11:05 PM", "오후 11:05", "09:05 AM" */
+static void fmt_time_with(const wchar_t *fmt, int h, int m, wchar_t *out, size_t n)
+{
+    ClockFmt c = clock_parse(fmt);
+    wchar_t hh[8], ap[16];
+    fmt_hour_c(c, h, hh, 8);
+    if (c.h24) { StringCchPrintfW(out, n, L"%ls:%02d", hh, m); return; }
+    ampm(h >= 12, ap, 16);
+    if (c.ap_first) StringCchPrintfW(out, n, L"%ls %ls:%02d", ap, hh, m);
+    else StringCchPrintfW(out, n, L"%ls:%02d %ls", hh, m, ap);
+}
+/* with the user's regional clock */
 static void fmt_time(int h, int m, wchar_t *out, size_t n)
 {
-    wchar_t hh[8], ap[16];
-    fmt_hour(h, hh, 8);
-    if (clock_24h()) { StringCchPrintfW(out, n, L"%ls:%02d", hh, m); return; }
-    ampm(h >= 12, ap, 16);
-    StringCchPrintfW(out, n, L"%ls:%02d %ls", hh, m, ap);
+    wchar_t f[80];
+    clock_fmt_str(f, 80);
+    fmt_time_with(f, h, m, out, n);
 }
