@@ -150,6 +150,37 @@ static void resolve_rules(void)
     CHECK(wcscmp(tag, L"de") == 0);
     lang_resolve(L"", tag, 16);
     CHECK(tag[0] != 0);
+    /* resolving goes by file name only: a header-less (but correctly named) file still resolves */
+    const char *fr = "action.title = Action FR\n";
+    write_lang_file(L"fr", fr, strlen(fr));
+    lang_resolve(L"fr", tag, 16);
+    CHECK(wcscmp(tag, L"fr") == 0);
+    lang_resolve(L"fr-CA", tag, 16);
+    CHECK(wcscmp(tag, L"fr") == 0);
+    lang_resolve(L"zz", tag, 16);                    /* saved language gone: English */
+    CHECK(wcscmp(tag, L"en") == 0);
+    lang_resolve(L"EN-gb", tag, 16);
+    CHECK(wcscmp(tag, L"en") == 0);
+    LangInfo li[64];
+    int n = lang_list(li, 64);
+    bool listed = false;
+    for (int i = 0; i < n; i++) if (wcscmp(li[i].tag, L"fr") == 0) listed = true;
+    CHECK(!listed);                                   /* the picker lists only files with a @name */
+    /* the picker reads only the header: a big file's @name is found in its first 1 KB */
+    static char big[8192];
+    StringCchCopyA(big, sizeof big, "@name = Grande\n");
+    size_t k = strlen(big);
+    while (k < sizeof big - 40) { memcpy(big + k, "action.title = xxxxxxxxxxxxxxxxxxxx\n", 36); k += 36; }
+    big[k] = 0;
+    write_lang_file(L"gr", big, k);
+    n = lang_list(li, 64);
+    listed = false;
+    for (int i = 0; i < n; i++) if (wcscmp(li[i].tag, L"gr") == 0 && wcscmp(li[i].name, L"Grande") == 0) listed = true;
+    CHECK(listed);
+    wchar_t dir[MAX_PATH], p[MAX_PATH];
+    lang_dir(dir, MAX_PATH);
+    swprintf(p, MAX_PATH, L"%ls\\fr.txt", dir); DeleteFileW(p);
+    swprintf(p, MAX_PATH, L"%ls\\gr.txt", dir); DeleteFileW(p);
 }
 
 static void every_key_unique(void)

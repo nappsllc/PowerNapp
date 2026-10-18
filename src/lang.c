@@ -167,22 +167,59 @@ static void lang_dir(wchar_t *out, size_t n)
     StringCchPrintfW(out, n, L"%ls\\lang", p);
     out[n - 1] = 0;
 }
-static char *lang_read_file(const wchar_t *path, size_t *len)
+/* Reads at most cap bytes (cap 0 = the whole file, up to 1 MB); a capped read ends at its last full line. */
+static char *lang_read_part(const wchar_t *path, size_t *len, DWORD cap)
 {
     HANDLE h = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (h == INVALID_HANDLE_VALUE) return NULL;
     LARGE_INTEGER sz;
     char *buf = NULL;
     if (GetFileSizeEx(h, &sz) && sz.QuadPart > 0 && sz.QuadPart <= (1 << 20)) {
-        buf = (char *)HeapAlloc(GetProcessHeap(), 0, (size_t)sz.QuadPart);
-        DWORD got = 0;
-        if (buf && (!ReadFile(h, buf, (DWORD)sz.QuadPart, &got, NULL) || got != (DWORD)sz.QuadPart)) {
+        DWORD want = (DWORD)sz.QuadPart, got = 0;
+        bool capped = cap && want > cap;
+        if (capped) want = cap;
+        buf = (char *)HeapAlloc(GetProcessHeap(), 0, want);
+        if (buf && (!ReadFile(h, buf, want, &got, NULL) || got != want)) {
             HeapFree(GetProcessHeap(), 0, buf); buf = NULL;
         }
-        if (buf) *len = (size_t)sz.QuadPart;
+        if (buf && capped) while (want > 0 && buf[want - 1] != '\n') want--;
+        if (buf) *len = want;
     }
     CloseHandle(h);
     return buf;
+}
+static char *lang_read_file(const wchar_t *path, size_t *len) { return lang_read_part(path, len, 0); }
+
+/* Language tags available as files (lang\<tag>.txt, "en" excluded), by file name only: no file is opened. */
+static int lang_file_tags(wchar_t (*tags)[LANG_TAG_MAX], int max)
+{
+    wchar_t dir[MAX_PATH], pat[MAX_PATH + 8];
+    lang_dir(dir, MAX_PATH);
+    StringCchPrintfW(pat, MAX_PATH + 8, L"%ls\\*.txt", dir);
+    pat[MAX_PATH + 7] = 0;
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pat, &fd);
+    if (h == INVALID_HANDLE_VALUE) return 0;
+    int n = 0;
+    do {
+        size_t fl = wcslen(fd.cFileName);
+        if (n >= max || (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fl < 5 || fl - 4 >= LANG_TAG_MAX) continue;
+        StringCchCopyNW(tags[n], LANG_TAG_MAX, fd.cFileName, fl - 4); tags[n][fl - 4] = 0;
+        if (lang_tag_ok(tags[n]) && _wcsicmp(tags[n], L"en") != 0) n++;
+    } while (FindNextFileW(h, &fd));
+    FindClose(h);
+    return n;
+}
+
+static bool lang_file_exists(const wchar_t *tag)
+{
+    if (!lang_tag_ok(tag)) return false;
+    wchar_t dir[MAX_PATH], path[MAX_PATH + 32];
+    lang_dir(dir, MAX_PATH);
+    StringCchPrintfW(path, MAX_PATH + 32, L"%ls\\%ls.txt", dir, tag);
+    path[MAX_PATH + 31] = 0;
+    DWORD a = GetFileAttributesW(path);
+    return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY);
 }
 
 static void lang_load(const wchar_t *tag)
@@ -236,7 +273,7 @@ static int lang_list(LangInfo *out, int max)
         StringCchPrintfW(path, MAX_PATH + 32, L"%ls\\%ls", dir, fd.cFileName);
         path[MAX_PATH + 31] = 0;
         size_t len = 0;
-        char *data = lang_read_file(path, &len);
+        char *data = lang_read_part(path, &len, 1024); /* the @name / @rtl header only */
         if (!data) continue;
         LangInfo li;
         StringCchCopyW(li.tag, LANG_TAG_MAX, tag);
@@ -325,27 +362,38 @@ static bool lang_match(const wchar_t *pref, const wchar_t **avail, int n, wchar_
     return false;
 }
 
-/* setting: saved choice ("" = follow Windows). tag receives the language tag to load. */
+/* setting: saved choice ("" = follow Windows). tag receives the language tag to load.
+   Cheap enough for the tray process: no file is read here. English needs no folder access, a saved tag
+   whose file exists is taken as is, anything else is matched against the folder's file names. */
 static void lang_resolve(const wchar_t *setting, wchar_t *tag, size_t n)
 {
-    LangInfo li[64];
+    static wchar_t tags[64][LANG_TAG_MAX];
     const wchar_t *av[64];
-    int cnt = lang_list(li, 64), na = 0;
-    for (int i = 0; i < cnt; i++) if (_wcsicmp(li[i].tag, L"en") != 0) av[na++] = li[i].tag;
+    int na = -1;   /* folder not listed yet */
     if (n == 0) return;
-    if (setting && setting[0]) {
-        wchar_t m[LANG_TAG_MAX];
-        lang_match(setting, av, na, m, LANG_TAG_MAX);
-        StringCchPrintfW(tag, n, L"%ls", m); tag[n - 1] = 0;
-        return;
-    }
-    wchar_t buf[512];
-    ULONG num = 0, sz = 512;
     StringCchPrintfW(tag, n, L"en"); tag[n - 1] = 0;
-    if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, buf, &sz)) return;
-    for (const wchar_t *p = buf; *p; p += wcslen(p) + 1) {
+    wchar_t buf[512];
+    const wchar_t *prefs;
+    if (setting && setting[0]) {
+        if (_wcsicmp(setting, L"en") == 0 || _wcsnicmp(setting, L"en-", 3) == 0) return;
+        if (lang_file_exists(setting)) { StringCchPrintfW(tag, n, L"%ls", setting); tag[n - 1] = 0; return; }
+        buf[0] = 0;
+        StringCchCopyW(buf, 510, setting);
+        buf[wcslen(buf) + 1] = 0;          /* one-entry multi-string */
+        prefs = buf;
+    } else {
+        ULONG num = 0, sz = 512;
+        if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, buf, &sz)) return;
+        prefs = buf;
+    }
+    for (const wchar_t *p = prefs; *p; p += wcslen(p) + 1) {
         if (_wcsicmp(p, L"en") == 0 || _wcsnicmp(p, L"en-", 3) == 0) return;
+        if (na < 0) {
+            na = lang_file_tags(tags, 64);
+            for (int i = 0; i < na; i++) av[i] = tags[i];
+        }
         wchar_t m[LANG_TAG_MAX];
         if (lang_match(p, av, na, m, LANG_TAG_MAX)) { StringCchPrintfW(tag, n, L"%ls", m); tag[n - 1] = 0; return; }
+        if (setting && setting[0]) return;  /* a saved choice that's gone: English (picker shows Windows default) */
     }
 }
