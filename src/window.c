@@ -149,7 +149,7 @@ static void apply_language(void) {
     /* fonts: the same Segoe UI faces serve every language (Windows' font linking covers other
        scripts), so nothing to rebuild here */
     update_combo_texts();
-    lang_picker_refresh();
+    lang_caption_refresh(); /* the dropdown was closed above: its entries are rebuilt when it reopens */
     set_text(G.btn_start, TR(G.rt.active ? L_BTN_CANCEL : L_BTN_START));
     for (int i = 0; i < 7; i++) {
         wchar_t dn[32];
@@ -219,7 +219,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
             ScreenToClient(hwnd, &pt);
             RECT brc = { pt.x, pt.y, pt.x + (rc.right - rc.left), pt.y + (rc.bottom - rc.top) };
             InflateRect(&brc, -S(CTL_PAD), -S(CTL_PAD));
-            int sel = lang_picker_refresh(); /* a file added or removed since: listed now */
+            int sel = lang_picker_build(); /* listed now: files added or removed show up */
             FlyItem it[FLY_MAX];
             for (int i = 0; i < g_lang_n; i++) {
                 it[i].label = g_lang_items[i].label;
@@ -391,7 +391,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
         G.ready = true;
         update_combo_texts();
-        lang_picker_refresh();
+        lang_caption_refresh();
         layout(hwnd);
         update_views();
         acc_sync_all();

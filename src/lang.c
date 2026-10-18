@@ -24,6 +24,7 @@ static const char *const g_lang_keys[L_COUNT] = {
 static const wchar_t *g_lang_cur[L_COUNT];     /* active translations; NULL = use English */
 static wchar_t *g_lang_blk;                    /* heap block backing g_lang_cur / last lang_parse */
 static wchar_t g_lang_tag[LANG_TAG_MAX] = L"en";
+static wchar_t g_lang_name[LANG_NAME_MAX] = L"English"; /* the loaded language's own name (@name) */
 static bool g_lang_rtl;
 
 static const wchar_t *TR(StrId id)
@@ -33,6 +34,7 @@ static const wchar_t *TR(StrId id)
 }
 static bool lang_rtl(void) { return g_lang_rtl; }
 static const wchar_t *lang_tag(void) { return g_lang_tag; }
+static const wchar_t *lang_name(void) { return g_lang_name; }
 
 /* ---- placeholders: same ORDERED sequence of %ls / %d / %lld as English ---- */
 static bool lang_ph_seq(const wchar_t *s, char *seq, int cap)
@@ -182,7 +184,11 @@ static char *lang_read_part(const wchar_t *path, size_t *len, DWORD cap)
         if (buf && (!ReadFile(h, buf, want, &got, NULL) || got != want)) {
             HeapFree(GetProcessHeap(), 0, buf); buf = NULL;
         }
-        if (buf && capped) while (want > 0 && buf[want - 1] != '\n') want--;
+        if (buf && capped) { /* drop a cut-off last line, unless it is the only one */
+            DWORD k = want;
+            while (k > 0 && buf[k - 1] != '\n') k--;
+            if (k > 0) want = k;
+        }
         if (buf) *len = want;
     }
     CloseHandle(h);
@@ -228,6 +234,7 @@ static void lang_load(const wchar_t *tag)
     if (g_lang_blk) { HeapFree(GetProcessHeap(), 0, g_lang_blk); g_lang_blk = NULL; }
     g_lang_rtl = false;
     StringCchCopyW(g_lang_tag, LANG_TAG_MAX, L"en");
+    StringCchCopyW(g_lang_name, LANG_NAME_MAX, L"English");
     if (!tag || !lang_tag_ok(tag) || _wcsicmp(tag, L"en") == 0) return;
     wchar_t dir[MAX_PATH], path[MAX_PATH + 32];
     lang_dir(dir, MAX_PATH);
@@ -245,6 +252,7 @@ static void lang_load(const wchar_t *tag)
         return;
     }
     StringCchCopyW(g_lang_tag, LANG_TAG_MAX, tag);
+    StringCchCopyW(g_lang_name, LANG_NAME_MAX, name[0] ? name : tag); /* no @name: the tag */
     g_lang_rtl = rtl;
 }
 
@@ -311,6 +319,15 @@ static int lang_items(const LangInfo *list, int n, const wchar_t *def_tag, LangI
         StringCchCopyW(out[k].label, LANG_NAME_MAX + 64, list[i].name);
     }
     return k;
+}
+
+/* The Language row's caption from what is loaded, without listing the folder: the saved choice's
+   own name, or "Windows default (<loaded language>)" when following Windows or when the saved
+   language's file is gone (then English is loaded). */
+static void lang_caption(const wchar_t *setting, wchar_t *out, size_t n)
+{
+    if (setting && setting[0] && _wcsicmp(setting, g_lang_tag) == 0) StringCchCopyW(out, n, g_lang_name);
+    else StringCchPrintfW(out, n, TR(L_LANGUAGE_DEFAULT), g_lang_name);
 }
 
 /* The entry for a saved setting: "" or a language that is no longer there -> 0 (Windows default). */

@@ -95,21 +95,27 @@ static void update_combo_texts(void) {
     set_text(G.combo_idle, d);
 }
 
-/* Options > Language: the picker's entries, rebuilt when it opens and when the language changes
- * (the folder is read then, not on every repaint). Sets the combo's text; returns the selection. */
+/* Options > Language. The caption comes from what is loaded (no folder access, so opening the
+ * window costs nothing extra); the entries are listed only when the dropdown opens. */
 static LangItem g_lang_items[FLY_MAX];
 static int g_lang_n;
 
-static int lang_picker_refresh(void) {
+static void lang_caption_refresh(void) {
+    wchar_t set[LANG_TAG_MAX], cap[LANG_NAME_MAX + 64];
+    lang_setting(set, LANG_TAG_MAX);
+    lang_caption(set, cap, LANG_NAME_MAX + 64);
+    if (G.combo_lang) set_text(G.combo_lang, cap);
+}
+
+/* lists the folder (headers only) for the dropdown; returns the selected entry */
+static int lang_picker_build(void) {
     LangInfo li[FLY_MAX - 1];
     wchar_t def[LANG_TAG_MAX], set[LANG_TAG_MAX];
     int n = lang_list(li, FLY_MAX - 1);
     lang_resolve(L"", def, LANG_TAG_MAX); /* what "Windows default" means right now */
     g_lang_n = lang_items(li, n, def, g_lang_items, FLY_MAX);
     lang_setting(set, LANG_TAG_MAX);
-    int sel = lang_item_index(g_lang_items, g_lang_n, set);
-    if (G.combo_lang) set_text(G.combo_lang, g_lang_items[sel].label);
-    return sel;
+    return lang_item_index(g_lang_items, g_lang_n, set);
 }
 
 static void update_views(void) {

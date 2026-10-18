@@ -177,10 +177,51 @@ static void resolve_rules(void)
     listed = false;
     for (int i = 0; i < n; i++) if (wcscmp(li[i].tag, L"gr") == 0 && wcscmp(li[i].name, L"Grande") == 0) listed = true;
     CHECK(listed);
+    /* no newline in the first 1 KB: the header line that fits is still parsed (not read as empty) */
+    StringCchCopyA(big, sizeof big, "@name = Solo");
+    k = strlen(big);
+    while (k < 1500) big[k++] = ' ';
+    memcpy(big + k, "\naction.title = Solo\n", 21); k += 21;
+    write_lang_file(L"so", big, k);
+    n = lang_list(li, 64);
+    listed = false;
+    for (int i = 0; i < n; i++) if (wcscmp(li[i].tag, L"so") == 0 && wcscmp(li[i].name, L"Solo") == 0) listed = true;
+    CHECK(listed);
     wchar_t dir[MAX_PATH], p[MAX_PATH];
     lang_dir(dir, MAX_PATH);
     swprintf(p, MAX_PATH, L"%ls\\fr.txt", dir); DeleteFileW(p);
     swprintf(p, MAX_PATH, L"%ls\\gr.txt", dir); DeleteFileW(p);
+    swprintf(p, MAX_PATH, L"%ls\\so.txt", dir); DeleteFileW(p);
+}
+
+/* the Language row's caption comes from the loaded language (no folder listing) */
+static void picker_caption(void)
+{
+    wchar_t c[128];
+    lang_load(L"en");
+    lang_caption(L"", c, 128);
+    CHECK(wcscmp(c, L"Windows default (English)") == 0);
+    lang_caption(L"en", c, 128);
+    CHECK(wcscmp(c, L"English") == 0);
+    lang_caption(L"qps-ploc", c, 128);               /* saved file gone, English loaded */
+    CHECK(wcscmp(c, L"Windows default (English)") == 0);
+    const char *x = "@name = Xx-Sprache\nlanguage.default = Standard (%ls)\n";
+    write_lang_file(L"xx", x, strlen(x));
+    lang_load(L"xx");
+    CHECK(wcscmp(lang_name(), L"Xx-Sprache") == 0);
+    lang_caption(L"xx", c, 128);
+    CHECK(wcscmp(c, L"Xx-Sprache") == 0);
+    lang_caption(L"", c, 128);                       /* following Windows, which resolved to xx */
+    CHECK(wcscmp(c, L"Standard (Xx-Sprache)") == 0);
+    const char *y = "action.title = Y\n";              /* no @name: the tag stands in */
+    write_lang_file(L"yy", y, strlen(y));
+    lang_load(L"yy");
+    CHECK(wcscmp(lang_name(), L"yy") == 0);
+    lang_load(L"en");
+    CHECK(wcscmp(lang_name(), L"English") == 0);
+    wchar_t dir[MAX_PATH], p[MAX_PATH];
+    lang_dir(dir, MAX_PATH);
+    swprintf(p, MAX_PATH, L"%ls\\yy.txt", dir); DeleteFileW(p);
 }
 
 static void every_key_unique(void)
@@ -334,6 +375,7 @@ int main(void)
     resolve_rules();
     clock_and_day_names();
     picker_items();
+    picker_caption();
     pseudo_file_complete();
     printf(g_fail ? "%d check(s) FAILED\n" : "all checks passed\n", g_fail);
     return g_fail;
