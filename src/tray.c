@@ -50,7 +50,7 @@ static void show_tray_menu(HWND hwnd) {
     AppendMenuW(menu, MF_SEPARATOR, 0, NULL);
     AppendMenuW(menu, MF_STRING, IDM_EXIT, TR(G.delegated ? L_TRAY_EXIT_KEEP : L_TRAY_EXIT));
     SetForegroundWindow(hwnd);
-    TrackPopupMenu(menu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
+    TrackPopupMenu(menu, TPM_RIGHTBUTTON | (lang_rtl() ? TPM_LAYOUTRTL : 0), pt.x, pt.y, 0, hwnd, NULL);
     DestroyMenu(menu);
 }
 

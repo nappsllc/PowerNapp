@@ -192,6 +192,57 @@ Check 'no lang folder: the picker lists only Windows default and English' {
 StopApp
 Rename-Item "$(Split-Path $exe)\lang-away" 'lang'; SetIni 'lang' ''
 
+# ----------------------------------------------------------------------------- right-to-left
+# tests\sandbox\qps-plocm.txt: the Pseudo strings as a right-to-left language (@rtl = 1, @name = Pseudo Mirrored,
+# the last picker entry). Every window mirrors: caption buttons and controls on the left, the reminder card bottom left.
+Section 'Right-to-left (mirrored pseudo-language)'
+Copy-Item "$T\qps-ploc.txt", "$T\qps-plocm.txt" $langDir -Force
+StopApp; SetIni 'lang' 'qps-plocm'; SetIni 'task' 5; SetIni 'mode' 0; SetIni 'h' 23; SetIni 'm' 0; SetIni 'tray' 1; SetIni 'remind' 1
+$main = StartApp
+$k = $dpi / 96
+function IsRtl($h) { ([H]::ExStyle($h) -band 0x400000) -ne 0 }
+Check 'the main window is mirrored (WS_EX_LAYOUTRTL)' { Note ('exstyle 0x{0:X}' -f [H]::ExStyle($main)); IsRtl $main }
+Snap 'PowerNappWnd' 'rtl-main'
+Check 'the Start button is left of the hero text' {
+    $w = [H]::Win($main); $s = [H]::Win([H]::GetDlgItem($main, 240)); Note "window $($w.L)..$($w.R), Start $($s.L)..$($s.R)"
+    $s.R -lt ($w.L + $w.R) / 2 }
+Check 'caption buttons on the left: close and minimize hit-test there, the right end is title bar' {
+    $w = [H]::Win($main); $y = $w.T + [int](16 * $k)   # the window rect has ~8 px invisible borders at the sides
+    $close = [H]::Hit($main, $w.L + [int](30 * $k), $y); $min = [H]::Hit($main, $w.L + [int](123 * $k), $y); $title = [H]::Hit($main, $w.R - [int](30 * $k), $y)
+    Note "close=$close min=$min right end=$title (HTCLOSE 20, HTMINBUTTON 8, HTCAPTION 2)"
+    $close -eq 20 -and $min -eq 8 -and $title -eq 2 }
+Check 'popups are mirrored too: dropdown, time picker, About' {
+    Cmd 200; $f = [H]::F('PowerNappFly'); $fr = IsRtl $f; Snap 'PowerNappFly' 'rtl-dropdown'
+    [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300
+    Cmd 210; $tp = [H]::F('PowerNappTimePick'); $tr = IsRtl $tp; Snap 'PowerNappTimePick' 'rtl-timepicker'
+    [H]::SendMessage($tp, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300
+    Cmd 251; $a = [H]::F('PowerNappAbout'); $ar = IsRtl $a; Snap 'PowerNappAbout' 'rtl-about'
+    [H]::SendMessage($a, $WM_CLOSE, [IntPtr]0, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300
+    Note "dropdown=$fr timepicker=$tr about=$ar"; $fr -and $tr -and $ar }
+StopApp
+Check 'the reminder card is mirrored, at the bottom left' {
+    Add-Type -AssemblyName System.Windows.Forms; $wa = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    $p = Start-Process $exe -ArgumentList '--task', 'display', '--fire-now', '--warn-secs', '30' -PassThru
+    for ($i = 0; $i -lt 20 -and [H]::F('PowerNappReminder') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 250 }
+    Start-Sleep -Seconds 1; Snap 'PowerNappReminder' 'rtl-reminder'
+    $rm = [H]::F('PowerNappReminder'); $r = [H]::Win($rm); $rtl = IsRtl $rm
+    [H]::SendMessage($rm, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Seconds 1; $p.Refresh()
+    if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+    Note "card $($r.L)..$($r.R), work area $($wa.Left)..$($wa.Right), mirrored=$rtl"
+    $rm -ne [IntPtr]::Zero -and $rtl -and $r.R -lt ($wa.Left + $wa.Right) / 2 }
+SetIni 'lang' 'qps-ploc'; $main = StartApp
+Check 'switch to rtl with flyout open: no dropdown left, the window comes back mirrored where it was' {
+    $w0 = [H]::Win($main)
+    Cmd 200; $f1 = [H]::F('PowerNappFly') -ne [IntPtr]::Zero   # Action dropdown open
+    $r = PickLast 0x0D                                          # the Language dropdown takes over: pick Pseudo Mirrored
+    $m2 = [H]::F('PowerNappWnd'); $w1 = [H]::Win($m2)
+    Note "action dropdown was open=$f1, picked '$($r.last)', dropdown left=$([H]::F('PowerNappFly') -ne [IntPtr]::Zero), mirrored=$(IsRtl $m2), at ($($w1.L),$($w1.T)) was ($($w0.L),$($w0.T)), lang=$(Ini 'lang')"
+    $f1 -and $r.last -eq 'Pseudo Mirrored' -and [H]::F('PowerNappFly') -eq [IntPtr]::Zero -and (IsRtl $m2) -and
+        $w1.L -eq $w0.L -and $w1.T -eq $w0.T -and (Ini 'lang') -eq 'qps-plocm' }
+Snap 'PowerNappWnd' 'rtl-after-switch'
+StopApp
+Remove-Item "$langDir\qps-ploc.txt", "$langDir\qps-plocm.txt"; SetIni 'lang' ''
+
 # ----------------------------------------------------------------------------- Task Scheduler is the schedule
 Section 'Task Scheduler is the schedule'
 schtasks /delete /tn PowerNapp /f 2>$null | Out-Null

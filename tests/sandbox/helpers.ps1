@@ -44,6 +44,11 @@ public static class H {
   public static int ClientW(IntPtr h) { RECT r; GetClientRect(h, out r); return r.R; }
   public static int ClientH(IntPtr h) { RECT r; GetClientRect(h, out r); return r.B; }
   public static int Left(IntPtr h) { RECT r; GetWindowRect(h, out r); return r.L; }
+  public static RECT Win(IntPtr h) { RECT r; GetWindowRect(h, out r); return r; }
+  // right-to-left: WS_EX_LAYOUTRTL (0x400000) in the extended style; WM_NCHITTEST at a screen point
+  [DllImport("user32.dll")] static extern int GetWindowLongW(IntPtr h, int i);
+  public static int ExStyle(IntPtr h) { return GetWindowLongW(h, -20); }
+  public static int Hit(IntPtr h, int x, int y) { return (int)SendMessage(h, 0x84, IntPtr.Zero, MK(x, y)); }
   // regional format: set through the API (keeps Windows' locale cache in step), then tell running apps
   [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern bool SetLocaleInfoW(uint lcid, uint type, string data);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern IntPtr SendMessageTimeoutW(IntPtr h, uint m, IntPtr w, string l, uint f, uint t, out IntPtr r);
@@ -51,7 +56,10 @@ public static class H {
   public static IntPtr Focus(IntPtr main) { uint p; uint t = GetWindowThreadProcessId(main, out p); var g = new GTI(); g.cb = Marshal.SizeOf(g); GetGUIThreadInfo(t, ref g); return g.f; }
   public static bool Capture(IntPtr h, string path) {
     RECT r; if (!GetWindowRect(h, out r)) return false; int w = r.R - r.L, hh = r.B - r.T; if (w <= 0 || hh <= 0) return false;
-    using (var b = new Bitmap(w, hh)) { using (var g = Graphics.FromImage(b)) { IntPtr dc = g.GetHdc(); PrintWindow(h, dc, 2); g.ReleaseHdc(dc); } b.Save(path); }
+    using (var b = new Bitmap(w, hh)) { using (var g = Graphics.FromImage(b)) { IntPtr dc = g.GetHdc(); PrintWindow(h, dc, 2); g.ReleaseHdc(dc); }
+      // PrintWindow hands back a mirrored window that has a frame (the main window) flipped; popups come out right
+      if ((GetWindowLongW(h, -20) & 0x400000) != 0 && (GetWindowLongW(h, -16) & 0x00C00000) == 0x00C00000) b.RotateFlip(RotateFlipType.RotateNoneFlipX);
+      b.Save(path); }
     return true; }
   static IUIA uia;
   public static string Uia(IntPtr h, int prop) { if (uia == null) uia = (IUIA)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("ff48dba4-60ef-4201-aa87-54103eef594e")));

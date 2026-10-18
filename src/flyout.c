@@ -67,8 +67,10 @@ static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, 
      * A list longer than FLY_ROWS (or the screen) scrolls, the selection near the middle. */
     int ih = S(36), w = btn_rc->right - btn_rc->left + S(8);
     if (w < S(208)) w = S(208);
-    POINT pt = { btn_rc->left - S(4), btn_rc->top };
-    ClientToScreen(owner, &pt);
+    RECT sr = *btn_rc; /* to screen; both corners at once keep left < right from a mirrored owner */
+    MapWindowPoints(owner, NULL, (POINT *)&sr, 2);
+    /* over the control from its leading edge: the left one, or the right one in right-to-left */
+    POINT pt = { lang_rtl() ? sr.right + S(4) - w : sr.left - S(4), sr.top };
     HMONITOR mon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
     MONITORINFO mi;
     mi.cbSize = sizeof(mi);
@@ -82,7 +84,8 @@ static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, 
     if (pt.y + h > mi.rcWork.bottom) pt.y = mi.rcWork.bottom - h;
     if (pt.y < mi.rcWork.top) pt.y = mi.rcWork.top;
     if (pt.x + w > mi.rcWork.right) pt.x = mi.rcWork.right - w;
-    FLY.wnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST, FLY_CLASS, NULL,
+    if (pt.x < mi.rcWork.left) pt.x = mi.rcWork.left;
+    FLY.wnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST | wnd_ex_dir(), FLY_CLASS, NULL,
         WS_POPUP, pt.x, pt.y, w, h, NULL, NULL, GetModuleHandleW(NULL), NULL);
     if (!FLY.wnd) return;
     /* let DWM round it (anti-aliased, with the system border); a window region
@@ -143,6 +146,7 @@ static LRESULT CALLBACK fly_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HDC hdc = CreateCompatibleDC(wdc); /* buffered: aa_rrect blends with what's below */
         HBITMAP bm = CreateCompatibleBitmap(wdc, rc.right, rc.bottom);
         HGDIOBJ ob = SelectObject(hdc, bm);
+        dc_match(hdc, wdc);
         fill_rect_c(hdc, &rc, T_FLY); /* DWM rounds the window and draws its border */
         for (int i = FLY.top; i < FLY.top + FLY.rows; i++) {
             int r = i - FLY.top;

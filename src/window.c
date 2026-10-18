@@ -3,6 +3,8 @@
 /* ------------------------------------------------------------------ main window proc */
 
 static void ensure_tray(void);
+static void recreate_main(void);
+static bool g_recreating; /* the window is being rebuilt: its WM_DESTROY must not quit */
 
 /* ------------------------------------------------------------------ title bar
  * The design's 48 px title bar: Windows has no taller standard caption, so the
@@ -24,6 +26,13 @@ static int cap_btn_at(POINT pt) {
     return 0;
 }
 
+/* caption buttons answer hit-tests as the system's own (HTMINBUTTON, HTMAXBUTTON, HTCLOSE) */
+static const LRESULT CAP_HT[4] = { HTNOWHERE, HTMINBUTTON, HTMAXBUTTON, HTCLOSE };
+static int cap_btn_of_ht(WPARAM ht) {
+    for (int i = 1; i <= 3; i++) if ((WPARAM)CAP_HT[i] == ht) return i;
+    return 0;
+}
+
 static void invalidate_title(void) {
     RECT cr;
     GetClientRect(G.main, &cr);
@@ -39,7 +48,7 @@ static void paint_title(HDC hdc) {
         icon_px = S(16);
         icon = (HICON)LoadImageW(GetModuleHandleW(NULL), MAKEINTRESOURCEW(1), IMAGE_ICON, icon_px, icon_px, 0);
     }
-    if (icon) DrawIconEx(hdc, S(16), S(16), icon, icon_px, icon_px, 0, NULL, DI_NORMAL);
+    if (icon) DrawIconEx(hdc, S(16), S(16), icon, icon_px, icon_px, 0, NULL, DI_NORMAL | DI_NOMIRROR);
     RECT cr;
     GetClientRect(G.main, &cr);
     COLORREF fg = G.inactive ? T_T2 : T_T1;
@@ -140,12 +149,17 @@ static void ui_after_plan_change(void) {
 /* The language setting changed (or its file did): load it and rebuild every text in place,
  * no restart. Popups are closed first; they are rebuilt with the new strings when reopened. */
 static void apply_language(void) {
+    bool was_rtl = lang_rtl();
     fly_close();
     tp_close();
     about_close();
     lang_load_saved();
     set_tray_tip();
     if (!G.main || !G.ready) return;
+    if (lang_rtl() != was_rtl) { /* mirroring is fixed at creation (children don't re-mirror): rebuild */
+        recreate_main();
+        return;
+    }
     /* fonts: the same Segoe UI faces serve every language (Windows' font linking covers other
        scripts), so nothing to rebuild here */
     update_combo_texts();
@@ -160,6 +174,16 @@ static void apply_language(void) {
     update_views();
     acc_sync_all();
     RedrawWindow(G.main, NULL, NULL, RDW_INVALIDATE | RDW_ALLCHILDREN);
+}
+
+/* a control's drawn body (not its focus padding) in the window's client coordinates; mapping
+   both corners at once keeps left < right in a mirrored window */
+static RECT ctl_rect_in(HWND hwnd, HWND ctl) {
+    RECT rc;
+    GetWindowRect(ctl, &rc);
+    MapWindowPoints(NULL, hwnd, (POINT *)&rc, 2);
+    InflateRect(&rc, -S(CTL_PAD), -S(CTL_PAD));
+    return rc;
 }
 
 /* WM_COMMAND: button clicks and flyout picks */
@@ -213,12 +237,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
     if (notif == BN_CLICKED) {
         switch (id) {
         case ID_COMBO_LANG: {
-            RECT rc;
-            GetWindowRect((HWND)lp, &rc);
-            POINT pt = { rc.left, rc.top };
-            ScreenToClient(hwnd, &pt);
-            RECT brc = { pt.x, pt.y, pt.x + (rc.right - rc.left), pt.y + (rc.bottom - rc.top) };
-            InflateRect(&brc, -S(CTL_PAD), -S(CTL_PAD));
+            RECT brc = ctl_rect_in(hwnd, (HWND)lp);
             int sel = lang_picker_build(); /* listed now: files added or removed show up */
             FlyItem it[FLY_MAX];
             for (int i = 0; i < g_lang_n; i++) {
@@ -230,12 +249,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
             return 0;
         }
         case ID_COMBO_ACTION: case ID_COMBO_MODE: case ID_COMBO_CD: case ID_COMBO_IDLE: {
-            RECT rc;
-            GetWindowRect((HWND)lp, &rc); /* screen coords, convert below */
-            POINT pt = { rc.left, rc.top };
-            ScreenToClient(hwnd, &pt);
-            RECT brc = { pt.x, pt.y, pt.x + (rc.right - rc.left), pt.y + (rc.bottom - rc.top) };
-            InflateRect(&brc, -S(CTL_PAD), -S(CTL_PAD)); /* the drawn control, not its focus padding */
+            RECT brc = ctl_rect_in(hwnd, (HWND)lp);
             if (id == ID_COMBO_ACTION) {
                 FlyItem it[NTASKS];
                 for (int i = 0; i < NTASKS; i++) {
@@ -323,7 +337,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 if (!wts_wake_register(G.wake_h, G.wake_m)) {
                     G.wake_on = false;
                     wake_save();
-                    MessageBoxW(hwnd, TR(L_ERR_WAKE), APP_NAME, MB_OK | MB_ICONWARNING);
+                    MessageBoxW(hwnd, TR(L_ERR_WAKE), APP_NAME, MB_OK | MB_ICONWARNING | MB_DIR);
                 }
             } else {
                 wts_wake_delete();
@@ -425,6 +439,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HDC hdc = CreateCompatibleDC(wdc);
         HBITMAP buf = CreateCompatibleBitmap(wdc, dw, dh);
         HGDIOBJ obuf = SelectObject(hdc, buf);
+        dc_match(hdc, wdc);
         SetViewportOrgEx(hdc, -dirty.left, -dirty.top, NULL);
         IntersectClipRect(hdc, dirty.left, dirty.top, dirty.right, dirty.bottom);
         RECT crc;
@@ -516,6 +531,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HDC mem = CreateCompatibleDC(screen);
         HBITMAP bmp = CreateCompatibleBitmap(screen, bw, bh);
         HGDIOBJ obmp = SelectObject(mem, bmp);
+        dc_match(mem, screen);
         SetViewportOrgEx(mem, -di->rcItem.left, -di->rcItem.top, NULL);
         di->hDC = mem;
         int id = (int)di->CtlID;
@@ -579,10 +595,33 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (hit == HTCLIENT) {
             POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
             ScreenToClient(hwnd, &pt);
-            if (pt.y < S(TITLE_H) && !cap_btn_at(pt)) return HTCAPTION;
+            int b = cap_btn_at(pt); /* client x is mirrored in RTL: the buttons are then on the left */
+            if (pt.y < S(TITLE_H)) return b ? CAP_HT[b] : HTCAPTION;
         }
         return hit;
     }
+    /* the caption buttons are ours: hover and press them here, not with the system's frame code */
+    case WM_NCMOUSEMOVE: {
+        int b = cap_btn_of_ht(wp);
+        if (b != G.cap_hover) { G.cap_hover = b; invalidate_title(); }
+        if (!b) break;
+        set_hover_row(NULL);
+        TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE | TME_NONCLIENT, hwnd, 0 };
+        TrackMouseEvent(&tme);
+        return 0;
+    }
+    case WM_NCMOUSELEAVE:
+        if (G.cap_hover && !G.cap_down) { G.cap_hover = 0; invalidate_title(); }
+        break;
+    case WM_NCLBUTTONDOWN: case WM_NCLBUTTONDBLCLK: {
+        int b = cap_btn_of_ht(wp);
+        if (!b) break;
+        if (b != 2) { G.cap_down = b; G.cap_hover = b; SetCapture(hwnd); invalidate_title(); } /* up: WM_LBUTTONUP */
+        return 0;
+    }
+    case WM_NCLBUTTONUP:
+        if (cap_btn_of_ht(wp)) return 0;
+        break;
     case WM_ACTIVATE:
         G.inactive = LOWORD(wp) == WA_INACTIVE;
         invalidate_title();
@@ -610,7 +649,14 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         return 0;
     }
     case WM_MOUSELEAVE:
-        if (G.cap_hover && !G.cap_down) { G.cap_hover = 0; invalidate_title(); }
+        if (G.cap_hover && !G.cap_down) { /* maybe left onto a caption button (non-client) */
+            POINT sp, pt;
+            GetCursorPos(&sp);
+            pt = sp;
+            ScreenToClient(hwnd, &pt);
+            int b = WindowFromPoint(sp) == hwnd ? cap_btn_at(pt) : 0;
+            if (b != G.cap_hover) { G.cap_hover = b; invalidate_title(); }
+        }
         hover_from_cursor(); /* left onto a toggle: its row stays hot */
         return 0;
     case WM_LBUTTONDOWN: {
@@ -684,7 +730,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         G.main = NULL;
         free_ui_fonts();
         if (G.br_ctl) { DeleteObject(G.br_ctl); G.br_ctl = NULL; }
-        if (!G.tray) PostQuitMessage(0);
+        if (!G.tray && !g_recreating) PostQuitMessage(0);
         return 0;
     }
     default:
@@ -698,12 +744,32 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 /* The main window is built on demand and destroyed on close. The comctl32/uxtheme/
  * dwmapi/shell32/powrprof imports are delay-loaded (build.bat), so a tray-only process
  * maps only what one hidden window and one notify icon need. */
+static HWND create_main(int x, int y);
+
 static void show_main(void) {
     if (G.main) {
         ShowWindow(G.main, SW_SHOWNORMAL);
         SetForegroundWindow(G.main);
         return;
     }
+    create_main(CW_USEDEFAULT, CW_USEDEFAULT);
+}
+
+/* The language switched between left-to-right and right-to-left: build the window again,
+ * mirrored or not, where it was, with the keyboard back on the Language control. */
+static void recreate_main(void) {
+    RECT wr;
+    GetWindowRect(G.main, &wr);
+    bool kbd = GetFocus() == G.combo_lang;
+    g_recreating = true;
+    DestroyWindow(G.main);
+    g_recreating = false;
+    G.cap_hover = G.cap_down = 0;
+    if (!create_main(wr.left, wr.top)) { if (!G.tray) PostQuitMessage(0); return; }
+    if (kbd) SetFocus(G.combo_lang);
+}
+
+static HWND create_main(int x, int y) {
     static bool cc_ready;
     if (!cc_ready) {
         INITCOMMONCONTROLSEX icc;
@@ -717,16 +783,17 @@ static void show_main(void) {
     /* estimate size: layout needs a window; create then resize in WM_CREATE */
     RECT adj = { 0, 0, 640, 700 };
     AdjustWindowRect(&adj, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, FALSE);
-    HWND hwnd = CreateWindowExW(0, L"PowerNappWnd", APP_NAME,
+    HWND hwnd = CreateWindowExW(wnd_ex_dir(), L"PowerNappWnd", APP_NAME, /* mirrored for RTL */
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN,
-        CW_USEDEFAULT, CW_USEDEFAULT, adj.right - adj.left, adj.bottom - adj.top,
+        x, y, adj.right - adj.left, adj.bottom - adj.top,
         NULL, NULL, GetModuleHandleW(NULL), NULL);
-    if (!hwnd) return;
+    if (!hwnd) return NULL;
     apply_dark_mode(hwnd);
     SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     layout(hwnd); /* height from the custom frame */
     ShowWindow(hwnd, SW_SHOW);
     SetForegroundWindow(hwnd);
+    return hwnd;
 }
 
 static UINT g_taskbar_created;

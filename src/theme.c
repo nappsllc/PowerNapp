@@ -130,13 +130,18 @@ static void aa_rrect(HDC hdc, float x, float y, float w, float h, float r,
     HBITMAP bm = CreateDIBSection(hdc, &bi, DIB_RGB_COLORS, &bits, NULL, 0);
     if (!mdc || !bm) { if (bm) DeleteObject(bm); if (mdc) DeleteDC(mdc); return; }
     HGDIOBJ old = SelectObject(mdc, bm);
+    /* same layout as hdc, so both copies are 1:1; in a mirrored DC pixel column i is logical
+       x0 + W-1-i (x grows leftwards) */
+    DWORD lay = GetLayout(hdc);
+    bool rtl = lay != GDI_ERROR && (lay & LAYOUT_RTL);
+    if (rtl) SetLayout(mdc, lay);
     BitBlt(mdc, 0, 0, W, H, hdc, x0, y0, SRCCOPY);
     GdiFlush();
     DWORD *px = (DWORD *)bits;
     float cx = x + w / 2, cy = y + h / 2, hx = w / 2 - r, hy = h / 2 - r;
     for (int j = 0; j < H; j++) {
         for (int i = 0; i < W; i++) {
-            float qx = fabsf(x0 + i + 0.5f - cx) - hx, qy = fabsf(y0 + j + 0.5f - cy) - hy;
+            float qx = fabsf(x0 + (rtl ? W - 1 - i : i) + 0.5f - cx) - hx, qy = fabsf(y0 + j + 0.5f - cy) - hy;
             float ox = qx > 0 ? qx : 0, oy = qy > 0 ? qy : 0;
             float d = sqrtf(ox * ox + oy * oy) + fminf(fmaxf(qx, qy), 0) - r;
             float a = clamp01(0.5f - d);
@@ -166,12 +171,39 @@ static void fill_rect_c(HDC hdc, const RECT *rc, COLORREF fill) {
     DeleteObject(br);
 }
 
-static void text_at(HDC hdc, const wchar_t *s, RECT rc, HFONT font, COLORREF color, UINT flags) {
+static void text_dir(HDC hdc, const wchar_t *s, RECT rc, HFONT font, COLORREF color, UINT flags, bool rtl) {
     SetBkMode(hdc, TRANSPARENT);
     SetTextColor(hdc, color);
     SelectObject(hdc, font);
-    DrawTextW(hdc, s, -1, &rc, flags | DT_NOPREFIX); /* "&" is text, not a mnemonic */
+    DrawTextW(hdc, s, -1, &rc, flags | DT_NOPREFIX | (rtl ? DT_RTLREADING : 0)); /* "&" is text, not a mnemonic */
 }
+
+/* UI text: reads right to left in Arabic and Hebrew (the mirrored DC already puts DT_LEFT on the right) */
+static void text_at(HDC hdc, const wchar_t *s, RECT rc, HFONT font, COLORREF color, UINT flags) {
+    text_dir(hdc, s, rc, font, color, flags, lang_rtl());
+}
+
+/* times and numbers keep their left-to-right order in every language */
+static void text_ltr(HDC hdc, const wchar_t *s, RECT rc, HFONT font, COLORREF color, UINT flags) {
+    text_dir(hdc, s, rc, font, color, flags, false);
+}
+
+/* ------------------------------------------------------------------ right-to-left
+ * Arabic and Hebrew mirror every window (WS_EX_LAYOUTRTL): client x grows leftwards from the
+ * right edge, so layout, hit-testing and drawing code stay the same. The off-screen buffers
+ * are mirrored to match, and keep bitmaps (the color icons) the right way round. */
+
+static DWORD wnd_ex_dir(void) { return lang_rtl() ? WS_EX_LAYOUTRTL : 0; }
+
+/* lay out a buffer DC (bitmap already selected) like the window DC it is blitted to */
+static void dc_match(HDC mem, HDC wnd) {
+    if (GetLayout(wnd) & LAYOUT_RTL) SetLayout(mem, LAYOUT_RTL | LAYOUT_BITMAPORIENTATIONPRESERVED);
+}
+
+#ifndef DI_NOMIRROR
+#define DI_NOMIRROR 0x0010
+#endif
+#define MB_DIR (lang_rtl() ? MB_RTLREADING | MB_RIGHT : 0)  /* message boxes */
 
 static void line_c(HDC hdc, int x0, int y0, int x1, int y1, COLORREF color, int w) {
     HPEN pen = CreatePen(PS_SOLID, SB(w), color); /* w: design width */
@@ -316,6 +348,7 @@ static void icon_bg(HDC hdc, int x, int y, int s, IconId id, COLORREF c, COLORRE
     HBITMAP bm = color_icon(id, s);
     if (bm) {
         HDC mdc = CreateCompatibleDC(hdc);
+        SetLayout(mdc, 0); /* the bitmap as is: hdc keeps its orientation even when mirrored */
         HGDIOBJ old = SelectObject(mdc, bm);
         BLENDFUNCTION bf = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
         AlphaBlend(hdc, x, y, s, s, mdc, 0, 0, s, s, bf);

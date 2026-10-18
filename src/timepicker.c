@@ -17,6 +17,16 @@ static const int TP_X3[4] = { 0, 81, 162, TP_W }, TP_X2[3] = { 0, 121, TP_W };
 static int tp_ncols(void) { return clock_24h() ? 2 : 3; }
 static const int *tp_x(void) { return clock_24h() ? TP_X2 : TP_X3; }
 
+/* Column c's edges in client px of a box w px wide (the button body or the popup). Times read
+ * left to right in every language, so in a mirrored (right-to-left) window, where client x
+ * grows leftwards, the columns are placed from the other side: the hour stays on the left. */
+static void tp_col(int c, int w, int *l, int *r) {
+    const int *X = tp_x();
+    int a = c ? S(X[c]) : 0, b = c == tp_ncols() - 1 ? w : S(X[c + 1]);
+    if (lang_rtl()) { *l = w - b; *r = w - a; }
+    else { *l = a; *r = b; }
+}
+
 static struct {
     HWND wnd, owner;     /* owner: the button that opened it (keeps keyboard focus) */
     int target;          /* 0 = Time row, 1 = Wake time row */
@@ -32,10 +42,13 @@ static void paint_time_btn(HDC hdc, HWND btn, int h, int m) {
     fill_rect_c(hdc, &all, T_CARD);
     focus_ring(hdc, &rc, 4, T_CARD);
     fill_round(hdc, &rc, 4, btn == G.hover_btn ? T_CTLHOV : T_CTL, T_CTLBRD);
-    int x0 = rc.left, top = rc.top, bot = rc.bottom, nc = tp_ncols();
-    const int *X = tp_x();
-    for (int c = 1; c < nc; c++)
-        line_c(hdc, x0 + S(X[c]), top + SB(1), x0 + S(X[c]), bot - SB(1) - 1, T_CTLBRD, 1);
+    int x0 = rc.left, top = rc.top, bot = rc.bottom, nc = tp_ncols(), bw = rc.right - rc.left;
+    for (int c = 1; c < nc; c++) { /* dividers: each column's left edge */
+        int l, r;
+        tp_col(c, bw, &l, &r);
+        int x = x0 + (lang_rtl() ? r : l);
+        line_c(hdc, x, top + SB(1), x, bot - SB(1) - 1, T_CTLBRD, 1);
+    }
     line_c(hdc, x0 + S(3), bot - SB(1) - 1, rc.right - S(4), bot - SB(1) - 1, T_CTLBOT, 1);
     wchar_t t[3][16];
     fmt_hour(h, t[0], 16);
@@ -43,8 +56,10 @@ static void paint_time_btn(HDC hdc, HWND btn, int h, int m) {
     ampm(h >= 12, t[2], 16);
     UINT f = DT_CENTER | DT_VCENTER | DT_SINGLELINE;
     for (int c = 0; c < nc; c++) {
-        RECT s = { x0 + S(X[c]), top, c == nc - 1 ? rc.right : x0 + S(X[c + 1]), bot };
-        text_at(hdc, t[c], s, G.f_row, T_T1, f);
+        int l, r;
+        tp_col(c, bw, &l, &r);
+        RECT s = { x0 + l, top, x0 + r, bot };
+        text_ltr(hdc, t[c], s, G.f_row, T_T1, f);
     }
 }
 
@@ -105,9 +120,11 @@ static void tp_hit(int x, int y, int *col, int *row, int *btn) {
     *btn = 0;
     if (x < 0 || x >= S(TP_W) || y < 0 || y >= S(TP_H)) return;
     if (y < S(TP_COLS)) {
-        const int *X = tp_x();
-        for (int c = 0, nc = tp_ncols(); c < nc; c++)
-            if (x >= S(X[c]) && x < S(X[c + 1])) *col = c;
+        for (int c = 0, nc = tp_ncols(); c < nc; c++) {
+            int l, r;
+            tp_col(c, S(TP_W), &l, &r);
+            if (x >= l && x < r) *col = c;
+        }
         *row = y / S(TP_ROW);
     } else if (y > S(TP_COLS + 4) && y < S(TP_H - 4)) {
         *btn = x < S(TP_W) / 2 ? 1 : 2;
@@ -140,13 +157,14 @@ static LRESULT CALLBACK tp_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HDC hdc = CreateCompatibleDC(wdc); /* buffered: aa_rrect reads the DC back */
         HBITMAP bm = CreateCompatibleBitmap(wdc, W, H);
         HGDIOBJ ob = SelectObject(hdc, bm);
+        dc_match(hdc, wdc);
         RECT all = { 0, 0, W, H };
         fill_rect_c(hdc, &all, T_FLY);
         aa_rrect(hdc, SF(4), (float)band, (float)(W - S(8)), (float)R, SF(4), T_ACCENT, T_ACCENT, 0);
-        const int *X = tp_x();
         int nc = tp_ncols();
         for (int c = 0; c < nc; c++) {
-            int cl = S(X[c]), cr_ = S(X[c + 1]);
+            int cl, cr_;
+            tp_col(c, W, &cl, &cr_);
             if (c == TP.kcol) /* keyboard column */
                 aa_rrect(hdc, (float)cl + SF(2), SF(2), (float)(cr_ - cl) - SF(4), (float)(7 * R) - SF(4), SF(4),
                     T_FLY, T_T1, SF(2));
@@ -159,12 +177,15 @@ static LRESULT CALLBACK tp_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 if (off && c == TP.hcol && r == TP.hrow)
                     aa_rrect(hdc, (float)cl + SF(4), (float)cell.top, (float)(cr_ - cl) - SF(8), (float)R, SF(4),
                         T_SUBTLE, T_SUBTLE, 0);
-                text_at(hdc, t, cell, G.f_row, off ? T_T1 : T_ONACC, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+                text_ltr(hdc, t, cell, G.f_row, off ? T_T1 : T_ONACC, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
             }
         }
         for (int c = 1; c < nc; c++) { /* column dividers, not across the band */
-            line_c(hdc, S(X[c]), 0, S(X[c]), band, T_FLYBRD, 1);
-            line_c(hdc, S(X[c]), band + R, S(X[c]), 7 * R, T_FLYBRD, 1);
+            int l, r;
+            tp_col(c, W, &l, &r);
+            int x = lang_rtl() ? r : l;
+            line_c(hdc, x, 0, x, band, T_FLYBRD, 1);
+            line_c(hdc, x, band + R, x, 7 * R, T_FLYBRD, 1);
         }
         line_c(hdc, 0, S(TP_COLS), W, S(TP_COLS), T_FLYBRD, 1);
         RECT ok = { S(4), S(TP_COLS + 5), W / 2 - S(2), H - S(4) };
@@ -239,6 +260,7 @@ static void tp_open(HWND btn, int target, int h, int m) {
     if (y < mi.rcWork.top) y = mi.rcWork.top;
     if (y + H > mi.rcWork.bottom) y = mi.rcWork.bottom - H;
     if (x + W > mi.rcWork.right) x = mi.rcWork.right - W;
+    if (x < mi.rcWork.left) x = mi.rcWork.left;
     TP.owner = btn;
     TP.target = target;
     TP.h = h;
@@ -246,7 +268,7 @@ static void tp_open(HWND btn, int target, int h, int m) {
     TP.hcol = TP.hrow = -1;
     TP.hbtn = 0;
     TP.kcol = -1;
-    TP.wnd = CreateWindowExW(WS_EX_TOOLWINDOW, TP_CLASS, NULL, WS_POPUP, x, y, W, H,
+    TP.wnd = CreateWindowExW(WS_EX_TOOLWINDOW | wnd_ex_dir(), TP_CLASS, NULL, WS_POPUP, x, y, W, H,
         G.main, NULL, GetModuleHandleW(NULL), NULL);
     if (!TP.wnd) return;
     DWORD corner = 2; /* DWMWCP_ROUND: rounded, shadowed, system border */

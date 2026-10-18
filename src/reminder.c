@@ -2,8 +2,8 @@
 
 /* ------------------------------------------------------------------ reminder
  * Shown 1 minute before the action: a topmost card at the bottom right of the work
- * area (like a notification) with a live countdown, a draining progress bar and three
- * buttons: "<Action> now", "Snooze 10 min", "Stop". When the countdown ends with no
+ * area (bottom left in right-to-left languages), like a notification, with a live
+ * countdown, a draining progress bar and three buttons: "<Action> now", "Snooze 10 min", "Stop". When the countdown ends with no
  * answer, the action runs. Used by the window (in-process countdown) and by the
  * "--fire-now --warn-secs N" process Task Scheduler starts for a handed-off task.
  * Keyboard: Tab / arrows move, Enter / Space press, Esc stops. */
@@ -69,6 +69,7 @@ static LRESULT CALLBACK rm_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HDC hdc = CreateCompatibleDC(wdc); /* buffered: aa_rrect reads the DC back */
         HBITMAP bm = CreateCompatibleBitmap(wdc, W, H);
         HGDIOBJ ob = SelectObject(hdc, bm);
+        dc_match(hdc, wdc);
         RECT all = { 0, 0, W, H }, foot = { 0, S(RM_FOOT), W, H };
         fill_rect_c(hdc, &all, T_CARD);
         fill_rect_c(hdc, &foot, T_WIN);
@@ -135,12 +136,12 @@ static LRESULT CALLBACK rm_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case VK_RETURN: case VK_SPACE:
             rm_finish(RM.focus == 1 ? RM_NOW : RM.focus == 2 ? RM_SNOOZE : RM_STOP);
             return 0;
-        case VK_TAB: case VK_RIGHT: case VK_DOWN:
-            RM.focus = RM.focus % 3 + 1;
+        case VK_TAB: case VK_RIGHT: case VK_LEFT: case VK_DOWN: case VK_UP: {
+            /* mirrored in right-to-left: the next button is then on the left */
+            bool next = wp == VK_TAB || wp == VK_DOWN || wp == (lang_rtl() ? VK_LEFT : VK_RIGHT);
+            RM.focus = next ? RM.focus % 3 + 1 : RM.focus == 1 ? 3 : RM.focus - 1;
             break;
-        case VK_LEFT: case VK_UP:
-            RM.focus = RM.focus == 1 ? 3 : RM.focus - 1;
-            break;
+        }
         default:
             return 0;
         }
@@ -201,8 +202,9 @@ static void reminder_show(Task task, unsigned secs, void (*done)(int result)) {
     mi.cbSize = sizeof(mi);
     GetMonitorInfoW(MonitorFromWindow(G.main, MONITOR_DEFAULTTOPRIMARY), &mi);
     int W = S(RM_W), H = S(RM_H);
-    RM.wnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, RM_CLASS, TR(L_RM_WINDOW), WS_POPUP,
-        mi.rcWork.right - W - S(12), mi.rcWork.bottom - H - S(12), W, H, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    int x = lang_rtl() ? mi.rcWork.left + S(12) : mi.rcWork.right - W - S(12); /* bottom left in right-to-left */
+    RM.wnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW | wnd_ex_dir(), RM_CLASS, TR(L_RM_WINDOW), WS_POPUP,
+        x, mi.rcWork.bottom - H - S(12), W, H, NULL, NULL, GetModuleHandleW(NULL), NULL);
     if (!RM.wnd) return;
     DWORD corner = 2; /* DWMWCP_ROUND: rounded, shadowed, system border */
     DwmSetWindowAttribute(RM.wnd, 33, &corner, sizeof(corner));

@@ -78,11 +78,12 @@ static LRESULT CALLBACK about_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HDC hdc = CreateCompatibleDC(wdc);
         HBITMAP bm = CreateCompatibleBitmap(wdc, W, H);
         HGDIOBJ ob = SelectObject(hdc, bm);
+        dc_match(hdc, wdc);
         RECT all = { 0, 0, W, H }, foot = { 0, S(AB_FOOT), W, H };
         fill_rect_c(hdc, &all, T_CARD);
         fill_rect_c(hdc, &foot, T_WIN);
         line_c(hdc, 0, S(AB_FOOT), W, S(AB_FOOT), T_CARDBRD, 1);
-        if (icon) { DrawIconEx(hdc, S(24), S(24), icon, ic, ic, 0, NULL, DI_NORMAL); DestroyIcon(icon); }
+        if (icon) { DrawIconEx(hdc, S(24), S(24), icon, ic, ic, 0, NULL, DI_NORMAL | DI_NOMIRROR); DestroyIcon(icon); }
         RECT tr = { S(68), S(24), W - S(24), S(56) };
         text_at(hdc, APP_NAME, tr, G.f_hero, T_T1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         RECT ver = { S(24), S(72), W - S(24), S(92) }, desc = { S(24), S(100), W - S(24), S(160) },
@@ -135,7 +136,8 @@ static LRESULT CALLBACK about_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case VK_ESCAPE: about_close(); break;
         case VK_RETURN: case VK_SPACE: about_press(AB.focus); break;
         case VK_TAB: case VK_LEFT: case VK_RIGHT: case VK_UP: case VK_DOWN: {
-            bool back = wp == VK_LEFT || wp == VK_UP || (wp == VK_TAB && GetKeyState(VK_SHIFT) < 0);
+            UINT left = lang_rtl() ? VK_RIGHT : VK_LEFT; /* mirrored: the previous control is on the right */
+            bool back = wp == left || wp == VK_UP || (wp == VK_TAB && GetKeyState(VK_SHIFT) < 0);
             AB.focus = back ? (AB.focus == 1 ? AB_N : AB.focus - 1) : (AB.focus == AB_N ? 1 : AB.focus + 1);
             acc_desc(hwnd, TR(AB_NAMES[AB.focus]));
             InvalidateRect(hwnd, NULL, FALSE);
@@ -158,7 +160,7 @@ static void about_open(void) {
     int x = (mr.left + mr.right - W) / 2, y = (mr.top + mr.bottom - H) / 2;
     AB.hover = 0;
     AB.focus = AB_OK; /* as a ContentDialog's default button */
-    AB.wnd = CreateWindowExW(0, ABOUT_CLASS, TR(L_ABOUT_TITLE), WS_POPUP, x, y, W, H,
+    AB.wnd = CreateWindowExW(wnd_ex_dir(), ABOUT_CLASS, TR(L_ABOUT_TITLE), WS_POPUP, x, y, W, H,
         G.main, NULL, GetModuleHandleW(NULL), NULL);
     if (!AB.wnd) return;
     DWORD corner = 2; /* DWMWCP_ROUND */

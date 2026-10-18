@@ -79,7 +79,7 @@ static void wake_flush(void) {
     G.wake_dirty = false;
     wake_save();
     if (G.wake_on && !wts_wake_register(G.wake_h, G.wake_m))
-        MessageBoxW(G.main, TR(L_ERR_WAKE), APP_NAME, MB_OK | MB_ICONWARNING);
+        MessageBoxW(G.main, TR(L_ERR_WAKE), APP_NAME, MB_OK | MB_ICONWARNING | MB_DIR);
 }
 
 static void update_combo_texts(void) {
@@ -181,7 +181,7 @@ static void tick(void) {
         if (!do_task(task)) {
             wchar_t m[256];
             StringCchPrintfW(m, 256, TR(L_ERR_EXEC), TASK_TR(task));
-            MessageBoxW(G.main, m, APP_NAME, MB_OK | MB_ICONERROR);
+            MessageBoxW(G.main, m, APP_NAME, MB_OK | MB_ICONERROR | MB_DIR);
         }
         switch (mode) {
         case M_DAILY:
@@ -270,7 +270,7 @@ static void toggle_start(void) {
     }
     save_current();
     const wchar_t *err = schedule();
-    if (err) MessageBoxW(G.main, err, APP_NAME, MB_OK | MB_ICONWARNING);
+    if (err) MessageBoxW(G.main, err, APP_NAME, MB_OK | MB_ICONWARNING | MB_DIR);
     update_views();
 }
 
