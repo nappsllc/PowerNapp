@@ -222,7 +222,7 @@ static void layout(HWND hwnd) {
 
     /* footer links, 20 px below the last card: Power settings left, About right */
     g_cy += S(20 - GAP);
-    int lw1 = text_w(hwnd, G.f_row, LINK_POWER), lw2 = text_w(hwnd, G.f_row, LINK_ABOUT);
+    int lw1 = text_w(hwnd, G.f_row, TR(L_LINK_POWER)), lw2 = text_w(hwnd, G.f_row, TR(L_LINK_ABOUT));
     G.rc_rel1 = (RECT){ px, g_cy, px + lw1, g_cy + S(20) };
     G.rc_rel2 = (RECT){ px + content - lw2, g_cy, px + content, g_cy + S(20) };
     g_cy += S(20 + 28);                    /* bottom page padding */

@@ -5,21 +5,20 @@
 typedef enum { T_SHUTDOWN, T_RESTART, T_SLEEP, T_HIBERNATE, T_LOGOFF, T_LOCK, T_DISPLAY, NTASKS } Task;
 typedef enum { M_DAILY, M_ONCE, M_COUNTDOWN, M_IDLE, M_INTERVAL, M_WEEKLY, NMODES_ALL } Mode;
 
-static const wchar_t *TASK_NAMES[] = {
-    L"Shut down", L"Restart", L"Sleep", L"Hibernate",
-    L"Sign out", L"Lock", L"Turn off display",
-};
-/* CLI spellings, index-aligned with TASK_NAMES */
+/* shown names: the string table's L_TASK_* / L_RM_* ranges, index-aligned with Task */
+#define TASK_TR(t) TR((StrId)(L_TASK_SHUTDOWN + (t)))
+typedef char task_strings_aligned[(L_TASK_DISPLAY - L_TASK_SHUTDOWN == NTASKS - 1 &&
+                                   L_RM_DISPLAY - L_RM_SHUTDOWN == NTASKS - 1) ? 1 : -1];
+/* CLI spellings, index-aligned with Task */
 static const wchar_t *TASK_CLI[] = {
     L"shutdown", L"restart", L"sleep", L"hibernate", L"logoff", L"lock", L"display",
 };
 
-/* GUI combo lists (artifact set) */
+/* GUI combo lists (artifact set); names: L_MODE_* (index-aligned) */
 static const int GUI_MODES[] = { M_DAILY, M_COUNTDOWN, M_WEEKLY, M_IDLE };
-static const wchar_t *GUI_MODE_NAMES[] = {
-    L"At a specific time", L"After a countdown", L"On a weekly schedule", L"When the PC is idle",
-};
 #define NGUI_MODES 4
+#define MODE_TR(i) TR((StrId)(L_MODE_DAILY + (i)))
+typedef char mode_strings_aligned[(L_MODE_IDLE - L_MODE_DAILY == NGUI_MODES - 1) ? 1 : -1];
 
 static const int CDS[] = { 5, 10, 15, 30, 45, 60, 90, 120, 180, 240 };
 #define NCDS 10
@@ -27,9 +26,7 @@ static const int IDLES[] = { 5, 10, 15, 30, 60 };
 #define NIDLES 5
 static const wchar_t *DAYS[] = { L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat", L"Sun" };
 
-#define APP_NAME L"PowerNapp"   /* shown name (v3 design) */
-#define LINK_POWER L"Power settings"
-#define LINK_ABOUT L"About"
+#define APP_NAME L"PowerNapp"   /* shown name (v3 design), the same in every language */
 #define REMIND_MIN 1 /* the reminder comes 1 minute before, with a countdown */
 
 typedef struct {
@@ -189,16 +186,15 @@ static void fmt12(int h, int m, wchar_t *out, size_t n) {
 }
 
 static void dur_label(int mins, wchar_t *out, size_t n) {
-    if (mins < 60) StringCchPrintfW(out, n, L"%d minutes", mins);
-    else if (mins == 60) StringCchCopyW(out, n, L"1 hour");
-    else if (mins % 60 == 0) StringCchPrintfW(out, n, L"%d hours", mins / 60);
-    else StringCchPrintfW(out, n, L"%d h %d min", mins / 60, mins % 60);
+    if (mins < 60) StringCchPrintfW(out, n, TR(mins == 1 ? L_TIME_MINUTE : L_TIME_MINUTES), mins);
+    else if (mins % 60 == 0) StringCchPrintfW(out, n, TR(mins == 60 ? L_TIME_HOUR : L_TIME_HOURS), mins / 60);
+    else StringCchPrintfW(out, n, TR(L_TIME_HM), mins / 60, mins % 60);
 }
 
 static void days_text(int days, wchar_t *out, size_t n) {
-    if (days == 0x7F) { StringCchCopyW(out, n, L"every day"); return; }
-    if (days == 0x1F) { StringCchCopyW(out, n, L"weekdays"); return; }
-    if (days == 0x60) { StringCchCopyW(out, n, L"weekends"); return; }
+    if (days == 0x7F) { StringCchCopyW(out, n, TR(L_DAYS_EVERY)); return; }
+    if (days == 0x1F) { StringCchCopyW(out, n, TR(L_DAYS_WEEKDAYS)); return; }
+    if (days == 0x60) { StringCchCopyW(out, n, TR(L_DAYS_WEEKENDS)); return; }
     wchar_t buf[128]; buf[0] = L'\0';
     for (int i = 0; i < 7; i++) {
         if (days & (1 << i)) {
@@ -206,7 +202,7 @@ static void days_text(int days, wchar_t *out, size_t n) {
             StringCchCatW(buf, 128, DAYS[i]);
         }
     }
-    StringCchPrintfW(out, n, L"%s", buf[0] ? buf : L"no days");
+    StringCchPrintfW(out, n, L"%ls", buf[0] ? buf : TR(L_DAYS_NONE));
 }
 
 /* "Today, 11:30 PM" for a local-epoch target */
@@ -221,8 +217,8 @@ static void day_label(long long target, wchar_t *out, size_t n) {
     wchar_t t[32];
     fmt12(h, m, t, 32);
     const wchar_t *day;
-    if (diff == 0) day = L"Today";
-    else if (diff == 1) day = L"Tomorrow";
+    if (diff == 0) day = TR(L_DAY_TODAY);
+    else if (diff == 1) day = TR(L_DAY_TOMORROW);
     else {
         /* weekday from civil: 1970-01-01 = Thursday (4) */
         int wd = (int)((target / 86400 + 3) % 7); /* 0=Mon */
@@ -230,7 +226,7 @@ static void day_label(long long target, wchar_t *out, size_t n) {
             L"Thursday", L"Friday", L"Saturday", L"Sunday" };
         day = FULL[wd];
     }
-    StringCchPrintfW(out, n, L"%ls, %ls", day, t);
+    StringCchPrintfW(out, n, TR(L_DAY_AT), day, t);
 }
 
 static bool parse_hhmm(const wchar_t *s, unsigned *h, unsigned *m) {
@@ -302,32 +298,32 @@ static bool do_task(Task t) { return do_task_ex(t, G.rt.plan.force); }
 /* ------------------------------------------------------------------ scheduler */
 
 static void rt_describe(const Runtime *r, wchar_t *out, size_t n) {
-    const wchar_t *tn = TASK_NAMES[r->plan.task];
+    const wchar_t *tn = TASK_TR(r->plan.task);
     wchar_t t[32];
     wchar_t d[96];
     switch (r->plan.mode) {
     case M_DAILY:
         fmt12(r->plan.h, r->plan.m, t, 32);
-        StringCchPrintfW(out, n, L"%ls at %ls", tn, t);
+        StringCchPrintfW(out, n, TR(L_PLAN_AT), tn, t);
         break;
     case M_WEEKLY:
         fmt12(r->plan.h, r->plan.m, t, 32);
         days_text(r->plan.days, d, 96);
-        StringCchPrintfW(out, n, L"%ls at %ls on %ls", tn, t, d);
+        StringCchPrintfW(out, n, TR(L_PLAN_AT_ON), tn, t, d);
         break;
     case M_ONCE:
-        StringCchPrintfW(out, n, L"%ls once at %ls %ls", tn, r->plan.p1, r->plan.p2);
+        StringCchPrintfW(out, n, TR(L_PLAN_ONCE), tn, r->plan.p1, r->plan.p2);
         break;
     case M_COUNTDOWN:
         dur_label(r->plan.cd, d, 96);
-        StringCchPrintfW(out, n, L"%ls in %ls", tn, d);
+        StringCchPrintfW(out, n, TR(L_PLAN_IN), tn, d);
         break;
     case M_IDLE:
         dur_label(r->plan.idle, d, 96);
-        StringCchPrintfW(out, n, L"%ls after %ls idle", tn, d);
+        StringCchPrintfW(out, n, TR(L_PLAN_IDLE), tn, d);
         break;
     case M_INTERVAL:
-        StringCchPrintfW(out, n, L"%ls every %ls min", tn, r->plan.p1);
+        StringCchPrintfW(out, n, TR(L_PLAN_EVERY), tn, r->plan.p1);
         break;
     }
 }
@@ -355,40 +351,40 @@ static const wchar_t *rt_start(Runtime *r, wchar_t *desc, size_t n) {
     switch (r->plan.mode) {
     case M_DAILY:
         if (r->plan.h < 0 || r->plan.h > 23 || r->plan.m < 0 || r->plan.m > 59)
-            return L"Hour must be 0-23 and minute 0-59";
+            return TR(L_ERR_HOUR);
         r->fire_at = 0;
         r->span = 86400;
         break;
     case M_WEEKLY:
         if (r->plan.h < 0 || r->plan.h > 23 || r->plan.m < 0 || r->plan.m > 59)
-            return L"Hour must be 0-23 and minute 0-59";
-        if (!r->plan.days) return L"Select at least one day of the week";
+            return TR(L_ERR_HOUR);
+        if (!r->plan.days) return TR(L_ERR_DAYS);
         r->fire_at = 0; /* computed live */
         r->span = 7 * 86400;
         break;
     case M_ONCE: {
         int y; unsigned mo, d, h, mi;
-        if (!parse_ymd(r->plan.p1, &y, &mo, &d)) return L"Date must be YYYY-MM-DD";
-        if (!parse_hhmm(r->plan.p2, &h, &mi)) return L"Time must be HH:MM (24h)";
+        if (!parse_ymd(r->plan.p1, &y, &mo, &d)) return TR(L_ERR_DATE);
+        if (!parse_hhmm(r->plan.p2, &h, &mi)) return TR(L_ERR_TIME);
         long long at = days_from_civil(y, mo, d) * 86400LL + h * 3600LL + mi * 60LL;
-        if (at <= now) return L"That date/time is in the past.";
+        if (at <= now) return TR(L_ERR_PAST);
         r->fire_at = at;
         r->span = at - now;
         break;
     }
     case M_COUNTDOWN:
-        if (r->plan.cd <= 0) return L"Choose a countdown duration";
+        if (r->plan.cd <= 0) return TR(L_ERR_COUNTDOWN);
         r->fire_at = now + (long long)r->plan.cd * 60;
         r->span = r->plan.cd * 60;
         break;
     case M_IDLE:
-        if (r->plan.idle <= 0) return L"Choose an idle duration";
+        if (r->plan.idle <= 0) return TR(L_ERR_IDLE);
         r->fire_at = 0;
         r->span = r->plan.idle * 60;
         break;
     case M_INTERVAL: {
         long long mins = wcstoll(r->plan.p1, NULL, 10);
-        if (mins <= 0) return L"Interval minutes must be > 0.";
+        if (mins <= 0) return TR(L_ERR_INTERVAL);
         r->fire_at = now + mins * 60;
         r->span = mins * 60;
         break;

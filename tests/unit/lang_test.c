@@ -70,41 +70,41 @@ static void escapes(void)
 
 static void missing_key_falls_back(void)
 {
-    const char *s = "@name = Xx\ntest.d = Zahl %d\n";
+    const char *s = "@name = Xx\ntime.minutes = %d Minuten\n";
     write_lang_file(L"xx", s, strlen(s));
     lang_load(L"xx");
     CHECK(wcscmp(TR(L_ACTION_TITLE), L"Action") == 0);
-    CHECK(wcscmp(TR(L_TEST_D), L"Zahl %d") == 0);
+    CHECK(wcscmp(TR(L_TIME_MINUTES), L"%d Minuten") == 0);
     CHECK(wcscmp(lang_tag(), L"xx") == 0);
     lang_load(L"en");
-    CHECK(wcscmp(TR(L_TEST_D), L"Count %d") == 0);
+    CHECK(wcscmp(TR(L_TIME_MINUTES), L"%d minutes") == 0);
 }
 
 static void placeholder_mismatch_falls_back(void)
 {
-    const char *s = "test.ls = Hallo\ntest.d = Zahl %d %d\naction.title = Aktion %ls\n";
+    const char *s = "rm.now = Jetzt\ntime.minutes = %d Minuten %d\naction.title = Aktion %ls\n";
     write_lang_file(L"xx", s, strlen(s));
     lang_load(L"xx");
-    CHECK(wcscmp(TR(L_TEST_LS), L"Hello %ls") == 0);
-    CHECK(wcscmp(TR(L_TEST_D), L"Count %d") == 0);
+    CHECK(wcscmp(TR(L_RM_NOW), L"%ls now") == 0);
+    CHECK(wcscmp(TR(L_TIME_MINUTES), L"%d minutes") == 0);
     CHECK(wcscmp(TR(L_ACTION_TITLE), L"Action") == 0);
-    s = "test.ls = Hallo %ls!\n";
+    s = "rm.now = Jetzt %ls!\n";
     write_lang_file(L"xx", s, strlen(s));
     lang_load(L"xx");
-    CHECK(wcscmp(TR(L_TEST_LS), L"Hallo %ls!") == 0);
+    CHECK(wcscmp(TR(L_RM_NOW), L"Jetzt %ls!") == 0);
     lang_load(L"en");
 }
 
 static void placeholder_reorder_falls_back(void)
 {
-    const char *s = "test.lsd = b %d a %ls\n";
+    const char *s = "rm.acc_name = %d Sekunden: %ls\n";
     write_lang_file(L"xx", s, strlen(s));
     lang_load(L"xx");
-    CHECK(wcscmp(TR(L_TEST_LSD), L"a %ls b %d") == 0);
-    s = "test.lsd = x %ls y %d\n";
+    CHECK(wcscmp(TR(L_RM_ACC_NAME), L"%ls in %d seconds") == 0);
+    s = "rm.acc_name = %ls in %d Sekunden\n";
     write_lang_file(L"xx", s, strlen(s));
     lang_load(L"xx");
-    CHECK(wcscmp(TR(L_TEST_LSD), L"x %ls y %d") == 0);
+    CHECK(wcscmp(TR(L_RM_ACC_NAME), L"%ls in %d Sekunden") == 0);
     lang_load(L"en");
 }
 
@@ -151,8 +151,55 @@ static void resolve_rules(void)
     CHECK(tag[0] != 0);
 }
 
+static void every_key_unique(void)
+{
+    for (int i = 0; i < L_COUNT; i++)
+        for (int j = i + 1; j < L_COUNT; j++)
+            if (strcmp(g_lang_keys[i], g_lang_keys[j]) == 0) {
+                printf("  duplicate key %s\n", g_lang_keys[i]);
+                CHECK(!"duplicate key");
+            }
+}
+
+/* every English string uses only the placeholders a translation can be checked against */
+static void english_placeholders_valid(void)
+{
+    for (int i = 0; i < L_COUNT; i++) {
+        char seq[32];
+        if (!lang_ph_seq(g_lang_en[i], seq, 32)) {
+            printf("  bad placeholder in %s\n", g_lang_keys[i]);
+            CHECK(!"bad placeholder");
+        }
+    }
+}
+
+/* lang\en.txt (tools\gen-lang-template.ps1) parses back to exactly the built-in English */
+static void en_template_matches(void)
+{
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    wchar_t *sl = wcsrchr(path, L'\\'); if (sl) *sl = 0;
+    StringCchCatW(path, MAX_PATH, L"\\..\\..\\..\\lang\\en.txt");
+    size_t len = 0;
+    char *data = lang_read_file(path, &len);
+    CHECK(data != NULL);
+    if (!data) return;
+    const wchar_t *t[L_COUNT]; wchar_t name[48]; bool rtl;
+    parse_into(data, len, t, name, &rtl);
+    HeapFree(GetProcessHeap(), 0, data);
+    CHECK(wcscmp(name, L"English") == 0);
+    for (int i = 0; i < L_COUNT; i++)
+        if (!t[i] || wcscmp(t[i], g_lang_en[i]) != 0) {
+            printf("  en.txt differs at %s\n", g_lang_keys[i]);
+            CHECK(!"en.txt matches strings.h");
+        }
+}
+
 int main(void)
 {
+    every_key_unique();
+    en_template_matches();
+    english_placeholders_valid();
     parse_basic();
     bom_crlf_whitespace();
     escapes();

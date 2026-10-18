@@ -2,7 +2,11 @@
 
 /* ------------------------------------------------------------------ headless (CLI) */
 
+/* Console output stays English in every language (scripts and logs parse it). */
+static const wchar_t *task_en(Task t) { return g_lang_en[L_TASK_SHUTDOWN + t]; }
+
 static void run_headless(Plan *plan) {
+    lang_load(NULL); /* English: rt_start's description and errors go to the console */
     Runtime r;
     memset(&r, 0, sizeof(r));
     r.plan = *plan;
@@ -22,10 +26,10 @@ static void run_headless(Plan *plan) {
         long long rem = rt_remaining(&r);
         if (rem <= 0) {
             if (do_task_ex(r.plan.task, r.plan.force)) {
-                wprintf(L"PowerNapp: executed '%ls'.\n", TASK_NAMES[r.plan.task]);
+                wprintf(L"PowerNapp: executed '%ls'.\n", task_en(r.plan.task));
             } else {
                 fwprintf(stderr, L"PowerNapp: failed to execute '%ls'.\n",
-                    TASK_NAMES[r.plan.task]);
+                    task_en(r.plan.task));
                 exit(3);
             }
             if (r.plan.mode == M_INTERVAL || r.plan.mode == M_DAILY || r.plan.mode == M_WEEKLY) {
@@ -52,7 +56,7 @@ static void run_headless(Plan *plan) {
                 rem <= (long long)r.plan.remind_min * 60 && rem > 5) {
             wchar_t dur[32];
             fmt_dur(rem, dur, 32);
-            wprintf(L"PowerNapp: '%ls' in %ls \x2026\n", TASK_NAMES[r.plan.task], dur);
+            wprintf(L"PowerNapp: '%ls' in %ls \x2026\n", task_en(r.plan.task), dur);
             r.reminded = true;
         }
         Sleep(1000);
@@ -94,9 +98,9 @@ static void warn_then_fire(Task task, unsigned warn_secs, bool force) {
     }
     snooze_mark(0);
     if (do_task_ex(task, force)) {
-        wprintf(L"PowerNapp: executed '%ls'.\n", TASK_NAMES[task]);
+        wprintf(L"PowerNapp: executed '%ls'.\n", task_en(task));
     } else {
-        fwprintf(stderr, L"PowerNapp: failed to execute '%ls'.\n", TASK_NAMES[task]);
+        fwprintf(stderr, L"PowerNapp: failed to execute '%ls'.\n", task_en(task));
         exit(3);
     }
 }
@@ -250,7 +254,7 @@ int wmain(int argc, wchar_t **argv) {
             StringCchPrintfW(args, 96, L"--task %ls --fire-now --warn-secs 60", TASK_CLI[task]);
             if (wts_create(WTS_DAILY, trig, L"", args)) {
                 wprintf(L"PowerNapp: Scheduled '%ls' daily at %02u:%02u (Task Scheduler: '" WTS_DAILY L"').\n",
-                    TASK_NAMES[task], h, m);
+                    task_en(task), h, m);
                 return 0;
             }
             fwprintf(stderr, L"PowerNapp: couldn't create the scheduled task.\n");

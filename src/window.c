@@ -88,39 +88,40 @@ static void acc_sync_all(void) {
     static const wchar_t *FULLDAYS[] = { L"Monday", L"Tuesday", L"Wednesday", L"Thursday",
         L"Friday", L"Saturday", L"Sunday" };
     wchar_t v[128];
-    acc_control(G.combo_action, L"Action", ROLE_SYSTEM_COMBOBOX, L"What happens when the time comes");
-    acc_value(G.combo_action, TASK_NAMES[G.rt.plan.task]);
-    acc_control(G.combo_mode, L"Schedule", ROLE_SYSTEM_COMBOBOX, L"Choose what triggers the action");
+    acc_control(G.combo_action, TR(L_ACTION_TITLE), ROLE_SYSTEM_COMBOBOX, TR(L_ACTION_SUB));
+    acc_value(G.combo_action, TASK_TR(G.rt.plan.task));
+    acc_control(G.combo_mode, TR(L_SCHED_TITLE), ROLE_SYSTEM_COMBOBOX, TR(L_SCHED_SUB));
     get_text(G.combo_mode, v, 128); acc_value(G.combo_mode, v);
-    acc_control(G.combo_cd, L"Countdown", ROLE_SYSTEM_COMBOBOX, NULL);
+    acc_control(G.combo_cd, TR(L_ACC_COUNTDOWN), ROLE_SYSTEM_COMBOBOX, NULL);
     get_text(G.combo_cd, v, 128); acc_value(G.combo_cd, v);
-    acc_control(G.combo_idle, L"Idle time", ROLE_SYSTEM_COMBOBOX, NULL);
+    acc_control(G.combo_idle, TR(L_ACC_IDLE), ROLE_SYSTEM_COMBOBOX, NULL);
     get_text(G.combo_idle, v, 128); acc_value(G.combo_idle, v);
-    acc_control(G.time_btn, L"Time", ROLE_SYSTEM_COMBOBOX, L"Opens the time picker");
+    acc_control(G.time_btn, TR(L_TIME_TITLE), ROLE_SYSTEM_COMBOBOX, TR(L_ACC_TIME));
     acc_time_btn(G.time_btn, G.rt.plan.h, G.rt.plan.m);
-    acc_control(G.wake_btn, L"Wake time", ROLE_SYSTEM_COMBOBOX, L"Not from shut down: the PC must be asleep");
+    acc_control(G.wake_btn, TR(L_OPT_WAKE_TIME), ROLE_SYSTEM_COMBOBOX, TR(L_ACC_WAKE_TIME));
     acc_time_btn(G.wake_btn, G.wake_h, G.wake_m);
     for (int i = 0; i < 7; i++) {
-        acc_control(G.day[i], FULLDAYS[i], ROLE_SYSTEM_CHECKBUTTON, L"Repeat on");
+        acc_control(G.day[i], FULLDAYS[i], ROLE_SYSTEM_CHECKBUTTON, TR(L_DAYS_TITLE));
         acc_checked(G.day[i], (G.rt.plan.days >> i) & 1);
     }
-    static const struct { HWND *h; const wchar_t *n, *d; bool *on; } T[] = {
-        { &G.tg_remind, L"Remind me 1 minute before", L"1 minute countdown before the action, to stop or snooze", &G.remind_on },
-        { &G.tg_force, L"Force apps to close", L"Apps with unsaved work won't stop the action", &G.force_on },
-        { &G.tg_auto, L"Start with Windows", L"Run in the system tray when you sign in", &G.auto_on },
-        { &G.tg_tray, L"Tray icon", L"Off: close exits; Windows runs the task", &G.tray_on },
-        { &G.tg_wake, L"Wake up", L"Wake the PC from sleep every day", &G.wake_on },
+    static const struct { HWND *h; StrId n, d; bool *on; } T[] = {
+        { &G.tg_remind, L_OPT_REMIND, L_ACC_REMIND, &G.remind_on },
+        { &G.tg_force, L_OPT_FORCE, L_ACC_FORCE, &G.force_on },
+        { &G.tg_auto, L_OPT_AUTO, L_ACC_AUTO, &G.auto_on },
+        { &G.tg_tray, L_OPT_TRAY, L_ACC_TRAY, &G.tray_on },
+        { &G.tg_wake, L_OPT_WAKE, L_ACC_WAKE, &G.wake_on },
     };
     for (int i = 0; i < 5; i++) {
-        acc_control(*T[i].h, T[i].n, ROLE_SYSTEM_CHECKBUTTON, T[i].d);
+        acc_control(*T[i].h, TR(T[i].n), ROLE_SYSTEM_CHECKBUTTON, TR(T[i].d));
         acc_checked(*T[i].h, *T[i].on);
     }
     wchar_t ht[128], hs[128];
     hero_strings(ht, 128, hs, 128);
-    StringCchPrintfW(v, 128, L"%ls. %ls", ht, hs);
+    StringCchPrintfW(v, 128, TR(L_ACC_HERO), ht, hs);
     acc_desc(G.btn_start, v); /* name is the button text: Start / Cancel */
-    acc_control(G.rel_power, LINK_POWER, ROLE_SYSTEM_LINK, L"Opens Windows Settings: sleep, screen timeout, power mode");
-    acc_control(G.rel_about, LINK_ABOUT, ROLE_SYSTEM_PUSHBUTTON, APP_NAME L", version " APP_VERSION);
+    acc_control(G.rel_power, TR(L_LINK_POWER), ROLE_SYSTEM_LINK, TR(L_ACC_POWER));
+    StringCchPrintfW(v, 128, TR(L_ACC_ABOUT), APP_NAME, APP_VERSION);
+    acc_control(G.rel_about, TR(L_LINK_ABOUT), ROLE_SYSTEM_PUSHBUTTON, v);
 }
 
 static void acc_sync(HWND h) { (void)h; acc_sync_all(); } /* focus moved: refresh states */
@@ -186,7 +187,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
             if (id == ID_COMBO_ACTION) {
                 FlyItem it[NTASKS];
                 for (int i = 0; i < NTASKS; i++) {
-                    it[i].label = TASK_NAMES[i];
+                    it[i].label = TASK_TR(i);
                     it[i].ic = TASK_ICON[i];
                     it[i].color = TASK_COLOR[i];
                 }
@@ -194,7 +195,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
             } else if (id == ID_COMBO_MODE) {
                 FlyItem it[NGUI_MODES];
                 for (int i = 0; i < NGUI_MODES; i++) {
-                    it[i].label = GUI_MODE_NAMES[i];
+                    it[i].label = MODE_TR(i);
                     it[i].ic = (IconId)-1;
                     it[i].color = 0;
                 }
@@ -270,8 +271,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 if (!wts_wake_register(G.wake_h, G.wake_m)) {
                     G.wake_on = false;
                     wake_save();
-                    MessageBoxW(hwnd, L"Couldn't create the wake task in Task Scheduler.",
-                        L"PowerNapp", MB_OK | MB_ICONWARNING);
+                    MessageBoxW(hwnd, TR(L_ERR_WAKE), APP_NAME, MB_OK | MB_ICONWARNING);
                 }
             } else {
                 wts_wake_delete();
@@ -314,11 +314,12 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         DWORD obtn = WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW; /* Tab-navigable */
 
         /* created in reading order: that is the Tab order */
-        G.btn_start = mk_child(hwnd, L"BUTTON", L"Start", obtn, ID_START, G.f_row);
-        G.combo_action = mk_child(hwnd, L"BUTTON", TASK_NAMES[0], obtn, ID_COMBO_ACTION, G.f_row);
-        G.combo_mode = mk_child(hwnd, L"BUTTON", GUI_MODE_NAMES[0], obtn, ID_COMBO_MODE, G.f_row);
-        G.combo_cd = mk_child(hwnd, L"BUTTON", L"1 hour", obtn, ID_COMBO_CD, G.f_row);
-        G.combo_idle = mk_child(hwnd, L"BUTTON", L"15 minutes", obtn, ID_COMBO_IDLE, G.f_row);
+        G.btn_start = mk_child(hwnd, L"BUTTON", TR(L_BTN_START), obtn, ID_START, G.f_row);
+        /* combo texts are set by update_combo_texts() below */
+        G.combo_action = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_ACTION, G.f_row);
+        G.combo_mode = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_MODE, G.f_row);
+        G.combo_cd = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_CD, G.f_row);
+        G.combo_idle = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_IDLE, G.f_row);
         G.time_btn = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TIME, G.f_row);
         for (int i = 0; i < 7; i++)
             G.day[i] = mk_child(hwnd, L"BUTTON", DAYS[i], obtn, ID_DAY0 + i, G.f_row);
@@ -387,18 +388,17 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             RECT hsr = { htr.left, hcy + S(5), htr.right, hcy + S(25) };
             text_at(hdc, hs, hsr, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
             /* section headers: 14 px semibold, as in the design */
-            text_at(hdc, L"Schedule", G.rc_sched_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
-            text_at(hdc, L"Task", G.rc_task_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
-            text_at(hdc, L"Options", G.rc_opts_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
+            text_at(hdc, TR(L_HDR_SCHEDULE), G.rc_sched_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
+            text_at(hdc, TR(L_HDR_TASK), G.rc_task_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
+            text_at(hdc, TR(L_HDR_OPTIONS), G.rc_opts_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
             /* task rows */
             wchar_t sub[128];
-            StringCchCopyW(sub, 128, L"What happens when the time comes");
             paint_row(hdc, &G.rc_action, TASK_ICON[p->task],
-                L"Action", sub, 216);
-            paint_row(hdc, &G.rc_sched, IC_CALCLK, L"Schedule",
-                L"Choose what triggers the action", 216);
+                TR(L_ACTION_TITLE), TR(L_ACTION_SUB), 216);
+            paint_row(hdc, &G.rc_sched, IC_CALCLK, TR(L_SCHED_TITLE),
+                TR(L_SCHED_SUB), 216);
             time_row_sub(sub, 128);
-            paint_row(hdc, &G.rc_time, IC_CLOCK, L"Time", sub, 258);
+            paint_row(hdc, &G.rc_time, IC_CLOCK, TR(L_TIME_TITLE), sub, 258);
             /* days row */
             if (p->mode == M_WEEKLY) {
                 paint_card(hdc, &G.rc_days);
@@ -407,29 +407,29 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 int dcy = (G.rc_days.top + G.rc_days.bottom) / 2;
                 RECT dr = { G.rc_days.left + S(18), dcy - S(18),
                             G.rc_days.right - S(16 + 7 * 44 + 6 * 4 + 18), dcy + S(2) };
-                text_at(hdc, L"Repeat on", dr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
+                text_at(hdc, TR(L_DAYS_TITLE), dr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
                 RECT dsr = { dr.left, dcy + S(2), dr.right, dcy + S(18) };
-                StringCchPrintfW(sub, 128, L"Repeats %ls", d);
+                StringCchPrintfW(sub, 128, TR(L_DAYS_SUB), d);
                 text_at(hdc, sub, dsr, G.f_sub, T_T2, DT_LEFT | DT_SINGLELINE);
             }
             /* options rows (On/Off labels left of the pill children) */
-            static const struct { RECT *rc; IconId ic; const wchar_t *t; bool *on; } OPTS[] = {
-                { &G.rc_remind, IC_ALERT, L"Remind me 1 minute before", &G.remind_on },
-                { &G.rc_force, IC_APPS, L"Force apps to close", &G.force_on },
-                { &G.rc_auto, IC_ROCKET, L"Start with Windows", &G.auto_on },
-                { &G.rc_tray, IC_MONITOR, L"Tray icon", &G.tray_on },
-                { &G.rc_wake, IC_SUN, L"Wake up", &G.wake_on },
+            static const struct { RECT *rc; IconId ic; StrId t; bool *on; } OPTS[] = {
+                { &G.rc_remind, IC_ALERT, L_OPT_REMIND, &G.remind_on },
+                { &G.rc_force, IC_APPS, L_OPT_FORCE, &G.force_on },
+                { &G.rc_auto, IC_ROCKET, L_OPT_AUTO, &G.auto_on },
+                { &G.rc_tray, IC_MONITOR, L_OPT_TRAY, &G.tray_on },
+                { &G.rc_wake, IC_SUN, L_OPT_WAKE, &G.wake_on },
             };
             for (int i = 0; i < (wake_applies() ? 5 : 4); i++) { /* Wake up is last */
-                paint_row(hdc, OPTS[i].rc, OPTS[i].ic, OPTS[i].t, NULL, 104); /* v3: single line */
+                paint_row(hdc, OPTS[i].rc, OPTS[i].ic, TR(OPTS[i].t), NULL, 104); /* v3: single line */
                 int ocy = (OPTS[i].rc->top + OPTS[i].rc->bottom) / 2;
                 RECT lr = { OPTS[i].rc->right - S(16 + 40 + 12 + 34), ocy - S(10),
                             OPTS[i].rc->right - S(16 + 40 + 12), ocy + S(10) };
-                text_at(hdc, *OPTS[i].on ? L"On" : L"Off", lr, G.f_row, T_T1,
+                text_at(hdc, TR(*OPTS[i].on ? L_OPT_ON : L_OPT_OFF), lr, G.f_row, T_T1,
                     DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
             }
             if (wake_applies() && G.wake_on) {
-                paint_row(hdc, &G.rc_wake_time, IC_CLOCK, L"Wake time", NULL, 258);
+                paint_row(hdc, &G.rc_wake_time, IC_CLOCK, TR(L_OPT_WAKE_TIME), NULL, 258);
             }
             /* footer links are owner-drawn buttons (see WM_DRAWITEM) */
         }
@@ -484,9 +484,9 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         else if (id == ID_START)
             paint_start_btn(di->hDC, di->hwndItem, G.rt.active);
         else if (id == ID_REL_POWER)
-            paint_link(di->hDC, di->hwndItem, LINK_POWER);
+            paint_link(di->hDC, di->hwndItem, TR(L_LINK_POWER));
         else if (id == ID_REL_ABOUT)
-            paint_link(di->hDC, di->hwndItem, LINK_ABOUT);
+            paint_link(di->hDC, di->hwndItem, TR(L_LINK_ABOUT));
         (void)pressed;
         SetViewportOrgEx(mem, 0, 0, NULL);
         BitBlt(screen, di->rcItem.left, di->rcItem.top, bw, bh, mem, 0, 0, SRCCOPY);

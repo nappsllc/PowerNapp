@@ -136,16 +136,17 @@ static bool ts_read(const wchar_t *name, TaskInfo *ti) {
  * RegistrationInfo/Date records when it was scheduled (a countdown's start). */
 static bool wts_create(const wchar_t *name, const wchar_t *trig, const wchar_t *extra,
                        const wchar_t *args) {
-    wchar_t exe[MAX_PATH], exe_x[MAX_PATH * 2], now[32];
+    wchar_t exe[MAX_PATH], exe_x[MAX_PATH * 2], now[32], desc_x[512];
     app_exe(exe, MAX_PATH);
     xml_escape(exe, exe_x, MAX_PATH * 2);
+    xml_escape(TR(L_TS_DESC), desc_x, 512); /* shown in Task Scheduler */
     iso_local(local_now_secs(), now, 32);
     static wchar_t xml[4096];
     StringCchPrintfW(xml, 4096,
         L"<?xml version=\"1.0\" encoding=\"UTF-16\"?>"
         L"<Task version=\"1.2\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">"
         L"<RegistrationInfo><Date>%ls</Date><Author>PowerNapp</Author>"
-        L"<Description>Created by PowerNapp. Change or cancel it in PowerNapp.</Description></RegistrationInfo>"
+        L"<Description>%ls</Description></RegistrationInfo>"
         L"<Triggers>%ls</Triggers>"
         L"<Principals><Principal id=\"Author\"><LogonType>InteractiveToken</LogonType>"
         L"<RunLevel>LeastPrivilege</RunLevel></Principal></Principals>"
@@ -155,7 +156,7 @@ static bool wts_create(const wchar_t *name, const wchar_t *trig, const wchar_t *
         L"%ls%ls</Settings>"
         L"<Actions Context=\"Author\"><Exec><Command>%ls</Command>"
         L"<Arguments>%ls</Arguments></Exec></Actions></Task>",
-        now, trig, wcsstr(extra, L"ExecutionTimeLimit") ? L"" : L"<ExecutionTimeLimit>PT1H</ExecutionTimeLimit>",
+        now, desc_x, trig, wcsstr(extra, L"ExecutionTimeLimit") ? L"" : L"<ExecutionTimeLimit>PT1H</ExecutionTimeLimit>",
         extra, exe_x, args);
     return ts_register(name, xml);
 }

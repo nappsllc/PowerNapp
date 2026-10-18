@@ -5,42 +5,42 @@
 static void hero_strings(wchar_t *title, size_t tn, wchar_t *sub, size_t sn) {
     Runtime *r = &G.rt;
     wchar_t t[32], d[96];
-    const wchar_t *act = TASK_NAMES[r->plan.task];
+    const wchar_t *act = TASK_TR(r->plan.task);
     switch (r->plan.mode) {
     case M_DAILY:
         fmt12(r->plan.h, r->plan.m, t, 32);
-        StringCchPrintfW(title, tn, L"%ls at %ls", act, t);
+        StringCchPrintfW(title, tn, TR(L_PLAN_AT), act, t);
         break;
     case M_WEEKLY:
         fmt12(r->plan.h, r->plan.m, t, 32);
         days_text(r->plan.days, d, 96);
-        StringCchPrintfW(title, tn, L"%ls at %ls on %ls", act, t, d);
+        StringCchPrintfW(title, tn, TR(L_PLAN_AT_ON), act, t, d);
         break;
     case M_COUNTDOWN:
         dur_label(r->plan.cd, d, 96);
-        StringCchPrintfW(title, tn, L"%ls in %ls", act, d);
+        StringCchPrintfW(title, tn, TR(L_PLAN_IN), act, d);
         break;
     case M_IDLE:
         dur_label(r->plan.idle, d, 96);
-        StringCchPrintfW(title, tn, L"%ls after %ls idle", act, d);
+        StringCchPrintfW(title, tn, TR(L_PLAN_IDLE), act, d);
         break;
     default:
         rt_describe(r, title, tn);
     }
     if (!r->active) {
-        StringCchCopyW(sub, sn, L"Not scheduled");
+        StringCchCopyW(sub, sn, TR(L_HERO_OFF));
         return;
     }
     if (r->plan.mode == M_IDLE) {
         dur_label(r->plan.idle, d, 96);
-        StringCchPrintfW(sub, sn, L"Scheduled \x00B7 waiting for %ls of inactivity", d);
+        StringCchPrintfW(sub, sn, TR(L_HERO_IDLE), d);
     } else {
         long long rem = rt_remaining(r);
         long long tgt = local_now_secs() + rem;
         wchar_t dl[64], dur[32];
         day_label(tgt, dl, 64);
         fmt_dur(rem, dur, 32);
-        StringCchPrintfW(sub, sn, L"Scheduled for %ls \x00B7 %ls left", dl, dur);
+        StringCchPrintfW(sub, sn, TR(L_HERO_LEFT), dl, dur);
     }
 }
 
@@ -49,17 +49,17 @@ static void time_row_sub(wchar_t *sub, size_t n) {
     Plan *p = &G.rt.plan;
     wchar_t d[96];
     if (p->mode == M_WEEKLY) {
-        StringCchCopyW(sub, n, L"Runs at this time on the days below");
+        StringCchCopyW(sub, n, TR(L_TIME_SUB_WEEKLY));
     } else if (p->mode == M_COUNTDOWN) {
         dur_label(p->cd, d, 96);
-        StringCchPrintfW(sub, n, L"Runs %ls from Start", d);
+        StringCchPrintfW(sub, n, TR(L_TIME_SUB_CD), d);
     } else if (p->mode == M_IDLE) {
         dur_label(p->idle, d, 96);
-        StringCchPrintfW(sub, n, L"After %ls with no mouse or keyboard", d);
+        StringCchPrintfW(sub, n, TR(L_TIME_SUB_IDLE), d);
     } else {
         long long tgt = next_at(p->h, p->m, 0x7F);
         day_label(tgt, d, 96);
-        StringCchPrintfW(sub, n, L"Next: %ls", d);
+        StringCchPrintfW(sub, n, TR(L_TIME_SUB_NEXT), d);
     }
 }
 
@@ -79,15 +79,15 @@ static void wake_flush(void) {
     G.wake_dirty = false;
     wake_save();
     if (G.wake_on && !wts_wake_register(G.wake_h, G.wake_m))
-        MessageBoxW(G.main, L"Couldn't create the wake task in Task Scheduler.", L"PowerNapp", MB_OK | MB_ICONWARNING);
+        MessageBoxW(G.main, TR(L_ERR_WAKE), APP_NAME, MB_OK | MB_ICONWARNING);
 }
 
 static void update_combo_texts(void) {
-    set_text(G.combo_action, TASK_NAMES[G.rt.plan.task]);
+    set_text(G.combo_action, TASK_TR(G.rt.plan.task));
     int gi = 0;
     for (int i = 0; i < NGUI_MODES; i++)
         if (GUI_MODES[i] == G.rt.plan.mode) gi = i;
-    set_text(G.combo_mode, GUI_MODE_NAMES[gi]);
+    set_text(G.combo_mode, MODE_TR(gi));
     wchar_t d[96];
     dur_label(G.rt.plan.cd, d, 96);
     set_text(G.combo_cd, d);
@@ -99,9 +99,9 @@ static void update_views(void) {
     Runtime *r = &G.rt;
     if (!G.main) return; /* tray-only: nothing to draw */
     /* Called every second while counting down: repaint only what can change. */
-    const wchar_t *bt = r->active ? L"Cancel" : L"Start";
-    wchar_t cur[16];
-    GetWindowTextW(G.btn_start, cur, 16);
+    const wchar_t *bt = TR(r->active ? L_BTN_CANCEL : L_BTN_START);
+    wchar_t cur[64];
+    GetWindowTextW(G.btn_start, cur, 64);
     if (wcscmp(cur, bt)) {                          /* only when the task starts or stops */
         set_text(G.btn_start, bt);
         InvalidateRect(G.btn_start, NULL, FALSE);  /* armed/unarmed style */
@@ -157,10 +157,8 @@ static void tick(void) {
         Mode mode = r->plan.mode;
         if (!do_task(task)) {
             wchar_t m[256];
-            StringCchPrintfW(m, 256,
-                L"Failed to execute '%ls'. (Sleep/Hibernate may be disabled on this PC.)",
-                TASK_NAMES[task]);
-            MessageBoxW(G.main, m, L"PowerNapp", MB_OK | MB_ICONERROR);
+            StringCchPrintfW(m, 256, TR(L_ERR_EXEC), TASK_TR(task));
+            MessageBoxW(G.main, m, APP_NAME, MB_OK | MB_ICONERROR);
         }
         switch (mode) {
         case M_DAILY:
@@ -249,7 +247,7 @@ static void toggle_start(void) {
     }
     save_current();
     const wchar_t *err = schedule();
-    if (err) MessageBoxW(G.main, err, L"PowerNapp", MB_OK | MB_ICONWARNING);
+    if (err) MessageBoxW(G.main, err, APP_NAME, MB_OK | MB_ICONWARNING);
     update_views();
 }
 
@@ -352,8 +350,8 @@ static void paint_start_btn(HDC hdc, HWND btn, bool armed) {
     GetClientRect(btn, &all);
     fill_rect_c(hdc, &all, T_CARD);
     focus_ring(hdc, &rc, 4, T_CARD);
-    wchar_t t[32];
-    GetWindowTextW(btn, t, 32);
+    wchar_t t[64];
+    GetWindowTextW(btn, t, 64);
     bool hot = btn == G.hover_btn;
     if (armed) {
         fill_round(hdc, &rc, 4, hot ? T_CTLHOV : T_CARD, T_CTLBRD);

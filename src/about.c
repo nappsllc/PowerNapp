@@ -11,15 +11,11 @@
 #define RELEASES_URL L"https://github.com/nappsllc/PowerNapp/releases/latest"
 #define CONTACT_URL L"mailto:hi@powernapps.net?subject=PowerNapps%20PowerNapp"
 #define SITE_URL L"https://powernapps.net"
-#define AB_DESC L"A tiny app that shuts down, restarts or sleeps your PC on a schedule. " \
-    L"Windows Task Scheduler does the work, so it uses no memory once closed."
-#define AB_LINK L"More cool apps at powernapps.net"
 #define AB_W 400
 #define AB_H 396
 #define AB_FOOT 316  /* footer band top */
 enum { AB_CONTACT = 1, AB_SITE, AB_UPDATES, AB_OK, AB_N = AB_OK };
-static const wchar_t *AB_NAMES[] = { NULL, L"Contact us button", L"More cool apps at powernapps.net link",
-    L"Check for updates button", L"OK button" };
+static const StrId AB_NAMES[] = { L_COUNT, L_ABOUT_CONTACT_ACC, L_ABOUT_LINK_ACC, L_ABOUT_UPDATES_ACC, L_ABOUT_OK_ACC };
 static struct { HWND wnd; int hover, focus; } AB;
 
 static RECT ab_btn(int i) {
@@ -30,7 +26,7 @@ static RECT ab_btn(int i) {
         HDC dc = GetDC(AB.wnd);
         HGDIOBJ o = SelectObject(dc, G.f_row);
         SIZE sz = { 0 };
-        GetTextExtentPoint32W(dc, AB_LINK, lstrlenW(AB_LINK), &sz);
+        GetTextExtentPoint32W(dc, TR(L_ABOUT_LINK), lstrlenW(TR(L_ABOUT_LINK)), &sz);
         SelectObject(dc, o);
         ReleaseDC(AB.wnd, dc);
         r = (RECT){ S(24), S(248), S(24) + sz.cx, S(268) };
@@ -91,22 +87,24 @@ static LRESULT CALLBACK about_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         text_at(hdc, APP_NAME, tr, G.f_hero, T_T1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         RECT ver = { S(24), S(72), W - S(24), S(92) }, desc = { S(24), S(100), W - S(24), S(160) },
              ask = { S(24), S(172), W - S(24), S(192) }, copy = { S(24), S(276), W - S(24), S(296) };
-        text_at(hdc, L"Version " APP_VERSION, ver, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
-        text_at(hdc, AB_DESC, desc, G.f_row, T_T2, DT_LEFT | DT_WORDBREAK);
-        text_at(hdc, L"Questions, concerns or a gig to offer?", ask, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
-        text_at(hdc, L"\x00A9 2026 PowerNapps (by Denis Platonov), Los Angeles", copy, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE);
+        wchar_t vs[64];
+        StringCchPrintfW(vs, 64, TR(L_ABOUT_VERSION), APP_VERSION);
+        text_at(hdc, vs, ver, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
+        text_at(hdc, TR(L_ABOUT_DESC), desc, G.f_row, T_T2, DT_LEFT | DT_WORDBREAK);
+        text_at(hdc, TR(L_ABOUT_ASK), ask, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
+        text_at(hdc, TR(L_ABOUT_COPYRIGHT), copy, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE);
         RECT con = ab_btn(AB_CONTACT), site = ab_btn(AB_SITE), upd = ab_btn(AB_UPDATES), ok = ab_btn(AB_OK);
         g_focus_cues = true; /* keyboard-only dialog: the focused control always shows it */
         RECT f = ab_btn(AB.focus);
         focus_ring(hdc, &f, AB.focus == AB_SITE ? 2 : 4, AB.focus >= AB_UPDATES ? T_WIN : T_CARD);
         fill_round(hdc, &con, 4, AB.hover == AB_CONTACT ? T_CTLHOV : T_CTL, T_CTLBRD);
-        text_at(hdc, L"Contact us", con, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-        text_at(hdc, AB_LINK, site, G.f_row, AB.hover == AB_SITE ? T_ACCHOV : T_ACCENT,
+        text_at(hdc, TR(L_ABOUT_CONTACT), con, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        text_at(hdc, TR(L_ABOUT_LINK), site, G.f_row, AB.hover == AB_SITE ? T_ACCHOV : T_ACCENT,
             DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP);
         fill_round(hdc, &upd, 4, AB.hover == AB_UPDATES ? T_CTLHOV : T_CTL, T_CTLBRD);
-        text_at(hdc, L"Check for updates", upd, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        text_at(hdc, TR(L_ABOUT_UPDATES), upd, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
         fill_round(hdc, &ok, 4, AB.hover == AB_OK ? T_ACCHOV : T_ACCENT, T_ACCENT);
-        text_at(hdc, L"OK", ok, G.f_row, T_ONACC, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        text_at(hdc, TR(L_ABOUT_OK), ok, G.f_row, T_ONACC, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
         BitBlt(wdc, 0, 0, W, H, hdc, 0, 0, SRCCOPY);
         SelectObject(hdc, ob);
         DeleteObject(bm);
@@ -139,7 +137,7 @@ static LRESULT CALLBACK about_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case VK_TAB: case VK_LEFT: case VK_RIGHT: case VK_UP: case VK_DOWN: {
             bool back = wp == VK_LEFT || wp == VK_UP || (wp == VK_TAB && GetKeyState(VK_SHIFT) < 0);
             AB.focus = back ? (AB.focus == 1 ? AB_N : AB.focus - 1) : (AB.focus == AB_N ? 1 : AB.focus + 1);
-            acc_desc(hwnd, AB_NAMES[AB.focus]);
+            acc_desc(hwnd, TR(AB_NAMES[AB.focus]));
             InvalidateRect(hwnd, NULL, FALSE);
             break;
         }
@@ -160,14 +158,16 @@ static void about_open(void) {
     int x = (mr.left + mr.right - W) / 2, y = (mr.top + mr.bottom - H) / 2;
     AB.hover = 0;
     AB.focus = AB_OK; /* as a ContentDialog's default button */
-    AB.wnd = CreateWindowExW(0, ABOUT_CLASS, L"About " APP_NAME, WS_POPUP, x, y, W, H,
+    AB.wnd = CreateWindowExW(0, ABOUT_CLASS, TR(L_ABOUT_TITLE), WS_POPUP, x, y, W, H,
         G.main, NULL, GetModuleHandleW(NULL), NULL);
     if (!AB.wnd) return;
     DWORD corner = 2; /* DWMWCP_ROUND */
     DwmSetWindowAttribute(AB.wnd, 33, &corner, sizeof(corner));
-    acc_control(AB.wnd, L"About " APP_NAME, ROLE_SYSTEM_DIALOG,
-        L"Version " APP_VERSION L". " AB_DESC L" Questions, concerns or a gig to offer? "
-        L"\x00A9 2026 PowerNapps (by Denis Platonov), Los Angeles. Controls: Contact us, " AB_LINK L", Check for updates, OK.");
+    wchar_t ver[64], desc[1024];
+    StringCchPrintfW(ver, 64, TR(L_ABOUT_VERSION), APP_VERSION);
+    StringCchPrintfW(desc, 1024, TR(L_ABOUT_ACC), ver, TR(L_ABOUT_DESC), TR(L_ABOUT_ASK), TR(L_ABOUT_COPYRIGHT),
+        TR(L_ABOUT_CONTACT), TR(L_ABOUT_LINK), TR(L_ABOUT_UPDATES), TR(L_ABOUT_OK));
+    acc_control(AB.wnd, TR(L_ABOUT_TITLE), ROLE_SYSTEM_DIALOG, desc);
     EnableWindow(G.main, FALSE);
     ShowWindow(AB.wnd, SW_SHOW);
     SetForegroundWindow(AB.wnd);

@@ -24,6 +24,10 @@ jobs:
         shell: cmd
         run: build.bat
 
+      - name: English template in sync (lang\en.txt)
+        shell: pwsh
+        run: ./tools/gen-lang-template.ps1 -Check
+
       - name: Unit tests
         shell: cmd
         run: tests\unit\build.bat

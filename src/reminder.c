@@ -26,15 +26,8 @@ static struct {
     void (*done)(int result);
 } RM;
 
-static const wchar_t *RM_WHAT[] = { /* index-aligned with Task */
-    L"PowerNapp will shut down the PC when the countdown ends.",
-    L"PowerNapp will restart the PC when the countdown ends.",
-    L"PowerNapp will put the PC to sleep when the countdown ends.",
-    L"PowerNapp will hibernate the PC when the countdown ends.",
-    L"PowerNapp will sign you out when the countdown ends.",
-    L"PowerNapp will lock the PC when the countdown ends.",
-    L"PowerNapp will turn off the display when the countdown ends.",
-};
+/* "PowerNapp will ... when the countdown ends.": L_RM_SHUTDOWN.., index-aligned with Task */
+#define RM_WHAT(t) TR((StrId)(L_RM_SHUTDOWN + (t)))
 
 static RECT rm_btn(int i) { /* primary 152 wide, the others 112, 8 apart, 24 margins */
     static const int X0[4] = { 0, 24, 184, 304 }, X1[4] = { 0, 176, 296, 416 };
@@ -81,23 +74,23 @@ static LRESULT CALLBACK rm_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         fill_rect_c(hdc, &foot, T_WIN);
         line_c(hdc, 0, S(RM_FOOT), W, S(RM_FOOT), T_CARDBRD, 1);
         icon_bg(hdc, S(24), S(24), S(32), TASK_ICON[RM.task], TASK_COLOR[RM.task], T_CARD);
-        wchar_t t[96];
-        StringCchPrintfW(t, 96, L"%ls in %d:%02d", TASK_NAMES[RM.task], secs / 60, secs % 60);
+        wchar_t t[128], mmss[16];
+        StringCchPrintfW(mmss, 16, L"%d:%02d", secs / 60, secs % 60);
+        StringCchPrintfW(t, 128, TR(L_RM_TITLE), TASK_TR(RM.task), mmss);
         RECT tr = { S(68), S(24), W - S(24), S(56) };
         text_at(hdc, t, tr, RM.f_title, T_T1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
         RECT dr = { S(24), S(64), W - S(24), S(84) };
-        text_at(hdc, RM_WHAT[RM.task], dr, RM.f_text, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+        text_at(hdc, RM_WHAT(RM.task), dr, RM.f_text, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         /* WinUI ProgressBar: 1 px track, 3 px rounded fill, draining */
         float px = SF(24), pw = (float)(W - S(48)), py = SF(96);
         line_c(hdc, S(24), S(97), W - S(24), S(97), T_CTLBRD, 1);
         float frac = RM.span ? (float)left / (float)RM.span : 0;
         if (frac > 0) aa_rrect(hdc, px, py, pw * frac, SF(3), SF(1.5f), T_ACCENT, T_ACCENT, 0);
-        static const wchar_t *LBL[4] = { 0, NULL, L"Snooze 10 min", L"Stop" };
         for (int i = 1; i <= 3; i++) {
             RECT r = rm_btn(i);
-            wchar_t now_lbl[48];
-            const wchar_t *lbl = LBL[i];
-            if (i == 1) { StringCchPrintfW(now_lbl, 48, L"%ls now", TASK_NAMES[RM.task]); lbl = now_lbl; }
+            wchar_t now_lbl[96];
+            const wchar_t *lbl = TR(i == 2 ? L_RM_SNOOZE : L_RM_STOP);
+            if (i == 1) { StringCchPrintfW(now_lbl, 96, TR(L_RM_NOW), TASK_TR(RM.task)); lbl = now_lbl; }
             g_focus_cues = RM.keys && RM.focus == i;
             focus_ring(hdc, &r, 4, T_WIN);
             if (i == 1) {
@@ -208,15 +201,14 @@ static void reminder_show(Task task, unsigned secs, void (*done)(int result)) {
     mi.cbSize = sizeof(mi);
     GetMonitorInfoW(MonitorFromWindow(G.main, MONITOR_DEFAULTTOPRIMARY), &mi);
     int W = S(RM_W), H = S(RM_H);
-    RM.wnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, RM_CLASS, L"PowerNapp reminder", WS_POPUP,
+    RM.wnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, RM_CLASS, TR(L_RM_WINDOW), WS_POPUP,
         mi.rcWork.right - W - S(12), mi.rcWork.bottom - H - S(12), W, H, NULL, NULL, GetModuleHandleW(NULL), NULL);
     if (!RM.wnd) return;
     DWORD corner = 2; /* DWMWCP_ROUND: rounded, shadowed, system border */
     DwmSetWindowAttribute(RM.wnd, 33, &corner, sizeof(corner));
-    wchar_t name[96], desc[200];
-    StringCchPrintfW(name, 96, L"%ls in %u seconds", TASK_NAMES[task], secs);
-    StringCchPrintfW(desc, 200, L"%ls Buttons: %ls now, Snooze 10 minutes, Stop. Escape stops.",
-        RM_WHAT[task], TASK_NAMES[task]);
+    wchar_t name[128], desc[320];
+    StringCchPrintfW(name, 128, TR(L_RM_ACC_NAME), TASK_TR(task), (int)secs);
+    StringCchPrintfW(desc, 320, TR(L_RM_ACC_DESC), RM_WHAT(task), TASK_TR(task));
     acc_control(RM.wnd, name, ROLE_SYSTEM_ALERT, desc);
     SetTimer(RM.wnd, 1, 250, NULL);
     ShowWindow(RM.wnd, SW_SHOW);
