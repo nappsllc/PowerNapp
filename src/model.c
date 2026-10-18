@@ -24,7 +24,8 @@ static const int CDS[] = { 5, 10, 15, 30, 45, 60, 90, 120, 180, 240 };
 #define NCDS 10
 static const int IDLES[] = { 5, 10, 15, 30, 60 };
 #define NIDLES 5
-static const wchar_t *DAYS[] = { L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat", L"Sun" };
+/* CLI spellings (Monday-based, like the days bitmask); shown names come from day_name() */
+static const wchar_t *DAY_CLI[] = { L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat", L"Sun" };
 
 #define APP_NAME L"PowerNapp"   /* shown name (v3 design), the same in every language */
 #define REMIND_MIN 1 /* the reminder comes 1 minute before, with a countdown */
@@ -179,12 +180,6 @@ static void fmt_dur(long long secs, wchar_t *out, size_t n) {
     else StringCchPrintfW(out, n, L"%lld:%02lld", m, s);
 }
 
-static void fmt12(int h, int m, wchar_t *out, size_t n) {
-    int h12 = h % 12;
-    if (h12 == 0) h12 = 12;
-    StringCchPrintfW(out, n, L"%d:%02d %ls", h12, m, h < 12 ? L"AM" : L"PM");
-}
-
 static void dur_label(int mins, wchar_t *out, size_t n) {
     if (mins < 60) StringCchPrintfW(out, n, TR(mins == 1 ? L_TIME_MINUTE : L_TIME_MINUTES), mins);
     else if (mins % 60 == 0) StringCchPrintfW(out, n, TR(mins == 60 ? L_TIME_HOUR : L_TIME_HOURS), mins / 60);
@@ -195,17 +190,20 @@ static void days_text(int days, wchar_t *out, size_t n) {
     if (days == 0x7F) { StringCchCopyW(out, n, TR(L_DAYS_EVERY)); return; }
     if (days == 0x1F) { StringCchCopyW(out, n, TR(L_DAYS_WEEKDAYS)); return; }
     if (days == 0x60) { StringCchCopyW(out, n, TR(L_DAYS_WEEKENDS)); return; }
-    wchar_t buf[128]; buf[0] = L'\0';
-    for (int i = 0; i < 7; i++) {
+    wchar_t buf[128], nm[32]; buf[0] = L'\0';
+    int first = first_day();
+    for (int k = 0; k < 7; k++) {          /* in the regional week order */
+        int i = (first + k) % 7;
         if (days & (1 << i)) {
             if (buf[0]) StringCchCatW(buf, 128, L", ");
-            StringCchCatW(buf, 128, DAYS[i]);
+            day_name(i, false, nm, 32);
+            StringCchCatW(buf, 128, nm);
         }
     }
     StringCchPrintfW(out, n, L"%ls", buf[0] ? buf : TR(L_DAYS_NONE));
 }
 
-/* "Today, 11:30 PM" for a local-epoch target */
+/* "Today, 11:30 PM" (or "Today, 23:30") for a local-epoch target */
 static void day_label(long long target, wchar_t *out, size_t n) {
     int y; unsigned mo, d;
     civil_from_days(target / 86400, &y, &mo, &d);
@@ -215,17 +213,12 @@ static void day_label(long long target, wchar_t *out, size_t n) {
     long long sod = target % 86400;
     int h = (int)(sod / 3600), m = (int)((sod % 3600) / 60);
     wchar_t t[32];
-    fmt12(h, m, t, 32);
-    const wchar_t *day;
+    fmt_time(h, m, t, 32);
+    wchar_t wdn[32];
+    const wchar_t *day = wdn;
     if (diff == 0) day = TR(L_DAY_TODAY);
     else if (diff == 1) day = TR(L_DAY_TOMORROW);
-    else {
-        /* weekday from civil: 1970-01-01 = Thursday (4) */
-        int wd = (int)((target / 86400 + 3) % 7); /* 0=Mon */
-        static const wchar_t *FULL[] = { L"Monday", L"Tuesday", L"Wednesday",
-            L"Thursday", L"Friday", L"Saturday", L"Sunday" };
-        day = FULL[wd];
-    }
+    else day_name((int)((target / 86400 + 3) % 7), true, wdn, 32); /* 1970-01-01 = Thursday; 0 = Mon */
     StringCchPrintfW(out, n, TR(L_DAY_AT), day, t);
 }
 
@@ -303,11 +296,11 @@ static void rt_describe(const Runtime *r, wchar_t *out, size_t n) {
     wchar_t d[96];
     switch (r->plan.mode) {
     case M_DAILY:
-        fmt12(r->plan.h, r->plan.m, t, 32);
+        fmt_time(r->plan.h, r->plan.m, t, 32);
         StringCchPrintfW(out, n, TR(L_PLAN_AT), tn, t);
         break;
     case M_WEEKLY:
-        fmt12(r->plan.h, r->plan.m, t, 32);
+        fmt_time(r->plan.h, r->plan.m, t, 32);
         days_text(r->plan.days, d, 96);
         StringCchPrintfW(out, n, TR(L_PLAN_AT_ON), tn, t, d);
         break;

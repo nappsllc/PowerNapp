@@ -243,12 +243,17 @@ static void layout(HWND hwnd) {
     place_right(G.combo_idle, &G.rc_time, 242, 32);
     place_right(G.time_btn, &G.rc_time, 242, 32);
 
-    /* day buttons: 7 x 44, 4 apart, right-aligned */
-    for (int i = 0; i < 7; i++) {
+    /* day buttons: 7 x 44, 4 apart, right-aligned, from the regional first day of the week;
+       the Tab order (z-order after the Time button) follows, should the region change */
+    HWND prev = G.time_btn;
+    for (int k = 0, first = first_day(); k < 7; k++) {
+        int i = (first + k) % 7;
         if (weekly) {
-            int bx = G.rc_days.right - S(16) - S(7 * 44 + 6 * 4) + i * S(48);
+            int bx = G.rc_days.right - S(16) - S(7 * 44 + 6 * 4) + k * S(48);
             move_ctl(G.day[i], bx, (G.rc_days.top + G.rc_days.bottom - S(32)) / 2, S(44), S(32));
         }
+        SetWindowPos(G.day[i], prev, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOREDRAW);
+        prev = G.day[i];
         ShowWindow(G.day[i], weekly ? SW_SHOW : SW_HIDE);
     }
 

@@ -186,7 +186,7 @@ static int days_from_list(const wchar_t *s) {
         tok[k] = L'\0';
         if (!k) break;
         for (int i = 0; i < 7; i++)
-            if (!_wcsicmp(tok, DAYS[i])) { mask |= 1 << i; break; }
+            if (!_wcsicmp(tok, DAY_CLI[i])) { mask |= 1 << i; break; }
     }
     return mask;
 }

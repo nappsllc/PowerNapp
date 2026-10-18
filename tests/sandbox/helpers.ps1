@@ -43,6 +43,11 @@ public static class H {
   public static IntPtr MK(int lo, int hi) { return (IntPtr)(int)((ushort)lo | ((uint)(ushort)hi << 16)); }
   public static int ClientW(IntPtr h) { RECT r; GetClientRect(h, out r); return r.R; }
   public static int ClientH(IntPtr h) { RECT r; GetClientRect(h, out r); return r.B; }
+  public static int Left(IntPtr h) { RECT r; GetWindowRect(h, out r); return r.L; }
+  // regional format: set through the API (keeps Windows' locale cache in step), then tell running apps
+  [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern bool SetLocaleInfoW(uint lcid, uint type, string data);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern IntPtr SendMessageTimeoutW(IntPtr h, uint m, IntPtr w, string l, uint f, uint t, out IntPtr r);
+  public static void IntlChanged() { IntPtr r; SendMessageTimeoutW((IntPtr)0xffff, 0x1A, IntPtr.Zero, "intl", 2, 3000, out r); }
   public static IntPtr Focus(IntPtr main) { uint p; uint t = GetWindowThreadProcessId(main, out p); var g = new GTI(); g.cb = Marshal.SizeOf(g); GetGUIThreadInfo(t, ref g); return g.f; }
   public static bool Capture(IntPtr h, string path) {
     RECT r; if (!GetWindowRect(h, out r)) return false; int w = r.R - r.L, hh = r.B - r.T; if (w <= 0 || hh <= 0) return false;

@@ -8,11 +8,11 @@ static void hero_strings(wchar_t *title, size_t tn, wchar_t *sub, size_t sn) {
     const wchar_t *act = TASK_TR(r->plan.task);
     switch (r->plan.mode) {
     case M_DAILY:
-        fmt12(r->plan.h, r->plan.m, t, 32);
+        fmt_time(r->plan.h, r->plan.m, t, 32);
         StringCchPrintfW(title, tn, TR(L_PLAN_AT), act, t);
         break;
     case M_WEEKLY:
-        fmt12(r->plan.h, r->plan.m, t, 32);
+        fmt_time(r->plan.h, r->plan.m, t, 32);
         days_text(r->plan.days, d, 96);
         StringCchPrintfW(title, tn, TR(L_PLAN_AT_ON), act, t, d);
         break;
@@ -333,8 +333,8 @@ static void paint_day_btn(HDC hdc, HWND btn, bool on) {
     fill_rect_c(hdc, &all, T_CARD);
     focus_ring(hdc, &rc, 4, T_CARD);
     bool hot = btn == G.hover_btn;
-    wchar_t d[8];
-    GetWindowTextW(btn, d, 8);
+    wchar_t d[32];
+    GetWindowTextW(btn, d, 32);
     if (on) {
         fill_round(hdc, &rc, 4, hot ? T_ACCHOV : T_ACCENT, T_CTLBOT);
         text_at(hdc, d, rc, G.f_row, T_ONACC, DT_CENTER | DT_SINGLELINE | DT_VCENTER);

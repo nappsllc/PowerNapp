@@ -113,6 +113,40 @@ Check 'client width = 960 at 150%' { $w = [H]::ClientW($main); Note "client ${w}
 Snap 'PowerNappWnd' 'main-150'
 StopApp
 
+# ----------------------------------------------------------------------------- regional format
+# The clock and the first day of the week follow the Windows regional format, in every language.
+Section 'Regional format (24-hour clock, week from Sunday)'
+$intl = 'HKCU:\Control Panel\International'
+$LC = @{ sShortTime = 0x79; sTimeFormat = 0x1003; iFirstDayOfWeek = 0x100C }   # LOCALE_SSHORTTIME, _STIMEFORMAT, _IFIRSTDAYOFWEEK
+$saved = @{}; foreach ($k in $LC.Keys) { $saved[$k] = (Get-ItemProperty $intl).$k }
+function SetIntl($v) { foreach ($k in $v.Keys) { [H]::SetLocaleInfoW(0x400, $LC[$k], $v[$k]) | Out-Null; Set-ItemProperty $intl $k $v[$k] }; [H]::IntlChanged(); Start-Sleep -Milliseconds 700 }
+function FirstDayBtn { 220..226 | Sort-Object { [H]::Left([H]::GetDlgItem($main, $_)) } | Select-Object -First 1 }
+Log "regional format before: $(($saved.Keys | ForEach-Object { "$_=$($saved[$_])" }) -join ', ')"
+SetIntl @{ sShortTime = 'HH:mm'; sTimeFormat = 'HH:mm'; iFirstDayOfWeek = '6' }
+SetIni 'task' 5; SetIni 'mode' 5; SetIni 'h' 23; SetIni 'm' 0; SetIni 'days' 127
+$main = StartApp
+Snap 'PowerNappWnd' 'regional-24h'
+Check 'time button reads 23:00' { $v = [H]::Uia([H]::GetDlgItem($main, 210), 30045); Note "value=$v"; $v -eq '23:00' }
+Check 'time picker has no AM/PM column (Right wraps after the minutes, Down turns 23 into 0)' {
+    for ($i = 0; $i -lt 10 -and [H]::GetDlgCtrlID([H]::Focus($main)) -ne 210; $i++) { Key 0x09 }
+    Key 0x20; for ($i = 0; $i -lt 40 -and [H]::F('PowerNappTimePick') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 100 }
+    Start-Sleep -Milliseconds 400; Snap 'PowerNappTimePick' 'timepicker-24h'
+    Key 0x27; Key 0x27; Key 0x27; Key 0x28; Key 0x0D   # Right x3: hour, minute, back to hour (AM/PM with 3 columns)
+    for ($i = 0; $i -lt 40 -and [H]::F('PowerNappTimePick') -ne [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 100 }
+    $h = Ini 'h'; Note "h 23 > $h"; $h -eq '0' }
+Check 'the first day button is Sunday, and first in the Tab order' {
+    $id = FirstDayBtn; $n = [H]::Uia([H]::GetDlgItem($main, $id), 30005)
+    Key 0x09; $t = [H]::GetDlgCtrlID([H]::Focus($main))
+    Note "leftmost $id '$n', Tab after Time: $t"; $id -eq 226 -and $n -eq 'Sunday' -and $t -eq 226 }
+# changed while the app runs: 12-hour clock, week from Monday
+SetIntl @{ sShortTime = 'h:mm tt'; sTimeFormat = 'h:mm:ss tt'; iFirstDayOfWeek = '0' }
+Check 'live change: time button reads 12:00 AM, the first day button is Monday' {
+    $v = [H]::Uia([H]::GetDlgItem($main, 210), 30045); $id = FirstDayBtn; $n = [H]::Uia([H]::GetDlgItem($main, $id), 30005)
+    Note "value=$v, leftmost $id '$n'"; $v -eq '12:00 AM' -and $id -eq 220 -and $n -eq 'Monday' }
+StopApp
+SetIntl $saved
+Check 'regional format restored' { $now = (Get-ItemProperty $intl); $ok = $true; foreach ($k in $saved.Keys) { if ($now.$k -ne $saved[$k]) { $ok = $false; Note "$k=$($now.$k)" } }; $ok }
+
 # ----------------------------------------------------------------------------- Task Scheduler is the schedule
 Section 'Task Scheduler is the schedule'
 schtasks /delete /tn PowerNapp /f 2>$null | Out-Null

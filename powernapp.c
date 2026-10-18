@@ -53,6 +53,7 @@
  * Unity build: one translation unit, so everything stays static and the build is a
  * single cl call. Order matters: each part uses only what comes before it. */
 #include "src/lang.c"     /* TR(): every UI string, so before everything that shows text */
+#include "src/locale.c"   /* regional clock, first day of week, day and AM/PM names */
 #include "src/model.c"
 #include "src/taskschd.c"
 #include "src/theme.c"

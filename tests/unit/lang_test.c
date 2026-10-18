@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "../../src/lang.c"
+#include "../../src/locale.c"
 
 static int g_fail;
 #define CHECK(c) do { if (!(c)) { printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #c); g_fail++; } } while (0)
@@ -195,6 +196,40 @@ static void en_template_matches(void)
         }
 }
 
+/* src/locale.c: regional clock, localized day and AM/PM names */
+static void clock_and_day_names(void)
+{
+    wchar_t t[32];
+    g_clock_test = 2;                                   /* 24-hour, "HH:mm" */
+    fmt_time(23, 5, t, 32); CHECK(wcscmp(t, L"23:05") == 0);
+    fmt_time(9, 5, t, 32); CHECK(wcscmp(t, L"09:05") == 0);
+    CHECK(clock_24h());
+    g_clock_test = 1;                                   /* 24-hour, "H:mm" */
+    fmt_time(9, 5, t, 32); CHECK(wcscmp(t, L"9:05") == 0);
+    g_clock_test = 0;                                   /* 12-hour */
+    CHECK(!clock_24h());
+    lang_load(L"en");
+    fmt_time(23, 5, t, 32); CHECK(wcscmp(t, L"11:05 PM") == 0);
+    fmt_time(0, 0, t, 32); CHECK(wcscmp(t, L"12:00 AM") == 0);
+    fmt_time(12, 30, t, 32); CHECK(wcscmp(t, L"12:30 PM") == 0);
+    day_name(0, false, t, 32); CHECK(wcscmp(t, L"Mon") == 0);
+    day_name(6, true, t, 32); CHECK(wcscmp(t, L"Sunday") == 0);
+    ampm(true, t, 32); CHECK(wcscmp(t, L"PM") == 0);
+    const char *de = "@name = Deutsch\naction.title = Aktion\n";
+    write_lang_file(L"de", de, strlen(de));
+    lang_load(L"de");
+    CHECK(wcscmp(lang_tag(), L"de") == 0);
+    day_name(0, false, t, 32); CHECK(wcscmp(t, L"Mo") == 0);
+    day_name(6, true, t, 32); CHECK(wcscmp(t, L"Sonntag") == 0);
+    ampm(false, t, 32); CHECK(t[0] != 0);
+    day_name(7, true, t, 32); CHECK(t[0] == 0);         /* out of range: empty, no crash */
+    lang_load(L"en");
+    g_clock_test = -1;                                  /* follows Windows */
+    int f = first_day();
+    CHECK(f >= 0 && f <= 6);
+    fmt_time(23, 5, t, 32); CHECK(t[0] != 0);
+}
+
 int main(void)
 {
     every_key_unique();
@@ -208,6 +243,7 @@ int main(void)
     placeholder_reorder_falls_back();
     garbage_file();
     resolve_rules();
+    clock_and_day_names();
     printf(g_fail ? "%d check(s) FAILED\n" : "all checks passed\n", g_fail);
     return g_fail;
 }

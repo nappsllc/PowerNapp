@@ -79,14 +79,12 @@ static void free_ui_fonts(void) {
 
 static void acc_time_btn(HWND btn, int h, int m) {
     wchar_t v[16];
-    fmt12(h, m, v, 16);
+    fmt_time(h, m, v, 16);
     acc_value(btn, v);
 }
 
 static void acc_sync_all(void) {
     if (!G.main || !g_acc) return;
-    static const wchar_t *FULLDAYS[] = { L"Monday", L"Tuesday", L"Wednesday", L"Thursday",
-        L"Friday", L"Saturday", L"Sunday" };
     wchar_t v[128];
     acc_control(G.combo_action, TR(L_ACTION_TITLE), ROLE_SYSTEM_COMBOBOX, TR(L_ACTION_SUB));
     acc_value(G.combo_action, TASK_TR(G.rt.plan.task));
@@ -101,7 +99,8 @@ static void acc_sync_all(void) {
     acc_control(G.wake_btn, TR(L_OPT_WAKE_TIME), ROLE_SYSTEM_COMBOBOX, TR(L_ACC_WAKE_TIME));
     acc_time_btn(G.wake_btn, G.wake_h, G.wake_m);
     for (int i = 0; i < 7; i++) {
-        acc_control(G.day[i], FULLDAYS[i], ROLE_SYSTEM_CHECKBUTTON, TR(L_DAYS_TITLE));
+        day_name(i, true, v, 128);
+        acc_control(G.day[i], v, ROLE_SYSTEM_CHECKBUTTON, TR(L_DAYS_TITLE));
         acc_checked(G.day[i], (G.rt.plan.days >> i) & 1);
     }
     static const struct { HWND *h; StrId n, d; bool *on; } T[] = {
@@ -321,8 +320,12 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         G.combo_cd = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_CD, G.f_row);
         G.combo_idle = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_IDLE, G.f_row);
         G.time_btn = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TIME, G.f_row);
-        for (int i = 0; i < 7; i++)
-            G.day[i] = mk_child(hwnd, L"BUTTON", DAYS[i], obtn, ID_DAY0 + i, G.f_row);
+        for (int k = 0; k < 7; k++) { /* G.day[] and the ids are Monday-based; created from the first day */
+            int i = (first_day() + k) % 7;
+            wchar_t dn[32];
+            day_name(i, false, dn, 32);
+            G.day[i] = mk_child(hwnd, L"BUTTON", dn, obtn, ID_DAY0 + i, G.f_row);
+        }
         G.tg_remind = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_REMIND, G.f_row);
         G.tg_force = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_FORCE, G.f_row);
         G.tg_auto = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_AUTO, G.f_row);
@@ -573,6 +576,13 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         return 0;
     }
     case WM_SETTINGCHANGE:
+        if (lp && lstrcmpiW((const wchar_t *)lp, L"intl") == 0) { /* regional format: clock, first day */
+            tp_close();
+            layout(hwnd);
+            acc_sync_all();
+            RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+            return 0;
+        }
         read_theme();
         apply_dark_mode(hwnd);
         InvalidateRect(hwnd, NULL, TRUE);
