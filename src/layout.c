@@ -219,6 +219,7 @@ static void layout(HWND hwnd) {
     else SetRectEmpty(&G.rc_wake);
     if (wake_applies() && G.wake_on) G.rc_wake_time = opt_row(content);
     else SetRectEmpty(&G.rc_wake_time);
+    G.rc_lang = opt_row(content); /* Language: always the last row */
 
     /* footer links, 20 px below the last card: Power settings left, About right */
     g_cy += S(20 - GAP);
@@ -266,6 +267,7 @@ static void layout(HWND hwnd) {
     place_right(G.tg_wake, &G.rc_wake, 40, 20);
     ShowWindow(G.wake_btn, wake_applies() && G.wake_on ? SW_SHOW : SW_HIDE);
     place_right(G.wake_btn, &G.rc_wake_time, 242, 32);
+    place_right(G.combo_lang, &G.rc_lang, 200, 32);
 
     /* hero start button: 120 x 32, 20 px from the right */
     move_ctl(G.btn_start, G.rc_hero.right - S(20 + 120), (G.rc_hero.top + G.rc_hero.bottom - S(32)) / 2,

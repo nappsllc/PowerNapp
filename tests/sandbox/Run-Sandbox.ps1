@@ -27,6 +27,10 @@ if ($Suite -eq 'msix') {
         if (-not (Test-Path (Join-Path $root $f))) { throw "$f not found: run build.bat and makensis first" }
         Copy-Item (Join-Path $root $f) $stage
     }
+    if ($Suite -eq 'main') { # language picker: the repo's lang\ and the pseudo-language
+        Copy-Item -Recurse (Join-Path $root 'lang') (Join-Path $stage 'lang')
+        Copy-Item (Join-Path $PSScriptRoot 'qps-ploc.txt') $stage
+    }
     if ($Suite -eq 'main') { # the upgrade test installs the last release under the old name first
         gh release download v1.0.1 --repo nappsllc/PowerNapp --pattern PowerOff-setup.exe --output (Join-Path $stage 'PowerOff-1.0.1-setup.exe')
         if ($LASTEXITCODE) { throw 'could not download PowerOff 1.0.1 (gh release download)' }

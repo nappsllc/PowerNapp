@@ -236,6 +236,58 @@ static void clock_and_day_names(void)
     fmt_time(23, 5, t, 32); CHECK(t[0] != 0);
 }
 
+/* tests\sandbox\qps-ploc.txt (gen-lang-template.ps1 -Pseudo): every key loads (placeholders kept) */
+static void pseudo_file_complete(void)
+{
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    wchar_t *sl = wcsrchr(path, L'\\'); if (sl) *sl = 0;
+    StringCchCatW(path, MAX_PATH, L"\\..\\..\\..\\tests\\sandbox\\qps-ploc.txt");
+    size_t len = 0;
+    char *data = lang_read_file(path, &len);
+    CHECK(data != NULL);
+    if (!data) return;
+    const wchar_t *t[L_COUNT]; wchar_t name[48]; bool rtl;
+    parse_into(data, len, t, name, &rtl);
+    HeapFree(GetProcessHeap(), 0, data);
+    CHECK(wcscmp(name, L"Pseudo") == 0);
+    for (int i = 0; i < L_COUNT; i++)
+        if (!t[i] || wcslen(t[i]) < wcslen(g_lang_en[i]) * 14 / 10) {
+            printf("  qps-ploc.txt missing or short at %s\n", g_lang_keys[i]);
+            CHECK(!"pseudo value loads and is 40 percent longer");
+        }
+}
+
+/* the language picker's entries: Windows default (named after what it resolves to), then each language */
+static void picker_items(void)
+{
+    LangInfo li[3] = { { L"en", L"English", false }, { L"de", L"Deutsch", false }, { L"qps-ploc", L"Pseudo", false } };
+    LangItem it[8];
+    lang_load(L"en");
+    int n = lang_items(li, 3, L"de", it, 8);
+    CHECK(n == 4);
+    CHECK(it[0].tag[0] == 0 && wcscmp(it[0].label, L"Windows default (Deutsch)") == 0);
+    CHECK(wcscmp(it[1].tag, L"en") == 0 && wcscmp(it[1].label, L"English") == 0);
+    CHECK(wcscmp(it[3].tag, L"qps-ploc") == 0 && wcscmp(it[3].label, L"Pseudo") == 0);
+    n = lang_items(li, 3, L"xx", it, 8);              /* resolved tag not listed: named English */
+    CHECK(wcscmp(it[0].label, L"Windows default (English)") == 0);
+    n = lang_items(li, 1, L"en", it, 8);              /* no lang folder: Windows default and English */
+    CHECK(n == 2);
+    CHECK(lang_items(li, 3, L"en", it, 2) == 2);      /* capped at max */
+    n = lang_items(li, 3, L"en", it, 8);
+    CHECK(lang_item_index(it, n, L"") == 0);
+    CHECK(lang_item_index(it, n, L"en") == 1);
+    CHECK(lang_item_index(it, n, L"QPS-PLOC") == 3);
+    CHECK(lang_item_index(it, n, L"fr") == 0);        /* saved language missing: Windows default */
+    CHECK(lang_item_index(it, n, NULL) == 0);
+    const char *x = "@name = Xx\nlanguage.default = Standard (%ls)\n";
+    write_lang_file(L"xx", x, strlen(x));
+    lang_load(L"xx");                                 /* the label is in the current language */
+    lang_items(li, 3, L"de", it, 8);
+    CHECK(wcscmp(it[0].label, L"Standard (Deutsch)") == 0);
+    lang_load(L"en");
+}
+
 int main(void)
 {
     every_key_unique();
@@ -250,6 +302,8 @@ int main(void)
     garbage_file();
     resolve_rules();
     clock_and_day_names();
+    picker_items();
+    pseudo_file_complete();
     printf(g_fail ? "%d check(s) FAILED\n" : "all checks passed\n", g_fail);
     return g_fail;
 }

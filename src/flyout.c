@@ -10,12 +10,34 @@ typedef struct {
     COLORREF color;
 } FlyItem;
 
+#define FLY_MAX 48   /* the language list: Windows default + English + every translation */
+#define FLY_ROWS 12  /* longer lists scroll (wheel, arrows, Page Up/Down) */
+
 static struct {
     HWND wnd, owner;
     int combo_id;
-    FlyItem items[16];
+    FlyItem items[FLY_MAX];
     int count, sel, hover, pick;
+    int top, rows; /* first visible item, visible items */
 } FLY = { .pick = -1 }; /* -1: no pending pick (0 would read as "first item picked") */
+
+static int fly_clamp_top(int top) {
+    if (top > FLY.count - FLY.rows) top = FLY.count - FLY.rows;
+    return top < 0 ? 0 : top;
+}
+
+static int fly_item_at(int y) { /* client y -> item index, -1 outside */
+    int r = (y - S(2)) / S(36);
+    if (y < S(2) || r >= FLY.rows || FLY.top + r >= FLY.count) return -1;
+    return FLY.top + r;
+}
+
+static void fly_scroll(int top) {
+    top = fly_clamp_top(top);
+    if (top == FLY.top) return;
+    FLY.top = top;
+    InvalidateRect(FLY.wnd, NULL, FALSE);
+}
 
 static void acc_sync_all(void); /* window.c */
 
@@ -34,22 +56,29 @@ static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, 
     fly_close();
     FLY.owner = owner;
     FLY.combo_id = combo_id;
+    if (count > FLY_MAX) count = FLY_MAX;
     FLY.count = count;
     FLY.sel = sel;
     FLY.hover = -1;
     FLY.pick = -1;
-    for (int i = 0; i < count && i < 16; i++) FLY.items[i] = items[i];
+    for (int i = 0; i < count; i++) FLY.items[i] = items[i];
     /* design: 208 wide (or the control's width + 8), 2 px padding, 36 px items, opened
-     * over the control so the selected item sits on it: left -4, top -(sel*36 + 6) */
+     * over the control so the selected item sits on it: left -4, top -(sel*36 + 6).
+     * A list longer than FLY_ROWS (or the screen) scrolls, the selection near the middle. */
     int ih = S(36), w = btn_rc->right - btn_rc->left + S(8);
     if (w < S(208)) w = S(208);
-    int h = count * ih + S(4);
-    POINT pt = { btn_rc->left - S(4), btn_rc->top - (sel * ih + S(6)) };
+    POINT pt = { btn_rc->left - S(4), btn_rc->top };
     ClientToScreen(owner, &pt);
     HMONITOR mon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
     MONITORINFO mi;
     mi.cbSize = sizeof(mi);
     GetMonitorInfoW(mon, &mi);
+    int fit = (mi.rcWork.bottom - mi.rcWork.top - S(4)) / ih;
+    FLY.rows = count < FLY_ROWS ? count : FLY_ROWS;
+    if (FLY.rows > fit && fit > 0) FLY.rows = fit;
+    FLY.top = fly_clamp_top(sel - FLY.rows / 2);
+    int h = FLY.rows * ih + S(4);
+    pt.y -= (sel - FLY.top) * ih + S(6);
     if (pt.y + h > mi.rcWork.bottom) pt.y = mi.rcWork.bottom - h;
     if (pt.y < mi.rcWork.top) pt.y = mi.rcWork.top;
     if (pt.x + w > mi.rcWork.right) pt.x = mi.rcWork.right - w;
@@ -72,6 +101,16 @@ static void fly_pick(int idx) { /* report like a click: WM_COMMAND with the inde
     PostMessageW(owner, WM_COMMAND, MAKEWPARAM(cid, 0), (LPARAM)idx);
 }
 
+/* wheel, from the popup or forwarded by the main window: 3 items a notch */
+static void fly_wheel(int delta) {
+    static int rest; /* touchpads send fractions of a notch */
+    if (!FLY.wnd) return;
+    rest += delta * 3;
+    int n = rest / WHEEL_DELTA;
+    rest -= n * WHEEL_DELTA;
+    fly_scroll(FLY.top - n);
+}
+
 /* keyboard, forwarded by the combo button (the popup never takes focus) */
 static bool fly_key(WPARAM vk) {
     if (!FLY.wnd) return false;
@@ -81,10 +120,14 @@ static bool fly_key(WPARAM vk) {
     case VK_RETURN: case VK_SPACE: fly_pick(cur); return true;
     case VK_UP: FLY.hover = cur > 0 ? cur - 1 : 0; break;
     case VK_DOWN: FLY.hover = cur < FLY.count - 1 ? cur + 1 : FLY.count - 1; break;
+    case VK_PRIOR: FLY.hover = cur - FLY.rows > 0 ? cur - FLY.rows : 0; break;
+    case VK_NEXT: FLY.hover = cur + FLY.rows < FLY.count - 1 ? cur + FLY.rows : FLY.count - 1; break;
     case VK_HOME: FLY.hover = 0; break;
     case VK_END: FLY.hover = FLY.count - 1; break;
     default: return false;
     }
+    if (FLY.hover < FLY.top) FLY.top = FLY.hover; /* keep it in view */
+    else if (FLY.hover >= FLY.top + FLY.rows) FLY.top = FLY.hover - FLY.rows + 1;
     InvalidateRect(FLY.wnd, NULL, FALSE);
     acc_value(GetDlgItem(FLY.owner, FLY.combo_id), FLY.items[FLY.hover].label); /* announce */
     return true;
@@ -101,8 +144,9 @@ static LRESULT CALLBACK fly_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HBITMAP bm = CreateCompatibleBitmap(wdc, rc.right, rc.bottom);
         HGDIOBJ ob = SelectObject(hdc, bm);
         fill_rect_c(hdc, &rc, T_FLY); /* DWM rounds the window and draws its border */
-        for (int i = 0; i < FLY.count; i++) {
-            RECT ir = { S(4), S(2) + i * S(36), rc.right - S(4), S(2) + (i + 1) * S(36) };
+        for (int i = FLY.top; i < FLY.top + FLY.rows; i++) {
+            int r = i - FLY.top;
+            RECT ir = { S(4), S(2) + r * S(36), rc.right - S(4), S(2) + (r + 1) * S(36) };
             if (i == FLY.sel || i == FLY.hover)
                 fill_round(hdc, &ir, 4, T_SUBTLE, T_SUBTLE);
             if (i == FLY.sel) /* WinUI selection pill */
@@ -110,6 +154,11 @@ static LRESULT CALLBACK fly_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             RECT tr = { ir.left + S(12), ir.top, ir.right - S(12), ir.bottom };
             text_at(hdc, FLY.items[i].label, tr, G.f_row, T_T1,
                 DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+        }
+        if (FLY.rows < FLY.count) { /* WinUI's collapsed scroll bar: a thin thumb at the right */
+            float track = (float)(rc.bottom - S(8)), th = track * FLY.rows / FLY.count;
+            float ty = SF(4) + track * FLY.top / FLY.count;
+            aa_rrect(hdc, (float)rc.right - SF(4), ty, SF(2), th, SF(1), T_T2, T_T2, 0);
         }
         BitBlt(wdc, 0, 0, rc.right, rc.bottom, hdc, 0, 0, SRCCOPY);
         SelectObject(hdc, ob);
@@ -122,8 +171,8 @@ static LRESULT CALLBACK fly_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
         RECT rc;
         GetClientRect(hwnd, &rc);
-        int idx = (pt.y - S(2)) / S(36);
-        if (pt.x < 0 || pt.x > rc.right || idx < 0 || idx >= FLY.count) idx = -1;
+        int idx = fly_item_at(pt.y);
+        if (pt.x < 0 || pt.x > rc.right) idx = -1;
         if (idx != FLY.hover) {
             FLY.hover = idx;
             InvalidateRect(hwnd, NULL, FALSE);
@@ -134,8 +183,8 @@ static LRESULT CALLBACK fly_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
         RECT rc;
         GetClientRect(hwnd, &rc);
-        int idx = (pt.y - S(2)) / S(36);
-        if (idx >= 0 && idx < FLY.count && pt.x >= 0 && pt.x <= rc.right) {
+        int idx = fly_item_at(pt.y);
+        if (idx >= 0 && pt.x >= 0 && pt.x <= rc.right) {
             fly_pick(idx);
         } else {
             fly_close();
@@ -150,6 +199,9 @@ static LRESULT CALLBACK fly_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         return 0;
     case WM_KEYDOWN:
         fly_key(wp);
+        return 0;
+    case WM_MOUSEWHEEL:
+        fly_wheel(GET_WHEEL_DELTA_WPARAM(wp));
         return 0;
     case WM_ERASEBKGND:
         return 1;

@@ -255,6 +255,36 @@ static int lang_list(LangInfo *out, int max)
     return n;
 }
 
+/* ---- the language picker's entries ---- */
+typedef struct { wchar_t tag[LANG_TAG_MAX], label[LANG_NAME_MAX + 64]; } LangItem;
+
+/* "Windows default (<def_tag's own name>)" with tag "" first, then every language of list (lang_list
+   order). def_tag: what the Windows default resolves to now. Labels are in the current language. */
+static int lang_items(const LangInfo *list, int n, const wchar_t *def_tag, LangItem *out, int max)
+{
+    if (max <= 0) return 0;
+    const wchar_t *dn = L"English";
+    for (int i = 0; i < n; i++)
+        if (def_tag && _wcsicmp(list[i].tag, def_tag) == 0) { dn = list[i].name; break; }
+    out[0].tag[0] = 0;
+    StringCchPrintfW(out[0].label, LANG_NAME_MAX + 64, TR(L_LANGUAGE_DEFAULT), dn);
+    int k = 1;
+    for (int i = 0; i < n && k < max; i++, k++) {
+        StringCchCopyW(out[k].tag, LANG_TAG_MAX, list[i].tag);
+        StringCchCopyW(out[k].label, LANG_NAME_MAX + 64, list[i].name);
+    }
+    return k;
+}
+
+/* The entry for a saved setting: "" or a language that is no longer there -> 0 (Windows default). */
+static int lang_item_index(const LangItem *it, int n, const wchar_t *setting)
+{
+    if (!setting || !setting[0]) return 0;
+    for (int i = 1; i < n; i++)
+        if (_wcsicmp(it[i].tag, setting) == 0) return i;
+    return 0;
+}
+
 /* ---- resolving ---- */
 static bool lang_pick(const wchar_t **avail, int n, const wchar_t *tag, wchar_t *out, size_t on)
 {

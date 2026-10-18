@@ -118,6 +118,8 @@ static void acc_sync_all(void) {
     hero_strings(ht, 128, hs, 128);
     StringCchPrintfW(v, 128, TR(L_ACC_HERO), ht, hs);
     acc_desc(G.btn_start, v); /* name is the button text: Start / Cancel */
+    acc_control(G.combo_lang, TR(L_LANGUAGE_TITLE), ROLE_SYSTEM_COMBOBOX, NULL);
+    get_text(G.combo_lang, v, 128); acc_value(G.combo_lang, v);
     acc_control(G.rel_power, TR(L_LINK_POWER), ROLE_SYSTEM_LINK, TR(L_ACC_POWER));
     StringCchPrintfW(v, 128, TR(L_ACC_ABOUT), APP_NAME, APP_VERSION);
     acc_control(G.rel_about, TR(L_LINK_ABOUT), ROLE_SYSTEM_PUSHBUTTON, v);
@@ -133,6 +135,31 @@ static void ui_after_plan_change(void) {
     update_views();
     RedrawWindow(G.main, NULL, NULL, RDW_INVALIDATE | RDW_ALLCHILDREN);
     acc_sync_all();
+}
+
+/* The language setting changed (or its file did): load it and rebuild every text in place,
+ * no restart. Popups are closed first; they are rebuilt with the new strings when reopened. */
+static void apply_language(void) {
+    fly_close();
+    tp_close();
+    about_close();
+    lang_load_saved();
+    set_tray_tip();
+    if (!G.main || !G.ready) return;
+    /* fonts: the same Segoe UI faces serve every language (Windows' font linking covers other
+       scripts), so nothing to rebuild here */
+    update_combo_texts();
+    lang_picker_refresh();
+    set_text(G.btn_start, TR(G.rt.active ? L_BTN_CANCEL : L_BTN_START));
+    for (int i = 0; i < 7; i++) {
+        wchar_t dn[32];
+        day_name(i, false, dn, 32);
+        set_text(G.day[i], dn);
+    }
+    layout(G.main);
+    update_views();
+    acc_sync_all();
+    RedrawWindow(G.main, NULL, NULL, RDW_INVALIDATE | RDW_ALLCHILDREN);
 }
 
 /* WM_COMMAND: button clicks and flyout picks */
@@ -174,8 +201,34 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
         save_current();
         return 0;
     }
+    if (fly_pick && id == ID_COMBO_LANG) {
+        int i = FLY.pick;
+        FLY.pick = -1;
+        if (i >= 0 && i < g_lang_n) {
+            lang_save_setting(g_lang_items[i].tag); /* "" = Windows default */
+            apply_language();
+        }
+        return 0;
+    }
     if (notif == BN_CLICKED) {
         switch (id) {
+        case ID_COMBO_LANG: {
+            RECT rc;
+            GetWindowRect((HWND)lp, &rc);
+            POINT pt = { rc.left, rc.top };
+            ScreenToClient(hwnd, &pt);
+            RECT brc = { pt.x, pt.y, pt.x + (rc.right - rc.left), pt.y + (rc.bottom - rc.top) };
+            InflateRect(&brc, -S(CTL_PAD), -S(CTL_PAD));
+            int sel = lang_picker_refresh(); /* a file added or removed since: listed now */
+            FlyItem it[FLY_MAX];
+            for (int i = 0; i < g_lang_n; i++) {
+                it[i].label = g_lang_items[i].label;
+                it[i].ic = (IconId)-1;
+                it[i].color = 0;
+            }
+            fly_open(hwnd, id, it, g_lang_n, sel, &brc);
+            return 0;
+        }
         case ID_COMBO_ACTION: case ID_COMBO_MODE: case ID_COMBO_CD: case ID_COMBO_IDLE: {
             RECT rc;
             GetWindowRect((HWND)lp, &rc); /* screen coords, convert below */
@@ -332,11 +385,13 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         G.tg_tray = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_TRAY, G.f_row);
         G.tg_wake = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_WAKE, G.f_row);
         G.wake_btn = mk_child(hwnd, L"BUTTON", L"", obtn, ID_WAKE_TIME, G.f_row);
+        G.combo_lang = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_LANG, G.f_row);
         G.rel_power = mk_child(hwnd, L"BUTTON", L"", obtn, ID_REL_POWER, G.f_row);
         G.rel_about = mk_child(hwnd, L"BUTTON", L"", obtn, ID_REL_ABOUT, G.f_row);
 
         G.ready = true;
         update_combo_texts();
+        lang_picker_refresh();
         layout(hwnd);
         update_views();
         acc_sync_all();
@@ -434,6 +489,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (wake_applies() && G.wake_on) {
                 paint_row(hdc, &G.rc_wake_time, IC_CLOCK, TR(L_OPT_WAKE_TIME), NULL, 258);
             }
+            paint_row(hdc, &G.rc_lang, IC_LANG, TR(L_LANGUAGE_TITLE), NULL, 216);
             /* footer links are owner-drawn buttons (see WM_DRAWITEM) */
         }
         SetViewportOrgEx(hdc, 0, 0, NULL);
@@ -466,7 +522,8 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         bool pressed = (di->itemState & ODS_SELECTED) != 0;
         /* focus ring only when focus came from the keyboard */
         g_focus_cues = (di->itemState & ODS_FOCUS) && G.kbd_nav;
-        if (id == ID_COMBO_ACTION || id == ID_COMBO_MODE || id == ID_COMBO_CD || id == ID_COMBO_IDLE)
+        if (id == ID_COMBO_ACTION || id == ID_COMBO_MODE || id == ID_COMBO_CD || id == ID_COMBO_IDLE ||
+                id == ID_COMBO_LANG)
             paint_combo_btn(di->hDC, di->hwndItem);
         else if (id == ID_TIME) {
             paint_time_btn(di->hDC, di->hwndItem, G.rt.plan.h, G.rt.plan.m);
@@ -506,6 +563,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     }
     case WM_MOUSEWHEEL:
         if (TP.wnd) { SendMessageW(TP.wnd, WM_MOUSEWHEEL, wp, lp); return 0; }
+        if (FLY.wnd) { fly_wheel(GET_WHEEL_DELTA_WPARAM(wp)); return 0; }
         break;
     case WM_NCCALCSIZE:
         if (wp) { /* drop the standard caption: client starts at the window top */

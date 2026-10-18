@@ -60,7 +60,7 @@ static volatile LONG g_cancel_req = 0;
 
 typedef enum {
     IC_POWER, IC_RESTART, IC_MOON, IC_SIGNOUT, IC_LOCK, IC_MONITOR,
-    IC_ALERT, IC_APPS, IC_ROCKET, IC_CALCLK, IC_CLOCK, IC_SUN, IC_HIBER,
+    IC_ALERT, IC_APPS, IC_ROCKET, IC_CALCLK, IC_CLOCK, IC_SUN, IC_HIBER, IC_LANG,
 } IconId;
 
 static IconId TASK_ICON[] = {
@@ -83,6 +83,7 @@ typedef struct {
     HWND main;
     /* interactive children */
     HWND combo_action, combo_mode, combo_cd, combo_idle;
+    HWND combo_lang;                  /* Options > Language */
     HWND time_btn;                    /* Time row: opens the time picker flyout */
     HWND day[7];
     HWND tray;                        /* tray icon owner, exists only while the icon is shown */
@@ -95,7 +96,7 @@ typedef struct {
     HBRUSH br_ctl;
     /* layout rects (client coords) */
     RECT rc_sched_hdr, rc_hero, rc_task_hdr, rc_action, rc_sched, rc_time, rc_days;
-    RECT rc_opts_hdr, rc_remind, rc_force, rc_auto, rc_tray, rc_wake, rc_wake_time;
+    RECT rc_opts_hdr, rc_remind, rc_force, rc_auto, rc_tray, rc_wake, rc_wake_time, rc_lang;
     RECT rc_rel1, rc_rel2; /* footer links */
     int client_h;
     /* state */
@@ -118,7 +119,7 @@ typedef struct {
 static Globals G;
 
 enum {
-    ID_COMBO_ACTION = 200, ID_COMBO_MODE, ID_COMBO_CD, ID_COMBO_IDLE,
+    ID_COMBO_ACTION = 200, ID_COMBO_MODE, ID_COMBO_CD, ID_COMBO_IDLE, ID_COMBO_LANG = 205,
     ID_TIME = 210, ID_WAKE_TIME,
     ID_DAY0 = 220, /* ..226 */
     ID_TG_REMIND = 230, ID_TG_FORCE, ID_TG_AUTO, ID_TG_TRAY, ID_TG_WAKE,
@@ -446,6 +447,30 @@ static void ini_path(wchar_t *out, size_t n) {
         return;
     }
     StringCchPrintfW(out, n, L"%s\\PowerNapp\\powernapp.ini", base);
+}
+
+/* The language choice: INI key "lang" ("" or missing = follow Windows). */
+static void lang_setting(wchar_t *out, size_t n) {
+    wchar_t path[MAX_PATH];
+    ini_path(path, MAX_PATH);
+    GetPrivateProfileStringW(L"PowerNapp", L"lang", L"", out, (DWORD)n, path);
+}
+
+static void lang_save_setting(const wchar_t *tag) {
+    wchar_t path[MAX_PATH], dir[MAX_PATH];
+    ini_path(path, MAX_PATH);
+    StringCchCopyW(dir, MAX_PATH, path);
+    wchar_t *bs = wcsrchr(dir, L'\\');
+    if (bs) { *bs = L'\0'; CreateDirectoryW(dir, NULL); }
+    WritePrivateProfileStringW(L"PowerNapp", L"lang", tag, path);
+}
+
+/* load the saved choice, or what Windows' display language resolves to */
+static void lang_load_saved(void) {
+    wchar_t set[LANG_TAG_MAX], tag[LANG_TAG_MAX];
+    lang_setting(set, LANG_TAG_MAX);
+    lang_resolve(set, tag, LANG_TAG_MAX);
+    lang_load(tag);
 }
 
 static void save_config(const Plan *p) {

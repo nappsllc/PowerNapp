@@ -95,6 +95,23 @@ static void update_combo_texts(void) {
     set_text(G.combo_idle, d);
 }
 
+/* Options > Language: the picker's entries, rebuilt when it opens and when the language changes
+ * (the folder is read then, not on every repaint). Sets the combo's text; returns the selection. */
+static LangItem g_lang_items[FLY_MAX];
+static int g_lang_n;
+
+static int lang_picker_refresh(void) {
+    LangInfo li[FLY_MAX - 1];
+    wchar_t def[LANG_TAG_MAX], set[LANG_TAG_MAX];
+    int n = lang_list(li, FLY_MAX - 1);
+    lang_resolve(L"", def, LANG_TAG_MAX); /* what "Windows default" means right now */
+    g_lang_n = lang_items(li, n, def, g_lang_items, FLY_MAX);
+    lang_setting(set, LANG_TAG_MAX);
+    int sel = lang_item_index(g_lang_items, g_lang_n, set);
+    if (G.combo_lang) set_text(G.combo_lang, g_lang_items[sel].label);
+    return sel;
+}
+
 static void update_views(void) {
     Runtime *r = &G.rt;
     if (!G.main) return; /* tray-only: nothing to draw */
@@ -319,8 +336,8 @@ static void paint_combo_btn(HDC hdc, HWND btn) {
     focus_ring(hdc, &rc, 4, T_CARD);
     fill_round(hdc, &rc, 4, btn == G.hover_btn ? T_CTLHOV : T_CTL, T_CTLBRD);
     line_c(hdc, rc.left + S(3), rc.bottom - SB(1) - 1, rc.right - S(4), rc.bottom - SB(1) - 1, T_CTLBOT, 1);
-    wchar_t txt[96];
-    GetWindowTextW(btn, txt, 96);
+    wchar_t txt[128];
+    GetWindowTextW(btn, txt, 128);
     RECT tr = { rc.left + S(11), rc.top, rc.right - S(26), rc.bottom };
     text_at(hdc, txt, tr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
     RECT cr = { rc.right - S(24), rc.top, rc.right, rc.bottom };

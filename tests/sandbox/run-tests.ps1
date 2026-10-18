@@ -70,8 +70,8 @@ Check 'time picker opens' { Cmd 210; $tp = [H]::F('PowerNappTimePick'); Snap 'Po
 Check 'window is named PowerNapp' { $n = [H]::Uia($main, 30005); Note "name=$n"; $n -eq 'PowerNapp' }
 Check 'v3 layout: compact Options rows, links in the footer' {
     $k = $dpi / 96; $ch = [H]::ClientH($main)
-    # daily, Lock (no Wake up): 56 + 28 + 96 + 4 + 36 + 3x(68+4) + 36 + 4x(48+4) + 16 + 20 + 28
-    $want = [math]::Round((56 + 28 + 96 + 4 + 36 + 216 + 36 + 208 + 16 + 20 + 28) * $k)
+    # daily, Lock (no Wake up): 56 + 28 + 96 + 4 + 36 + 3x(68+4) + 36 + 5x(48+4) (4 toggles + Language) + 16 + 20 + 28
+    $want = [math]::Round((56 + 28 + 96 + 4 + 36 + 216 + 36 + 260 + 16 + 20 + 28) * $k)
     Note "client height $ch, expected ~$want"; [math]::Abs($ch - $want) -le 4 }
 Check 'About dialog' { Cmd 251; $a = [H]::F('PowerNappAbout'); Snap 'PowerNappAbout' 'about'
     $n = [H]::Uia($a, 30005); $d = [H]::Uia($a, 30094)
@@ -98,9 +98,9 @@ Check 'time picker by keyboard: Down + Enter changes the hour' {
 # ----------------------------------------------------------------------------- accessibility
 Section 'Screen reader (native UI Automation)'
 StopApp; SetIni 'remind' 1; $main = StartApp
-$names = @{ 240 = 'Start'; 200 = 'Action'; 201 = 'Schedule'; 210 = 'Time'; 230 = 'Remind me 1 minute before'; 250 = 'Power settings'; 251 = 'About' }
-$types = @{ 240 = '50000'; 200 = '50003'; 201 = '50003'; 210 = '50003'; 230 = '50002'; 250 = '50005'; 251 = '50000' }
-foreach ($id in 240, 200, 201, 210, 230, 250, 251) {
+$names = @{ 240 = 'Start'; 200 = 'Action'; 201 = 'Schedule'; 210 = 'Time'; 230 = 'Remind me 1 minute before'; 205 = 'Language'; 250 = 'Power settings'; 251 = 'About' }
+$types = @{ 240 = '50000'; 200 = '50003'; 201 = '50003'; 210 = '50003'; 230 = '50002'; 205 = '50003'; 250 = '50005'; 251 = '50000' }
+foreach ($id in 240, 200, 201, 210, 230, 205, 250, 251) {
     $h = [H]::GetDlgItem($main, $id)
     Check "control $id is '$($names[$id])'" { $n = [H]::Uia($h, 30005); $t = [H]::Uia($h, 30003); $v = [H]::Uia($h, 30045); Note "name=$n type=$t value=$v"; $n -eq $names[$id] -and $t -eq $types[$id] }
 }
@@ -146,6 +146,51 @@ Check 'live change: time button reads 12:00 AM, the first day button is Monday' 
 StopApp
 SetIntl $saved
 Check 'regional format restored' { $now = (Get-ItemProperty $intl); $ok = $true; foreach ($k in $saved.Keys) { if ($now.$k -ne $saved[$k]) { $ok = $false; Note "$k=$($now.$k)" } }; $ok }
+
+# ----------------------------------------------------------------------------- language picker
+# The installer doesn't ship lang\ yet: put the repo's files and the pseudo-language (tests\sandbox\qps-ploc.txt,
+# accented English ~40% longer, @name = Pseudo) next to the installed exe.
+Section 'Language picker'
+$langDir = Join-Path (Split-Path $exe) 'lang'
+New-Item -ItemType Directory -Force $langDir | Out-Null
+Copy-Item "$T\lang\*" $langDir -Force; Copy-Item "$T\qps-ploc.txt" $langDir -Force
+$pseudo = @{}; foreach ($l in Get-Content "$T\qps-ploc.txt" -Encoding UTF8) { if ($l -match '^([a-z_.]+) = (.*)$') { $pseudo[$Matches[1]] = $Matches[2] } }
+function LangValue { [H]::Uia([H]::GetDlgItem([H]::F('PowerNappWnd'), 205), 30045) }
+# open the picker, End (its value announces the last entry), then Enter picks it / Esc closes
+function PickLast($vk) { Cmd 205; $f = [H]::F('PowerNappFly'); $h = [H]::ClientH($f)
+    [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x23, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300; $last = LangValue
+    [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]$vk, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 800
+    @{ shown = $f -ne [IntPtr]::Zero; h = $h; last = $last } }
+StopApp; SetIni 'lang' ''; SetIni 'task' 5; SetIni 'mode' 0; SetIni 'h' 23; SetIni 'm' 0; SetIni 'tray' 1
+$main = StartApp
+Check 'picker reads Windows default (English)' { $v = LangValue; $n = [H]::Uia([H]::GetDlgItem($main, 205), 30005); Note "name=$n value=$v"; $v -eq 'Windows default (English)' }
+Check 'choosing Pseudo switches the window without a restart and saves lang=qps-ploc' {
+    $r = PickLast 0x0D; $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005)
+    Note "last entry=$($r.last) start='$b' want '$($pseudo['btn.start'])' lang=$(Ini 'lang') same window=$([H]::F('PowerNappWnd') -eq $main)"
+    $r.last -eq 'Pseudo' -and $b -eq $pseudo['btn.start'] -and (Ini 'lang') -eq 'qps-ploc' -and [H]::F('PowerNappWnd') -eq $main }
+Snap 'PowerNappWnd' 'language-pseudo'
+StopApp; $main = StartApp
+Check 'restarting keeps the language' { $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005); $v = LangValue; Note "start='$b' picker=$v"; $b -eq $pseudo['btn.start'] -and $v -eq 'Pseudo' }
+StopApp
+Check 'the reminder card from --fire-now shows the pseudo text' {
+    $p = Start-Process $exe -ArgumentList '--task', 'display', '--fire-now', '--warn-secs', '30' -PassThru
+    for ($i = 0; $i -lt 20 -and [H]::F('PowerNappReminder') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 250 }
+    Start-Sleep -Seconds 1; Snap 'PowerNappReminder' 'reminder-pseudo'
+    $rm = [H]::F('PowerNappReminder'); $n = [H]::Uia($rm, 30005)
+    [H]::SendMessage($rm, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Seconds 1; $p.Refresh()
+    if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+    Note "name='$n'"; $rm -ne [IntPtr]::Zero -and $n.Contains($pseudo['task.display']) }
+Check 'saved language missing: starts in English, the picker shows Windows default' {
+    Remove-Item "$langDir\qps-ploc.txt"; $main = StartApp
+    $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005); $v = LangValue; Note "lang=$(Ini 'lang') start=$b picker=$v"
+    $b -eq 'Start' -and $v -eq 'Windows default (English)' }
+StopApp
+Check 'no lang folder: the picker lists only Windows default and English' {
+    Rename-Item $langDir 'lang-away'; $main = StartApp
+    $r = PickLast 0x1B; $want = [math]::Round((2 * 36 + 4) * $dpi / 96)
+    Note "last entry=$($r.last) flyout height $($r.h) (2 entries: $want)"; $r.shown -and $r.last -eq 'English' -and [math]::Abs($r.h - $want) -le 2 }
+StopApp
+Rename-Item "$(Split-Path $exe)\lang-away" 'lang'; SetIni 'lang' ''
 
 # ----------------------------------------------------------------------------- Task Scheduler is the schedule
 Section 'Task Scheduler is the schedule'

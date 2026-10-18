@@ -200,6 +200,7 @@ static const wchar_t ICON_GLYPH[] = {
     0xE823, /* IC_CLOCK   Recent */
     0xE706, /* IC_SUN     Brightness */
     0xE708, /* IC_HIBER   QuietHours */
+    0xF2B7, /* IC_LANG    LocaleLanguage */
 };
 
 static struct { int px; HFONT f; } g_icon_fonts[6]; /* device px -> font */

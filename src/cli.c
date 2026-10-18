@@ -299,6 +299,7 @@ int wmain(int argc, wchar_t **argv) {
             if (t <= warn + 30) warn = (unsigned)t;
             else if (t > 86400 - 300) warn = 0; /* just past it: act now */
         }
+        lang_load_saved(); /* the reminder card speaks the app's language; the console stays English */
         warn_then_fire(task_opt, warn, has_flag(argc, argv, L"--force"));
         return 0;
     }
@@ -414,6 +415,7 @@ int wmain(int argc, wchar_t **argv) {
 
     /* GUI path */
     migrate_from_poweroff(); /* once: PowerOff 1.x settings, tasks and startup entry */
+    lang_load_saved();       /* window and tray (and a reminder they show) */
     read_theme();
     if (has_flag(argc, argv, L"--dark")) G.dark = true;
     if (has_flag(argc, argv, L"--light")) G.dark = false;

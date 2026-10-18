@@ -69,6 +69,8 @@
     X(OPT_WAKE_TIME,     "opt.wake_time",      L"Wake time") \
     X(OPT_ON,            "opt.on",             L"On") \
     X(OPT_OFF,           "opt.off",            L"Off") \
+    X(LANGUAGE_TITLE,    "language.title",     L"Language") \
+    X(LANGUAGE_DEFAULT,  "language.default",   L"Windows default (%ls)") \
     X(LINK_POWER,        "link.power",         L"Power settings") \
     X(LINK_ABOUT,        "link.about",         L"About") \
     X(ACC_COUNTDOWN,     "acc.countdown",      L"Countdown") \
