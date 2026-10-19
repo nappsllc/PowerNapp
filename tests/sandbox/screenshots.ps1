@@ -2,7 +2,7 @@
 # Installs, schedules Sleep at 11 PM with Wake up at 7:00, and captures the English window in each theme
 # (README: screenshot-light.png, screenshot-dark.png). With -Languages: for each language (all = every
 # lang\*.txt the installer shipped), light theme, <tag>\main.png, flyout.png (Action), action.png and
-# language.png (the window with the Action or the title bar's Language dropdown open, taken from the
+# language.png (the window with the Action or the footer's Language dropdown open, taken from the
 # screen), about.png and reminder.png. The dark theme also gets the English set in en-dark\.
 # Every capture is cropped to the visible window: the main window's invisible resize border (8 px left,
 # right and bottom at 100%) is cut off using DWM's extended frame bounds.

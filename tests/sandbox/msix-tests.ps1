@@ -83,9 +83,9 @@ Check 'lang=de: the packaged app reads lang\de.txt (Start and Language in German
     Start-Process "shell:AppsFolder\$($pkg.PackageFamilyName)!PowerNapp"
     for ($i = 0; $i -lt 30 -and [H]::F('PowerNappWnd') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 300 }
     Start-Sleep -Seconds 1; $m = [H]::F('PowerNappWnd'); Snap 'PowerNappWnd' 'msix-de'
-    # German Start is also "Start": the title bar Language button's name (Sprache) tells German from English
+    # German Start is also "Start": the footer Language picker's name (Sprache) tells German from English
     $b = [H]::Uia([H]::GetDlgItem($m, 240), 30005); $l = [H]::Uia([H]::GetDlgItem($m, 205), 30005)
-    Note "start='$b' want '$($de['btn.start'])', language button='$l' want '$($de['language.title'])'"
+    Note "start='$b' want '$($de['btn.start'])', language picker='$l' want '$($de['language.title'])'"
     $de['language.title'] -and $de['language.title'] -ne 'Language' -and $b -eq $de['btn.start'] -and $l -eq $de['language.title'] }
 
 Log "`n**$($script:pass) passed, $($script:fail) failed** - finished $(Get-Date -Format 'HH:mm:ss')"

@@ -49,6 +49,11 @@ public static class H {
   [DllImport("user32.dll")] static extern int GetWindowLongW(IntPtr h, int i);
   public static int ExStyle(IntPtr h) { return GetWindowLongW(h, -20); }
   public static int Hit(IntPtr h, int x, int y) { return (int)SendMessage(h, 0x84, IntPtr.Zero, MK(x, y)); }
+  // the work area (screen less the taskbar) of the monitor a window is on
+  [StructLayout(LayoutKind.Sequential)] struct MI { public int cb; public RECT m, w; public int f; }
+  [DllImport("user32.dll")] static extern IntPtr MonitorFromWindow(IntPtr h, uint f);
+  [DllImport("user32.dll")] static extern bool GetMonitorInfoW(IntPtr m, ref MI mi);
+  public static RECT Work(IntPtr h) { var mi = new MI(); mi.cb = Marshal.SizeOf(mi); GetMonitorInfoW(MonitorFromWindow(h, 2), ref mi); return mi.w; }
   // regional format: set through the API (keeps Windows' locale cache in step), then tell running apps
   [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern bool SetLocaleInfoW(uint lcid, uint type, string data);
   [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] static extern int GetLocaleInfoW(uint lcid, uint type, System.Text.StringBuilder data, int n);
