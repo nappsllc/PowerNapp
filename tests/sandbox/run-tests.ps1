@@ -358,7 +358,7 @@ Cmd 240
 Check 'Start registers the task right away' { $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005); Note "button=$b"; $b -eq 'Cancel' -and (TaskExists 'PowerNapp') }
 Check 'daily trigger, 1 min early, runs on battery' { $x = TaskXml 'PowerNapp'; $sb = $x.Task.Triggers.CalendarTrigger.StartBoundary; Note "start=$sb battery=$($x.Task.Settings.DisallowStartIfOnBatteries) args=$($x.Task.Actions.Exec.Arguments)"; $sb -match 'T22:59:00' -and $x.Task.Settings.DisallowStartIfOnBatteries -eq 'false' }
 Check 'an edit while scheduled updates the task (Force on)' {
-    for ($i = 0; $i -lt 6; $i++) { Key 0x09 }   # Start > Action > Schedule > Time > Remind > Force
+    for ($i = 0; $i -lt 10 -and [H]::GetDlgCtrlID([H]::Focus($main)) -ne 231; $i++) { Key 0x09 }   # Language > Start > ... > Force
     Key 0x20; $a = (TaskXml 'PowerNapp').Task.Actions.Exec.Arguments; Note "args=$a"; Key 0x20
     $a -match '--force' -and (TaskXml 'PowerNapp').Task.Actions.Exec.Arguments -notmatch '--force' }
 [H]::PostMessage($main, $WM_CLOSE, [IntPtr]0, [IntPtr]0) | Out-Null; Start-Sleep -Seconds 4
