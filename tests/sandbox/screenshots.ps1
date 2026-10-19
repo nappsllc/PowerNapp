@@ -1,8 +1,9 @@
 # Screenshots, run inside Windows Sandbox (Run-Sandbox.ps1 -Suite screenshots [-Languages all|de,fr,...]).
 # Installs, schedules Sleep at 11 PM with Wake up at 7:00, and captures the English window in each theme
 # (README: screenshot-light.png, screenshot-dark.png). With -Languages: for each language (all = every
-# lang\*.txt the installer shipped), light theme, <tag>\main.png, flyout.png (Action), language.png (the
-# window with the title bar's Language dropdown open, taken from the screen), about.png and reminder.png.
+# lang\*.txt the installer shipped), light theme, <tag>\main.png, flyout.png (Action), action.png and
+# language.png (the window with the Action or the title bar's Language dropdown open, taken from the
+# screen), about.png and reminder.png. The dark theme also gets the English set in en-dark\.
 # Every capture is cropped to the visible window: the main window's invisible resize border (8 px left,
 # right and bottom at 100%) is cut off using DWM's extended frame bounds.
 param([string]$Languages = '')
@@ -49,6 +50,21 @@ function Shot($cls, $file) {
 }
 function Esc($cls) { $h = [H]::F($cls); if ($h -ne [IntPtr]::Zero) { [H]::SendMessage($h, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 400 } }
 function Fresh { StopApp; $m = StartApp; [H]::PostMessage($m, 0x0200, [IntPtr]0, [H]::MK(5, 5)) | Out-Null; Start-Sleep -Seconds 2; $m }
+# the window with a dropdown open (Cmd: 200 Action, 205 Language), taken from the screen
+function ScreenWith($main, $id, $file) {
+    Cmd $id; Start-Sleep -Milliseconds 500
+    $f = [H]::F('PowerNappFly')
+    if ($f -ne [IntPtr]::Zero) { Log "  - $(Split-Path $file -Leaf) $([Crop]::Screen($main, $f, $file))" } else { Log "  - $(Split-Path $file -Leaf) : no dropdown" }
+    Esc 'PowerNappFly'
+}
+# the reminder card for the scheduled Sleep; the process is killed long before the countdown ends
+function ReminderShot($file) {
+    StopApp
+    $p = Start-Process $exe -ArgumentList '--task', 'sleep', '--fire-now', '--warn-secs', '120' -PassThru
+    for ($i = 0; $i -lt 20 -and [H]::F('PowerNappReminder') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 250 }
+    Start-Sleep -Milliseconds 1500; Shot 'PowerNappReminder' $file
+    Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; StopApp
+}
 
 Start-Process "$T\PowerNapp-setup.exe" -ArgumentList '/S' -Wait
 # the README example: Sleep at 11 PM every day, reminder on, Wake up at 7:00
@@ -63,6 +79,12 @@ foreach ($mode in 'light', 'dark') {
     $main = Fresh                                     # fresh window: no hover, no focus ring
     Log "- $mode (task=$(TaskExists 'PowerNapp'))"
     Shot 'PowerNappWnd' "$R\screenshot-$mode.png"
+    if ($mode -eq 'dark') { # the English set in the dark theme (Store screenshots): en-dark\main, action, reminder
+        $d = "$R\en-dark"; New-Item -ItemType Directory -Force $d | Out-Null
+        Shot 'PowerNappWnd' "$d\main.png"
+        ScreenWith $main 200 "$d\action.png"
+        ReminderShot "$d\reminder.png"
+    }
 }
 
 if ($Languages) {
@@ -77,17 +99,11 @@ if ($Languages) {
         Log "- $tag : Start='$([H]::Uia([H]::GetDlgItem($main, 240), 30005))'"
         Shot 'PowerNappWnd' "$d\main.png"
         Cmd 200; Start-Sleep -Milliseconds 500; Shot 'PowerNappFly' "$d\flyout.png"; Esc 'PowerNappFly'
-        Cmd 205; Start-Sleep -Milliseconds 500
-        $f = [H]::F('PowerNappFly'); if ($f -ne [IntPtr]::Zero) { Log "  - language.png $([Crop]::Screen($main, $f, "$d\language.png"))" } else { Log "  - language.png : no dropdown" }
-        Esc 'PowerNappFly'
+        ScreenWith $main 200 "$d\action.png"
+        ScreenWith $main 205 "$d\language.png"
         Cmd 251; Start-Sleep -Milliseconds 700; Shot 'PowerNappAbout' "$d\about.png"
         $a = [H]::F('PowerNappAbout'); if ($a -ne [IntPtr]::Zero) { [H]::SendMessage($a, $WM_CLOSE, [IntPtr]0, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300 }
-        StopApp
-        # the reminder card for the scheduled Sleep; the process is killed long before the countdown ends
-        $p = Start-Process $exe -ArgumentList '--task', 'sleep', '--fire-now', '--warn-secs', '120' -PassThru
-        for ($i = 0; $i -lt 20 -and [H]::F('PowerNappReminder') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 250 }
-        Start-Sleep -Milliseconds 1500; Shot 'PowerNappReminder' "$d\reminder.png"
-        Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; StopApp
+        ReminderShot "$d\reminder.png"
     }
 }
 Log "`nfinished $(Get-Date -Format 'HH:mm:ss')"
