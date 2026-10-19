@@ -1,8 +1,8 @@
 /* PowerNapp: About dialog. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ about
- * ContentDialog-style box: icon + name, version, description, "Contact us", a link to
- * more apps, copyright, and a footer band with "Check for updates" and an accent "OK".
+ * ContentDialog-style box: icon + name, version, description, "Contact us", "Visit our
+ * website" (more apps), copyright, and a footer band with "Check for updates" and an accent "OK".
  * Modal to the window. Keyboard: Tab / arrows move between the controls, Enter / Space
  * press, Esc closes. Geometry in design pixels, scaled with S(). */
 
@@ -12,22 +12,22 @@
 #define CONTACT_URL L"mailto:hi@powernapps.net?subject=PowerNapps%20PowerNapp"
 #define SITE_URL L"https://powernapps.net/r/powernapp" /* the site redirects with the campaign tags */
 #define AB_W 400
-#define AB_H 396
-#define AB_FOOT 316  /* footer band top */
+#define AB_H 444
+#define AB_FOOT 364  /* footer band top */
 enum { AB_CONTACT = 1, AB_SITE, AB_UPDATES, AB_OK, AB_N = AB_OK };
-static const StrId AB_NAMES[] = { L_COUNT, L_ABOUT_CONTACT_ACC, L_ABOUT_LINK_ACC, L_ABOUT_UPDATES_ACC, L_ABOUT_OK_ACC };
-static struct { HWND wnd; int hover, focus, w, h, dy, cw, lw; } AB; /* w h: size; dy: extra description lines; cw lw: Contact, link widths */
+static const StrId AB_NAMES[] = { L_COUNT, L_ABOUT_CONTACT_ACC, L_ABOUT_VISIT_ACC, L_ABOUT_UPDATES_ACC, L_ABOUT_OK_ACC };
+static struct { HWND wnd; int hover, focus, w, h, dy, cw; } AB; /* w h: size; dy: extra description lines; cw: Contact / Visit width */
 
 /* Sized to the language: as wide as its longest line (400 in the design), taller when the
- * description needs more than 3 lines, Contact us as wide as its text + 40. */
+ * description needs more than 3 lines; Contact us and Visit our website one width, the longer text + 40. */
 static void ab_measure(void) {
     wchar_t vs[64];
     StringCchPrintfW(vs, 64, TR(L_ABOUT_VERSION), APP_VERSION);
-    const wchar_t *line[] = { TR(L_ABOUT_LINK), TR(L_ABOUT_CONTACT), vs, TR(L_ABOUT_ASK), TR(L_ABOUT_COPYRIGHT) };
+    const wchar_t *line[] = { TR(L_ABOUT_MORE), vs, TR(L_ABOUT_ASK), TR(L_ABOUT_COPYRIGHT) };
     int w = S(AB_W - 48);
-    for (int i = 0; i < 5; i++) w = max_i(w, text_px(G.f_row, line[i]));
-    AB.lw = text_px(G.f_row, line[0]);
-    AB.cw = max_i(S(120), text_px(G.f_row, line[1]) + S(40));
+    for (int i = 0; i < 4; i++) w = max_i(w, text_px(G.f_row, line[i]));
+    AB.cw = max_i(S(120), max_i(text_px(G.f_row, TR(L_ABOUT_CONTACT)), text_px(G.f_row, TR(L_ABOUT_VISIT))) + S(40));
+    w = max_i(w, AB.cw);
     AB.dy = max_i(0, text_ext(G.f_row, TR(L_ABOUT_DESC), w) - S(60));
     AB.w = w + S(48);
     AB.h = S(AB_H) + AB.dy;
@@ -37,9 +37,9 @@ static RECT ab_btn(int i) {
     RECT r = { 0 };
     switch (i) {
     case AB_CONTACT: r = (RECT){ S(24), S(200), S(24) + AB.cw, S(232) }; break;
-    case AB_SITE: r = (RECT){ S(24), S(248), S(24) + AB.lw, S(268) }; break; /* as wide as its text */
-    case AB_UPDATES: r = (RECT){ S(24), S(340), AB.w / 2 - S(8), S(372) }; break;
-    case AB_OK: r = (RECT){ AB.w / 2 + S(8), S(340), AB.w - S(24), S(372) }; break;
+    case AB_SITE: r = (RECT){ S(24), S(276), S(24) + AB.cw, S(308) }; break; /* under "More cool apps?" */
+    case AB_UPDATES: r = (RECT){ S(24), S(388), AB.w / 2 - S(8), S(420) }; break;
+    case AB_OK: r = (RECT){ AB.w / 2 + S(8), S(388), AB.w - S(24), S(420) }; break;
     }
     OffsetRect(&r, 0, AB.dy); /* all below the description */
     return r;
@@ -87,21 +87,23 @@ static void about_paint(HDC hdc) {
     RECT tr = { S(68), S(24), W - S(24), S(56) };
     text_at(hdc, APP_NAME, tr, G.f_hero, T_T1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     RECT ver = { S(24), S(72), W - S(24), S(92) }, desc = { S(24), S(100), W - S(24), S(160) + dy },
-         ask = { S(24), S(172) + dy, W - S(24), S(192) + dy }, copy = { S(24), S(276) + dy, W - S(24), S(296) + dy };
+         ask = { S(24), S(172) + dy, W - S(24), S(192) + dy }, more = { S(24), S(248) + dy, W - S(24), S(268) + dy },
+         copy = { S(24), S(324) + dy, W - S(24), S(344) + dy };
     wchar_t vs[64];
     StringCchPrintfW(vs, 64, TR(L_ABOUT_VERSION), APP_VERSION);
     text_at(hdc, vs, ver, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
     text_at(hdc, TR(L_ABOUT_DESC), desc, G.f_row, T_T2, DT_LEFT | DT_WORDBREAK);
     text_at(hdc, TR(L_ABOUT_ASK), ask, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
+    text_at(hdc, TR(L_ABOUT_MORE), more, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
     text_at(hdc, TR(L_ABOUT_COPYRIGHT), copy, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE);
     RECT con = ab_btn(AB_CONTACT), site = ab_btn(AB_SITE), upd = ab_btn(AB_UPDATES), ok = ab_btn(AB_OK);
     g_focus_cues = true; /* keyboard-only dialog: the focused control always shows it */
     RECT f = ab_btn(AB.focus);
-    focus_ring(hdc, &f, AB.focus == AB_SITE ? 2 : 4, AB.focus >= AB_UPDATES ? T_WIN : T_CARD);
+    focus_ring(hdc, &f, 4, AB.focus >= AB_UPDATES ? T_WIN : T_CARD);
     fill_round(hdc, &con, 4, AB.hover == AB_CONTACT ? T_CTLHOV : T_CTL, T_CTLBRD);
     text_at(hdc, TR(L_ABOUT_CONTACT), con, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-    text_at(hdc, TR(L_ABOUT_LINK), site, G.f_row, AB.hover == AB_SITE ? T_ACCHOV : T_ACCENT,
-        DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP);
+    fill_round(hdc, &site, 4, AB.hover == AB_SITE ? T_CTLHOV : T_CTL, T_CTLBRD);
+    text_at(hdc, TR(L_ABOUT_VISIT), site, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     fill_round(hdc, &upd, 4, AB.hover == AB_UPDATES ? T_CTLHOV : T_CTL, T_CTLBRD);
     text_at(hdc, TR(L_ABOUT_UPDATES), upd, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     fill_round(hdc, &ok, 4, AB.hover == AB_OK ? T_ACCHOV : T_ACCENT, T_ACCENT);
@@ -128,9 +130,6 @@ static LRESULT CALLBACK about_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     }
     case WM_ERASEBKGND:
         return 1;
-    case WM_SETCURSOR: /* the hand over the link, as on a web page */
-        if (AB.hover == AB_SITE) { SetCursor(LoadCursorW(NULL, IDC_HAND)); return TRUE; }
-        break;
     case WM_MOUSEMOVE: {
         int h = about_hit(GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
         if (h != AB.hover) { AB.hover = h; InvalidateRect(hwnd, NULL, FALSE); }
@@ -182,7 +181,7 @@ static void about_open(void) {
     wchar_t ver[64], desc[1024];
     StringCchPrintfW(ver, 64, TR(L_ABOUT_VERSION), APP_VERSION);
     StringCchPrintfW(desc, 1024, TR(L_ABOUT_ACC), ver, TR(L_ABOUT_DESC), TR(L_ABOUT_ASK), TR(L_ABOUT_COPYRIGHT),
-        TR(L_ABOUT_CONTACT), TR(L_ABOUT_LINK), TR(L_ABOUT_UPDATES), TR(L_ABOUT_OK));
+        TR(L_ABOUT_CONTACT), TR(L_ABOUT_VISIT), TR(L_ABOUT_UPDATES), TR(L_ABOUT_OK));
     acc_control(AB.wnd, TR(L_ABOUT_TITLE), ROLE_SYSTEM_DIALOG, desc);
     EnableWindow(G.main, FALSE);
     ShowWindow(AB.wnd, SW_SHOW);

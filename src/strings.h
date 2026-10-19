@@ -110,11 +110,12 @@
     X(ABOUT_ASK,         "about.ask",          L"Questions, concerns or a gig to offer?") \
     X(ABOUT_COPYRIGHT,   "about.copyright",    L"\x00A9 2026 PowerNapps (by Denis Platonov), Los Angeles") \
     X(ABOUT_CONTACT,     "about.contact",      L"Contact us") \
-    X(ABOUT_LINK,        "about.link",         L"More cool apps at powernapps.net") \
+    X(ABOUT_MORE,        "about.more",         L"More cool apps?") \
+    X(ABOUT_VISIT,       "about.visit",        L"Visit our website") \
     X(ABOUT_UPDATES,     "about.updates",      L"Check for updates") \
     X(ABOUT_OK,          "about.ok",           L"OK") \
     X(ABOUT_CONTACT_ACC, "about.contact_acc",  L"Contact us button") \
-    X(ABOUT_LINK_ACC,    "about.link_acc",     L"More cool apps at powernapps.net link") \
+    X(ABOUT_VISIT_ACC,   "about.visit_acc",    L"Visit our website button") \
     X(ABOUT_UPDATES_ACC, "about.updates_acc",  L"Check for updates button") \
     X(ABOUT_OK_ACC,      "about.ok_acc",       L"OK button") \
     X(ABOUT_ACC,         "about.acc",          L"%ls. %ls %ls %ls. Controls: %ls, %ls, %ls, %ls.") \

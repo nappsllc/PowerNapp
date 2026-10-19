@@ -120,8 +120,9 @@ Turkish, Ukrainian and Vietnamese.
   system light/dark theme.
 - The live countdown repaints just its own text — no flicker.
 - **About** has a short description, a **Contact us** button
-  (hi@powernapps.net — questions, concerns, or a gig to offer), a link to
-  more apps at [powernapps.net](https://powernapps.net), and Check for updates.
+  (hi@powernapps.net — questions, concerns, or a gig to offer), a **Visit
+  our website** button for more apps at [powernapps.net](https://powernapps.net),
+  and Check for updates.
 
 ---
 

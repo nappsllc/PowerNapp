@@ -105,10 +105,12 @@ Check 'v3 layout: compact Options rows, links in the footer' {
     Note "client height $ch, expected ~$want"; [math]::Abs($ch - $want) -le 4 }
 Check 'About dialog' { Cmd 251; $a = [H]::F('PowerNappAbout'); Snap 'PowerNappAbout' 'about'
     $n = [H]::Uia($a, 30005); $d = [H]::Uia($a, 30094)
-    [H]::SendMessage($a, $WM_KEYDOWN, [IntPtr]0x09, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 200; $f = [H]::Uia($a, 30094)
-    Note "name=$n | after Tab: $f | text has contact: $($d -match 'gig to offer' -and $d -match 'Los Angeles')"
+    # Tab from OK (the default): Contact us > Visit our website > Check for updates > OK
+    $o = @(); foreach ($i in 1..4) { [H]::SendMessage($a, $WM_KEYDOWN, [IntPtr]0x09, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 200; $o += [H]::Uia($a, 30094) }
+    Note "name=$n | Tab: $($o -join ' > ') | text has contact and website: $($d -match 'gig to offer' -and $d -match 'Los Angeles' -and $d -match 'Visit our website')"
     [H]::SendMessage($a, $WM_CLOSE, [IntPtr]0, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300
-    $n -eq 'About PowerNapp' -and $f -eq 'Contact us button' -and [H]::F('PowerNappAbout') -eq [IntPtr]::Zero }
+    $n -eq 'About PowerNapp' -and ($o -join '|') -eq 'Contact us button|Visit our website button|Check for updates button|OK button' -and
+        $d -match 'Visit our website' -and [H]::F('PowerNappAbout') -eq [IntPtr]::Zero }
 
 # ----------------------------------------------------------------------------- keyboard
 Section 'Keyboard'
