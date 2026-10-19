@@ -9,14 +9,16 @@ Order of the steps below follows the submission page in Partner Center
 
 ## 0. Before the submission
 
-- [ ] **TODO (you):** Partner Center developer account (individual or company).
-      The account's publisher display name becomes `PublisherDisplayName`.
-- [ ] **TODO (you):** Reserve the product name **PowerNapp** (Apps and games >
-      New product > MSIX or PWA app).
-- [ ] **TODO (you):** Deploy https://powernapps.net/privacy (the privacy policy
-      page is still pending deploy; the submission needs a live URL).
-- [ ] **TODO (you):** Copy the package identity into the repo and build the
-      release package (section 4).
+- [x] Partner Center developer account; publisher display name **PowerNapps**.
+- [x] Product reserved as **PowerNapps PowerNapp** ("PowerNapp" was taken). Store ID
+      `9NP8QXLBN793`. The package's display name is set to that reserved name; the
+      app itself still shows "PowerNapp" in its window.
+- [x] Privacy policy live at https://powernapps.net/privacy.
+- [x] Package identity stored as repository variables (MSIX_NAME
+      `PowerNapps.PowerNappsPowerNapp`, MSIX_PUBLISHER
+      `CN=7966F61F-53A3-4F69-A623-E09C3C32F6E1`, MSIX_PUBLISHER_NAME `PowerNapps`,
+      MSIX_DISPLAY_NAME `PowerNapps PowerNapp`); CI builds the uploadable package.
+- [ ] **TODO (you):** approve the v2.0.0 release (tag), then upload its `PowerNapp.msix`.
 
 ## 1. Pricing and availability
 
@@ -36,7 +38,7 @@ Order of the steps below follows the submission page in Partner Center
 |---|---|
 | Category | **Utilities & tools** |
 | Subcategory | none needed (pick the closest one only if Partner Center requires it) |
-| Privacy policy URL | `https://powernapps.net/privacy` (**TODO (you):** deploy first) |
+| Privacy policy URL | `https://powernapps.net/privacy` (live) |
 | Website | `https://powernapps.net` |
 | Support contact info | `hi@powernapps.net` |
 | Game settings | not a game: leave empty |
@@ -134,7 +136,7 @@ For each language (Store listings > the language > Edit):
 
 | Partner Center field | Value |
 |---|---|
-| Product name | `PowerNapp` (same in every language) |
+| Product name | `PowerNapps PowerNapp` (the reserved name; same in every language) |
 | Description | `# Description` section of `<tag>.txt` |
 | What's new in this version | `# What's new` section |
 | Product features | `# Features` section, one line per feature box (up to 20) |
@@ -202,7 +204,7 @@ Notes for certification (paste):
 
 ## Still TODO for you (summary)
 
-1. Partner Center account and the reserved name PowerNapp.
+1. Partner Center account and the reserved name PowerNapps PowerNapp (done).
 2. Deploy https://powernapps.net/privacy.
 3. Set `MSIX_NAME`, `MSIX_PUBLISHER`, `MSIX_PUBLISHER_NAME` repo variables
    from Product identity.
