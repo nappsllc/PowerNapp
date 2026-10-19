@@ -139,9 +139,64 @@ static void title_lang_width(void)
     g_dpi = dpi;
 }
 
+/* time button and picker columns: hour, minute, AM/PM read left to right on screen in every language
+   (AM/PM leftmost on an AM/PM-first clock); a mirrored window's client x grows leftwards, so the
+   on-screen x of a client range [l, r) is w - r there */
+static int vis_left(int c, int w) { int l, r; tp_col(c, w, &l, &r); return lang_rtl() ? w - r : l; }
+static int vis_width(int c, int w) { int l, r; tp_col(c, w, &l, &r); return r - l; }
+static void time_columns_read_ltr(void)
+{
+    int dpi = g_dpi, apw = g_apw, sw = g_sw;
+    bool rtl = g_lang_rtl;
+    g_dpi = 96; g_apw = 80; g_sw = 242;
+    for (int d = 0; d < 2; d++) {
+        g_lang_rtl = d == 1;
+        g_clock_test = L"h:mm tt";                                 /* hour | minute | AM/PM */
+        CHECK(vis_left(0, 242) == 0 && vis_left(1, 242) == 81 && vis_left(2, 242) == 162);
+        CHECK(vis_width(0, 242) == 81 && vis_width(1, 242) == 81 && vis_width(2, 242) == 80);
+        g_clock_test = L"tt h:mm";                                 /* AM/PM | hour | minute */
+        CHECK(vis_left(2, 242) == 0 && vis_left(0, 242) == 80 && vis_left(1, 242) == 161);
+        CHECK(vis_width(2, 242) == 80 && vis_width(0, 242) == 81 && vis_width(1, 242) == 81);
+        g_clock_test = L"HH:mm";                                   /* hour | minute */
+        CHECK(vis_left(0, 242) == 0 && vis_left(1, 242) == 121);
+        /* hit-testing: the on-screen leftmost and rightmost cells */
+        int c, r, b, xl = g_lang_rtl ? 241 : 0, xr = g_lang_rtl ? 0 : 241;
+        g_clock_test = L"h:mm tt";
+        tp_hit(xl, 10, &c, &r, &b); CHECK(c == 0);
+        tp_hit(xr, 10, &c, &r, &b); CHECK(c == 2);
+        g_clock_test = L"tt h:mm";
+        tp_hit(xl, 10, &c, &r, &b); CHECK(c == 2);
+        tp_hit(xr, 10, &c, &r, &b); CHECK(c == 1);
+        /* Left / Right move on screen: from no column, Right takes the leftmost */
+        g_clock_test = L"h:mm tt";
+        CHECK(tp_next_col(-1, 1) == 0 && tp_next_col(0, 1) == 1 && tp_next_col(2, 1) == 0);
+        CHECK(tp_next_col(-1, -1) == 2 && tp_next_col(0, -1) == 2 && tp_next_col(1, -1) == 0);
+        g_clock_test = L"tt h:mm";
+        CHECK(tp_next_col(-1, 1) == 2 && tp_next_col(2, 1) == 0 && tp_next_col(0, 1) == 1 && tp_next_col(1, 1) == 2);
+        CHECK(tp_next_col(-1, -1) == 1 && tp_next_col(1, -1) == 0 && tp_next_col(0, -1) == 2);
+    }
+    g_clock_test = NULL; g_lang_rtl = rtl; g_dpi = dpi; g_apw = apw; g_sw = sw;
+}
+
+/* Enter and Alt+Down open a dropdown once: their auto-repeat (lParam bit 30, key already down) does
+   not reopen it after a pick */
+static void combo_keys_ignore_repeat(void)
+{
+    CHECK(combo_open_key(WM_KEYDOWN, VK_RETURN, 0x00000001));
+    CHECK(!combo_open_key(WM_KEYDOWN, VK_RETURN, 0x40000001));
+    CHECK(combo_open_key(WM_KEYDOWN, VK_F4, 0x00000001));
+    CHECK(combo_open_key(WM_SYSKEYDOWN, VK_DOWN, 0x20000001));
+    CHECK(!combo_open_key(WM_SYSKEYDOWN, VK_DOWN, 0x60000001));
+    CHECK(combo_open_key(WM_SYSKEYDOWN, VK_UP, 0x20000001));
+    CHECK(!combo_open_key(WM_KEYDOWN, VK_DOWN, 0x00000001));      /* plain Down: not an opener */
+    CHECK(!combo_open_key(WM_KEYDOWN, VK_SPACE, 0x00000001));     /* Space: the button's own click */
+}
+
 int main(void)
 {
     title_lang_width();
+    time_columns_read_ltr();
+    combo_keys_ignore_repeat();
     korean_wraps_at_spaces();
     task_aliases();
     migration_keeps_unmoved_tasks();

@@ -15,14 +15,46 @@
    on a 24-hour clock (regional format); the AM/PM column is as wide as its names need (g_apw) */
 static int tp_ncols(void) { return clock_24h() ? 2 : 3; }
 
+/* Where column c (0 hour, 1 minute, 2 AM/PM) sits on screen, 0 = leftmost: hour, minute, AM/PM, or
+ * AM/PM first when the regional format puts it before the hour ("tt h:mm"), as the time reads in text */
+static int tp_slot(int c) {
+    if (tp_ncols() == 3 && clock_fmt().ap_first) return c == 2 ? 0 : c + 1;
+    return c;
+}
+static int tp_at_slot(int s) { /* the column at on-screen slot s */
+    for (int c = 0, nc = tp_ncols(); c < nc; c++) if (tp_slot(c) == s) return c;
+    return 0;
+}
+
 /* Column c's edges in client px of a box w px wide (the button body or the popup). Times read
  * left to right in every language, so in a mirrored (right-to-left) window, where client x
  * grows leftwards, the columns are placed from the other side: the hour stays on the left. */
 static void tp_col(int c, int w, int *l, int *r) {
     int nc = tp_ncols(), hm = nc == 2 ? w / 2 : (w - g_apw) / 2; /* hour and minute widths */
-    int a = c * hm, b = c == nc - 1 ? w : a + hm;
-    if (lang_rtl()) { *l = w - b; *r = w - a; }
-    else { *l = a; *r = b; }
+    int a = 0, s = tp_slot(c);
+    for (int k = 0; k <= s; k++) {
+        int col = tp_at_slot(k), cw = col == nc - 1 ? w - (nc - 1) * hm : hm; /* the last column: the rest */
+        if (k == s) {
+            int b = a + cw;
+            if (lang_rtl()) { *l = w - b; *r = w - a; }
+            else { *l = a; *r = b; }
+            return;
+        }
+        a += cw;
+    }
+}
+
+/* the on-screen left edge of slot s (1 .. ncols-1) in client px: where a divider goes */
+static int tp_divider_x(int s, int w) {
+    int l, r;
+    tp_col(tp_at_slot(s), w, &l, &r);
+    return lang_rtl() ? r : l;
+}
+
+/* keyboard Left (dir -1) / Right (+1) from column kcol (-1: none yet) */
+static int tp_next_col(int kcol, int dir) { /* by on-screen slot, wrapping */
+    int nc = tp_ncols(), s = kcol < 0 ? (dir < 0 ? 0 : -1) : tp_slot(kcol);
+    return tp_at_slot(((s + dir) % nc + nc) % nc);
 }
 
 static struct {
@@ -41,10 +73,8 @@ static void paint_time_btn(HDC hdc, HWND btn, int h, int m) {
     focus_ring(hdc, &rc, 4, T_CARD);
     fill_round(hdc, &rc, 4, btn == G.hover_btn ? T_CTLHOV : T_CTL, T_CTLBRD);
     int x0 = rc.left, top = rc.top, bot = rc.bottom, nc = tp_ncols(), bw = rc.right - rc.left;
-    for (int c = 1; c < nc; c++) { /* dividers: each column's left edge */
-        int l, r;
-        tp_col(c, bw, &l, &r);
-        int x = x0 + (lang_rtl() ? r : l);
+    for (int c = 1; c < nc; c++) { /* dividers: each slot's on-screen left edge */
+        int x = x0 + tp_divider_x(c, bw);
         line_c(hdc, x, top + SB(1), x, bot - SB(1) - 1, T_CTLBRD, 1);
     }
     line_c(hdc, x0 + S(3), bot - SB(1) - 1, rc.right - S(4), bot - SB(1) - 1, T_CTLBOT, 1);
@@ -135,8 +165,8 @@ static bool tp_key(WPARAM vk) {
     switch (vk) {
     case VK_ESCAPE: tp_close(); return true;
     case VK_RETURN: case VK_SPACE: tp_accept(); return true;
-    case VK_LEFT: TP.kcol = TP.kcol <= 0 ? tp_ncols() - 1 : TP.kcol - 1; break;
-    case VK_RIGHT: case VK_TAB: TP.kcol = TP.kcol < 0 || TP.kcol >= tp_ncols() - 1 ? 0 : TP.kcol + 1; break;
+    case VK_LEFT: TP.kcol = tp_next_col(TP.kcol, -1); break;  /* on screen, in every language */
+    case VK_RIGHT: case VK_TAB: TP.kcol = tp_next_col(TP.kcol, 1); break;
     case VK_UP: if (TP.kcol < 0) TP.kcol = 0; tp_shift(TP.kcol, -1); break;
     case VK_DOWN: if (TP.kcol < 0) TP.kcol = 0; tp_shift(TP.kcol, 1); break;
     default: return false;
@@ -179,9 +209,7 @@ static LRESULT CALLBACK tp_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             }
         }
         for (int c = 1; c < nc; c++) { /* column dividers, not across the band */
-            int l, r;
-            tp_col(c, W, &l, &r);
-            int x = lang_rtl() ? r : l;
+            int x = tp_divider_x(c, W);
             line_c(hdc, x, 0, x, band, T_FLYBRD, 1);
             line_c(hdc, x, band + R, x, 7 * R, T_FLYBRD, 1);
         }

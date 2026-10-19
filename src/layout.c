@@ -46,6 +46,12 @@ static bool is_combo(HWND h) { /* a dropdown control: Action, Schedule, countdow
     return id >= ID_COMBO_ACTION && id <= ID_COMBO_LANG;
 }
 
+/* Alt+Down / Alt+Up, F4 and Enter open a dropdown, as in a real combo box (Space: the button's own click) */
+static bool combo_open_key(UINT m, WPARAM w, LPARAM l) {
+    if (l & 0x40000000) return false; /* auto-repeat of a held key: a held Enter would reopen it after a pick */
+    return (m == WM_SYSKEYDOWN && (w == VK_DOWN || w == VK_UP)) || (m == WM_KEYDOWN && (w == VK_F4 || w == VK_RETURN));
+}
+
 static LRESULT CALLBACK button_hover_proc(HWND h, UINT m, WPARAM w, LPARAM l) {
     if (m == WM_MOUSEMOVE) {
         if (G.hover_btn != h) {
@@ -75,9 +81,7 @@ static LRESULT CALLBACK button_hover_proc(HWND h, UINT m, WPARAM w, LPARAM l) {
         LRESULT r = CallWindowProcW(g_button_proc, h, m, w, l);
         acc_sync(h); /* the focused state is part of the annotated state */
         return r;
-    } else if (!popup_open() && is_combo(h) && ((m == WM_SYSKEYDOWN && (w == VK_DOWN || w == VK_UP)) ||
-            (m == WM_KEYDOWN && (w == VK_F4 || w == VK_RETURN)))) {
-        /* Alt+Down, F4 and Enter open a dropdown, as in a real combo box (Space: the button's own click) */
+    } else if (!popup_open() && is_combo(h) && combo_open_key(m, w, l)) {
         SendMessageW(GetParent(h), WM_COMMAND, MAKEWPARAM(GetDlgCtrlID(h), BN_CLICKED), (LPARAM)h);
         return 0;
     } else if (m == WM_GETDLGCODE && !popup_open() && is_combo(h) && l &&
