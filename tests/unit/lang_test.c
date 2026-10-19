@@ -309,6 +309,22 @@ static void clock_and_day_names(void)
     fmt_time(23, 5, t, 32); CHECK(t[0] != 0);
 }
 
+/* src/lang.c: CJK languages draw with Windows' own UI face for their script (Segoe UI's fallback
+   misses kana and hanzi); every other language keeps Segoe UI Variable */
+static void ui_font_faces(void)
+{
+    CHECK(wcscmp(ui_font_face(L"ja"), L"Yu Gothic UI") == 0);
+    CHECK(wcscmp(ui_font_face(L"zh-Hans"), L"Microsoft YaHei UI") == 0);
+    CHECK(wcscmp(ui_font_face(L"zh-Hant"), L"Microsoft JhengHei UI") == 0);
+    CHECK(wcscmp(ui_font_face(L"ko"), L"Malgun Gothic") == 0);
+    CHECK(wcscmp(ui_font_face(L"ZH-HANT"), L"Microsoft JhengHei UI") == 0);  /* tags ignore case */
+    CHECK(wcscmp(ui_font_face(L"en"), L"Segoe UI Variable Text") == 0);
+    CHECK(wcscmp(ui_font_face(L"ru"), L"Segoe UI Variable Text") == 0);
+    CHECK(wcscmp(ui_font_face(L"jav"), L"Segoe UI Variable Text") == 0);    /* not a prefix match */
+    CHECK(wcscmp(ui_font_face(L""), L"Segoe UI Variable Text") == 0);
+    CHECK(wcscmp(ui_font_face(NULL), L"Segoe UI Variable Text") == 0);
+}
+
 /* tests\sandbox\qps-ploc.txt (gen-lang-template.ps1 -Pseudo): every key loads (placeholders kept) */
 static void pseudo_file_complete(void)
 {
@@ -392,6 +408,7 @@ int main(void)
     garbage_file();
     resolve_rules();
     clock_and_day_names();
+    ui_font_faces();
     picker_items();
     picker_caption();
     pseudo_file_complete();

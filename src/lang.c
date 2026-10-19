@@ -36,6 +36,22 @@ static bool lang_rtl(void) { return g_lang_rtl; }
 static const wchar_t *lang_tag(void) { return g_lang_tag; }
 static const wchar_t *lang_name(void) { return g_lang_name; }
 
+/* The UI font face for a language. Segoe UI's font fallback reaches Hangul but not kana or hanzi
+   (they draw as boxes), so Chinese, Japanese and Korean use Windows' own UI face for their script,
+   at the same sizes and weights; all four ship with Windows 10 and 11. */
+static const wchar_t *ui_font_face(const wchar_t *tag)
+{
+    static const struct { const wchar_t *tag, *face; } CJK[] = {
+        { L"ja", L"Yu Gothic UI" },
+        { L"zh-Hans", L"Microsoft YaHei UI" },
+        { L"zh-Hant", L"Microsoft JhengHei UI" },
+        { L"ko", L"Malgun Gothic" },
+    };
+    for (int i = 0; tag && i < 4; i++)
+        if (_wcsicmp(tag, CJK[i].tag) == 0) return CJK[i].face;
+    return L"Segoe UI Variable Text";
+}
+
 /* ---- placeholders: same ORDERED sequence of %ls / %d / %lld as English ---- */
 static bool lang_ph_seq(const wchar_t *s, char *seq, int cap)
 {

@@ -220,8 +220,8 @@ static void reminder_show(Task task, unsigned secs, void (*done)(int result)) {
     RM.focus = 2; /* Snooze: the safe default for an accidental Enter */
     RM.keys = false;
     RM.done = done;
-    RM.f_title = make_font(L"Segoe UI Variable Text", L"Segoe UI", -20, FW_SEMIBOLD);
-    RM.f_text = make_font(L"Segoe UI Variable Text", L"Segoe UI", -14, FW_NORMAL);
+    RM.f_title = make_font(ui_font_face(lang_tag()), L"Segoe UI", -20, FW_SEMIBOLD);
+    RM.f_text = make_font(ui_font_face(lang_tag()), L"Segoe UI", -14, FW_NORMAL);
     MONITORINFO mi;
     mi.cbSize = sizeof(mi);
     GetMonitorInfoW(MonitorFromWindow(G.main, MONITOR_DEFAULTTOPRIMARY), &mi);

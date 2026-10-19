@@ -72,11 +72,14 @@ static void paint_title(HDC hdc) {
     }
 }
 
-static void make_ui_fonts(void) { /* at the current DPI */
-    G.f_hero = make_font(L"Segoe UI Variable Text", L"Segoe UI", -20, FW_SEMIBOLD);
-    G.f_row = make_font(L"Segoe UI Variable Text", L"Segoe UI", -14, FW_NORMAL);
-    G.f_sub = make_font(L"Segoe UI Variable Text", L"Segoe UI", -12, FW_NORMAL);
-    G.f_hdr = make_font(L"Segoe UI Variable Text", L"Segoe UI", -14, FW_SEMIBOLD); /* section headers */
+static const wchar_t *g_ui_face; /* the face the UI fonts were made with (ui_font_face) */
+
+static void make_ui_fonts(void) { /* at the current DPI, in the language's face */
+    g_ui_face = ui_font_face(lang_tag());
+    G.f_hero = make_font(g_ui_face, L"Segoe UI", -20, FW_SEMIBOLD);
+    G.f_row = make_font(g_ui_face, L"Segoe UI", -14, FW_NORMAL);
+    G.f_sub = make_font(g_ui_face, L"Segoe UI", -12, FW_NORMAL);
+    G.f_hdr = make_font(g_ui_face, L"Segoe UI", -14, FW_SEMIBOLD); /* section headers */
 }
 
 static void free_ui_fonts(void) {
@@ -162,8 +165,14 @@ static void apply_language(void) {
         recreate_main();
         return;
     }
-    /* fonts: the same Segoe UI faces serve every language (Windows' font linking covers other
-       scripts), so nothing to rebuild here */
+    /* fonts: Segoe UI serves most languages (Windows' font linking covers other scripts);
+       Chinese, Japanese and Korean have their own face, so switching into or out of one rebuilds them */
+    if (ui_font_face(lang_tag()) != g_ui_face) {
+        free_ui_fonts();
+        make_ui_fonts();
+        for (HWND c = GetWindow(G.main, GW_CHILD); c; c = GetWindow(c, GW_HWNDNEXT))
+            SendMessageW(c, WM_SETFONT, (WPARAM)G.f_row, 0);
+    }
     update_combo_texts();
     lang_caption_refresh(); /* the dropdown was closed above: its entries are rebuilt when it reopens */
     set_text(G.btn_start, TR(G.rt.active ? L_BTN_CANCEL : L_BTN_START));
@@ -1041,8 +1050,8 @@ static int check_fit(void) {
     }
     ab_measure();
     about_paint(hdc);
-    RM.f_title = make_font(L"Segoe UI Variable Text", L"Segoe UI", -20, FW_SEMIBOLD);
-    RM.f_text = make_font(L"Segoe UI Variable Text", L"Segoe UI", -14, FW_NORMAL);
+    RM.f_title = make_font(ui_font_face(lang_tag()), L"Segoe UI", -20, FW_SEMIBOLD);
+    RM.f_text = make_font(ui_font_face(lang_tag()), L"Segoe UI", -14, FW_NORMAL);
     for (int t = 0; t < NTASKS; t++) {
         RM.task = (Task)t;
         rm_measure();
