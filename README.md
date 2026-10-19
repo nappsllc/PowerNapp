@@ -119,6 +119,8 @@ Turkish, Ukrainian and Vietnamese.
   custom title bar, hover highlights, Segoe UI Variable, follows the
   system light/dark theme.
 - The live countdown repaints just its own text — no flicker.
+- The window opens where you last left it (on the same monitor, kept inside its
+  work area), or at the default spot if that monitor is gone.
 - **About** has a short description, a **Contact us** button
   (hi@powernapps.net — questions, concerns, or a gig to offer), a **Visit
   our website** button for more apps at [powernapps.net](https://powernapps.net),
@@ -318,7 +320,7 @@ names, 150% scaling, the regional format, the language picker and right-to-left
 and a forced shutdown of the sandbox at the end.
 
 ```bat
-powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 96 checks, ~11 min
+powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 98 checks, ~11 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         :: Store package, ~1 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  :: README screenshots
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots -Languages all

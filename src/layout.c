@@ -245,20 +245,41 @@ static int foot_lang_w(int text, int room, bool *fits) {
 /* the app caption's text box starts here: 16 px margin, the 16 px icon, 12 px */
 #define TITLE_TEXT_X (16 + 16 + 12)
 
-/* Moves the window up (never above the top) so its bottom is inside the monitor's work area.
- * CW_USEDEFAULT cascades the window for its first, smaller size; grown to the content it could
- * reach past the taskbar or the screen edge, and the part off the screen is never painted. */
+/* r's top-left moved so r lies inside work: up / left past the bottom / right edge, never above the
+ * top or left of the left edge (a rect larger than work keeps its top-left at work's). */
+static POINT clamp_into(const RECT *r, const RECT *work) {
+    POINT p = { r->left, r->top };
+    if (p.x + (r->right - r->left) > work->right) p.x = work->right - (r->right - r->left);
+    if (p.y + (r->bottom - r->top) > work->bottom) p.y = work->bottom - (r->bottom - r->top);
+    if (p.x < work->left) p.x = work->left;
+    if (p.y < work->top) p.y = work->top;
+    return p;
+}
+
+/* Moves the window into its monitor's work area. CW_USEDEFAULT cascades the window for its first,
+ * smaller size, and a saved position was the last size; grown to the content it could reach past the
+ * taskbar or the screen edge, and the part off the screen is never painted. */
 static void keep_on_screen(HWND hwnd) {
     MONITORINFO mi;
     RECT wr;
     mi.cbSize = sizeof(mi);
     if (!GetWindowRect(hwnd, &wr) || !GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi))
         return;
-    int top = wr.top;
-    if (wr.bottom > mi.rcWork.bottom) top -= wr.bottom - mi.rcWork.bottom;
-    if (top < mi.rcWork.top) top = mi.rcWork.top;
-    if (top != wr.top)
-        SetWindowPos(hwnd, NULL, wr.left, top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    POINT p = clamp_into(&wr, &mi.rcWork);
+    if (p.x != wr.left || p.y != wr.top)
+        SetWindowPos(hwnd, NULL, p.x, p.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
+/* Where to open the window from its saved screen rect: false (the default placement) when it lands on
+ * no connected monitor, else its top-left moved fully into that monitor's work area. Opened there, the
+ * window gets that monitor's DPI from the start. */
+static bool saved_place(const RECT *saved, POINT *out) {
+    MONITORINFO mi;
+    mi.cbSize = sizeof(mi);
+    HMONITOR mon = MonitorFromRect(saved, MONITOR_DEFAULTTONULL);
+    if (!mon || !GetMonitorInfoW(mon, &mi)) return false;
+    *out = clamp_into(saved, &mi.rcWork);
+    return true;
 }
 
 /* resize the window so its client area is w x h device px (frame added as it is) */

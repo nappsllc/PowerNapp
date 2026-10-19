@@ -476,6 +476,28 @@ static void lang_save_setting(const wchar_t *tag) {
     WritePrivateProfileStringW(L"PowerNapp", L"lang", tag, path);
 }
 
+/* The main window's last top-left on the screen: INI keys "win_x" / "win_y" (missing: none saved). */
+#define WIN_POS_NONE (-2147483647 - 1)
+static bool win_pos_load(POINT *p) {
+    wchar_t path[MAX_PATH];
+    ini_path(path, MAX_PATH);
+    p->x = (int)GetPrivateProfileIntW(L"PowerNapp", L"win_x", WIN_POS_NONE, path);
+    p->y = (int)GetPrivateProfileIntW(L"PowerNapp", L"win_y", WIN_POS_NONE, path);
+    return p->x != WIN_POS_NONE && p->y != WIN_POS_NONE;
+}
+
+static void win_pos_save(int x, int y) {
+    wchar_t path[MAX_PATH], dir[MAX_PATH], v[16];
+    ini_path(path, MAX_PATH);
+    StringCchCopyW(dir, MAX_PATH, path);
+    wchar_t *bs = wcsrchr(dir, L'\\');
+    if (bs) { *bs = L'\0'; CreateDirectoryW(dir, NULL); }
+    StringCchPrintfW(v, 16, L"%d", x);
+    WritePrivateProfileStringW(L"PowerNapp", L"win_x", v, path);
+    StringCchPrintfW(v, 16, L"%d", y);
+    WritePrivateProfileStringW(L"PowerNapp", L"win_y", v, path);
+}
+
 /* load the saved choice, or what Windows' display language resolves to */
 static void lang_load_saved(void) {
     wchar_t set[LANG_TAG_MAX], tag[LANG_TAG_MAX];

@@ -53,6 +53,8 @@ public static class H {
   [StructLayout(LayoutKind.Sequential)] struct MI { public int cb; public RECT m, w; public int f; }
   [DllImport("user32.dll")] static extern IntPtr MonitorFromWindow(IntPtr h, uint f);
   [DllImport("user32.dll")] static extern bool GetMonitorInfoW(IntPtr m, ref MI mi);
+  [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr a, int x, int y, int cx, int cy, uint f);
+  public static bool MoveTo(IntPtr h, int x, int y) { return SetWindowPos(h, IntPtr.Zero, x, y, 0, 0, 0x15); } // NOSIZE|NOZORDER|NOACTIVATE
   public static RECT Work(IntPtr h) { var mi = new MI(); mi.cb = Marshal.SizeOf(mi); GetMonitorInfoW(MonitorFromWindow(h, 2), ref mi); return mi.w; }
   // regional format: set through the API (keeps Windows' locale cache in step), then tell running apps
   [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern bool SetLocaleInfoW(uint lcid, uint type, string data);

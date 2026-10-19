@@ -173,6 +173,36 @@ static void fly_above_placement(void)
     g_dpi = dpi;
 }
 
+/* the saved window position: kept inside the work area, moved fully into it when partly off,
+   dropped (default placement) when it lands on no connected monitor */
+static void saved_window_position(void)
+{
+    RECT work = { 0, 0, 1920, 1040 }, wk2 = { -1280, 40, 0, 1024 };
+    RECT in = { 100, 200, 760, 1000 }, off_r = { 1500, 300, 2160, 1100 }, off_l = { -50, -30, 610, 770 };
+    RECT big = { 10, 10, 2010, 1210 }, left = { -1100, 900, -440, 1700 };
+    POINT p = clamp_into(&in, &work);
+    CHECK(p.x == 100 && p.y == 200);                          /* inside: kept */
+    p = clamp_into(&off_r, &work);
+    CHECK(p.x == 1920 - 660 && p.y == 1040 - 800);            /* past the right and the taskbar: moved in */
+    p = clamp_into(&off_l, &work);
+    CHECK(p.x == 0 && p.y == 0);                              /* past the left and top */
+    p = clamp_into(&big, &work);
+    CHECK(p.x == 0 && p.y == 0);                              /* larger than the work area: its top-left */
+    p = clamp_into(&left, &wk2);
+    CHECK(p.x == -1100 && p.y == 1024 - 800);                 /* a monitor left of the primary: negative x */
+    RECT gone = { -100000, -100000, -99340, -99200 };         /* on no monitor: default placement */
+    POINT q = { 1, 2 };
+    CHECK(!saved_place(&gone, &q) && q.x == 1 && q.y == 2);
+    MONITORINFO mi;                                           /* on the primary monitor: kept inside it */
+    mi.cbSize = sizeof(mi);
+    POINT o = { 0, 0 };
+    GetMonitorInfoW(MonitorFromPoint(o, MONITOR_DEFAULTTOPRIMARY), &mi);
+    RECT prim = { mi.rcWork.left + 10, mi.rcWork.top + 10, mi.rcWork.left + 110, mi.rcWork.top + 110 };
+    CHECK(saved_place(&prim, &q) && q.x == prim.left && q.y == prim.top);
+    RECT part = { mi.rcWork.right - 70, mi.rcWork.top + 10, mi.rcWork.right + 30, mi.rcWork.top + 110 };
+    CHECK(saved_place(&part, &q) && q.x == mi.rcWork.right - 100 && q.y == part.top); /* mostly on it, partly off: in */
+}
+
 /* time button and picker columns: hour, minute, AM/PM read left to right on screen in every language
    (AM/PM leftmost on an AM/PM-first clock); a mirrored window's client x grows leftwards, so the
    on-screen x of a client range [l, r) is w - r there */
@@ -230,6 +260,7 @@ int main(void)
 {
     foot_lang_width();
     fly_above_placement();
+    saved_window_position();
     time_columns_read_ltr();
     combo_keys_ignore_repeat();
     korean_wraps_at_spaces();

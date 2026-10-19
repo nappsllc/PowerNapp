@@ -111,6 +111,19 @@ Check 'About dialog' { Cmd 251; $a = [H]::F('PowerNappAbout'); Snap 'PowerNappAb
     [H]::SendMessage($a, $WM_CLOSE, [IntPtr]0, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300
     $n -eq 'About PowerNapp' -and ($o -join '|') -eq 'Contact us button|Visit our website button|Check for updates button|OK button' -and
         $d -match 'Visit our website' -and [H]::F('PowerNappAbout') -eq [IntPtr]::Zero }
+# the window opens where it was closed; a saved spot on no monitor gives the default placement
+function CloseMain { $m = [H]::F('PowerNappWnd'); [H]::PostMessage($m, $WM_CLOSE, [IntPtr]0, [IntPtr]0) | Out-Null
+    for ($i = 0; $i -lt 20 -and [H]::F('PowerNappWnd') -ne [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 200 } }
+Check 'window position is remembered: moved, closed and relaunched, it opens at the same spot' {
+    $wa = [H]::Work($main); $x = $wa.L + 200; $y = $wa.T + 40
+    [H]::MoveTo($main, $x, $y) | Out-Null; Start-Sleep -Milliseconds 300; CloseMain
+    $sx = Ini 'win_x'; $sy = Ini 'win_y'; StopApp; $main = StartApp; $w = [H]::Win($main)
+    Note "moved to $x,$y; saved $sx,$sy; reopened at $($w.L),$($w.T)"; $sx -eq "$x" -and $sy -eq "$y" -and $w.L -eq $x -and $w.T -eq $y }
+Check 'a saved position on no monitor: the default placement, inside the work area' {
+    StopApp; SetIni 'win_x' '-30000'; SetIni 'win_y' '-30000'; $main = StartApp; $w = [H]::Win($main); $wa = [H]::Work($main)
+    Note "reopened at $($w.L),$($w.T)..$($w.R),$($w.B), work area $($wa.L),$($wa.T)..$($wa.R),$($wa.B)"
+    $w.L -ge $wa.L - 16 -and $w.R -le $wa.R + 16 -and $w.T -ge $wa.T -and $w.B -le $wa.B + 16 }
+StopApp; $main = StartApp
 
 # ----------------------------------------------------------------------------- keyboard
 Section 'Keyboard'

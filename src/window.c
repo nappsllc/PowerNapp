@@ -35,6 +35,14 @@ static int cap_btn_of_ht(WPARAM ht) {
     return ht == HTMINBUTTON ? 1 : ht == HTCLOSE ? 3 : 0;
 }
 
+/* the window's screen top-left (mirroring does not change a screen rect), not while minimized,
+   never from --check-fit's offscreen window */
+static void save_win_pos(HWND hwnd) {
+    RECT wr;
+    if (g_fit || hwnd != G.main || IsIconic(hwnd) || !GetWindowRect(hwnd, &wr)) return;
+    win_pos_save(wr.left, wr.top);
+}
+
 static void invalidate_title(void) {
     RECT cr;
     GetClientRect(G.main, &cr);
@@ -740,9 +748,13 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         apply_dark_mode(hwnd);
         InvalidateRect(hwnd, NULL, TRUE);
         return 0;
+    case WM_EXITSIZEMOVE: /* a move ended: remembered for the next launch */
+        save_win_pos(hwnd);
+        break;
     case WM_CLOSE: {
         /* The window is always destroyed, not hidden: reopening rebuilds it, and the
          * process left behind is just the tray icon -- or nothing at all. */
+        save_win_pos(hwnd);
         wake_flush();
         bool in_process = G.rt.active && !G.delegated; /* idle mode (or a refused task) needs us */
         if (G.tray_on && !in_process) {
@@ -832,6 +844,11 @@ static HWND create_main(int x, int y) {
     /* estimate size: layout needs a window; create then resize in WM_CREATE */
     RECT adj = { 0, 0, 640, 700 };
     AdjustWindowRect(&adj, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, FALSE);
+    POINT sp;
+    if (x == CW_USEDEFAULT && win_pos_load(&sp)) { /* where it was last time, if that monitor is still there */
+        RECT sr = { sp.x, sp.y, sp.x + adj.right - adj.left, sp.y + adj.bottom - adj.top };
+        if (saved_place(&sr, &sp)) { x = sp.x; y = sp.y; }
+    }
     HWND hwnd = CreateWindowExW(wnd_ex_dir(), L"PowerNappWnd", APP_NAME, /* mirrored for RTL */
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN,
         x, y, adj.right - adj.left, adj.bottom - adj.top,
