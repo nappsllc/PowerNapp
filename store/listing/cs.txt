@@ -30,7 +30,7 @@ Zdarma a s otevřeným zdrojovým kódem (GPL-3.0)
 časovač vypnutí
 časovač uspání
 naplánovat vypnutí počítače
-vypnutí počítače v určitou dobu
+vypnutí PC v určitou dobu
 automatické vypnutí
 probuzení počítače
 plánovač úloh

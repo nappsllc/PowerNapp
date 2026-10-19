@@ -9,7 +9,7 @@
   Task Scheduler description (ts.desc) <= 400 characters and the tray tooltip text (tray.delegated,
   appended to the tray tooltip) <= 120, since longer values get cut off.
   -Listing checks the Store listing files instead: sections "# Description", "# Short description"
-  (<= 270 chars), "# Features" (one per line, <= 20, each <= 200), "# Keywords" (<= 7, each <= 40)
+  (<= 270 chars), "# Features" (one per line, <= 20, each <= 200), "# Keywords" (<= 7, each <= 30 chars, <= 21 words in total)
   and "# What's new", each exactly once, none empty, no other "# " lines.
   -Dir / -ListingDir point at other folders (tests). Exits 1 and lists the problems, else 0.
 #>
@@ -128,7 +128,10 @@ function Check-Listing([string]$file) {
     if ($sections.Contains('Keywords')) {
         $k = Nonblank 'Keywords'
         if ($k.Count -gt 7) { Problem $name "$($k.Count) keywords (max 7)" }
-        foreach ($x in $k) { if ($x.Length -gt 40) { Problem $name "keyword is $($x.Length) chars (max 40): $x" } }
+        # Partner Center: each search term <= 30 characters, <= 21 words across all of them
+        foreach ($x in $k) { if ($x.Length -gt 30) { Problem $name "keyword is $($x.Length) chars (max 30): $x" } }
+        $words = ($k | ForEach-Object { ($_ -split '\s+' | Where-Object { $_ }).Count } | Measure-Object -Sum).Sum
+        if ($words -gt 21) { Problem $name "keywords have $words words in total (max 21)" }
     }
 }
 

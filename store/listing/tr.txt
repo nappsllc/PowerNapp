@@ -27,7 +27,7 @@ Dil seçiciyle 35 dil
 Ücretsiz ve açık kaynak (GPL-3.0)
 
 # Keywords
-bilgisayar kapatma zamanlayıcısı
+PC kapatma zamanlayıcısı
 otomatik kapatma
 zamanlı kapatma
 uyku zamanlayıcısı

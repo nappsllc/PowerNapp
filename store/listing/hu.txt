@@ -30,7 +30,7 @@ Ingyenes és nyílt forráskódú (GPL-3.0)
 leállítási időzítő
 alvó állapot időzítő
 leállítás ütemezése
-számítógép kikapcsolása időzítve
+időzített kikapcsolás
 automatikus leállítás
 számítógép ébresztése
 feladatütemező

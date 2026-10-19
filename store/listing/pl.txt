@@ -30,7 +30,7 @@ Bezpłatny i z otwartym kodem źródłowym (GPL-3.0)
 wyłącznik czasowy
 timer uśpienia
 zaplanuj wyłączenie komputera
-wyłączenie komputera o godzinie
+wyłączenie PC o godzinie
 automatyczne wyłączanie
 wybudzanie komputera
 harmonogram zadań

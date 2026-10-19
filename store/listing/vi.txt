@@ -30,10 +30,8 @@ Miễn phí và mã nguồn mở (GPL-3.0)
 hẹn giờ tắt máy
 tự động tắt máy
 hẹn giờ ngủ
-tắt máy tính
 lên lịch tắt máy
 hẹn giờ đánh thức
-lập lịch tác vụ
 
 # What's new
 PowerNapp hiện đã có 35 ngôn ngữ, với bộ chọn ngôn ngữ ngay trong ứng dụng.
