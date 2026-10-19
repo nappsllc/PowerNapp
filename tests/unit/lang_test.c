@@ -282,15 +282,15 @@ static void clock_and_day_names(void)
     g_clock_test = L"h:mm tt";                          /* 12-hour */
     CHECK(!clock_24h());
     lang_load(L"en");
-    fmt_time(23, 5, t, 32); CHECK(wcscmp(t, L"11:05 PM") == 0);
+    fmt_time(23, 5, t, 32); CHECK(wcscmp(t, L"11:05\u00A0PM") == 0);
     /* the regional format's order and padding */
-    fmt_time_with(L"tt h:mm", 23, 5, t, 32); CHECK(wcscmp(t, L"PM 11:05") == 0);
-    fmt_time_with(L"h:mm tt", 23, 5, t, 32); CHECK(wcscmp(t, L"11:05 PM") == 0);
-    fmt_time_with(L"hh:mm tt", 9, 5, t, 32); CHECK(wcscmp(t, L"09:05 AM") == 0);
-    fmt_time_with(L"'tt' h:mm tt", 23, 5, t, 32); CHECK(wcscmp(t, L"11:05 PM") == 0);  /* quoted text ignored */
+    fmt_time_with(L"tt h:mm", 23, 5, t, 32); CHECK(wcscmp(t, L"PM\u00A011:05") == 0);
+    fmt_time_with(L"h:mm tt", 23, 5, t, 32); CHECK(wcscmp(t, L"11:05\u00A0PM") == 0);
+    fmt_time_with(L"hh:mm tt", 9, 5, t, 32); CHECK(wcscmp(t, L"09:05\u00A0AM") == 0);
+    fmt_time_with(L"'tt' h:mm tt", 23, 5, t, 32); CHECK(wcscmp(t, L"11:05\u00A0PM") == 0);  /* quoted text ignored */
     fmt_time_with(L"tt HH:mm", 23, 5, t, 32); CHECK(wcscmp(t, L"23:05") == 0);         /* 24-hour: no marker */
-    fmt_time(0, 0, t, 32); CHECK(wcscmp(t, L"12:00 AM") == 0);
-    fmt_time(12, 30, t, 32); CHECK(wcscmp(t, L"12:30 PM") == 0);
+    fmt_time(0, 0, t, 32); CHECK(wcscmp(t, L"12:00\u00A0AM") == 0);
+    fmt_time(12, 30, t, 32); CHECK(wcscmp(t, L"12:30\u00A0PM") == 0);
     day_name(0, false, t, 32); CHECK(wcscmp(t, L"Mon") == 0);
     day_name(6, true, t, 32); CHECK(wcscmp(t, L"Sunday") == 0);
     ampm(true, t, 32); CHECK(wcscmp(t, L"PM") == 0);

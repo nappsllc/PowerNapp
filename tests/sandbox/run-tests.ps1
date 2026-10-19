@@ -154,7 +154,7 @@ Check 'the first day button is Sunday, and first in the Tab order' {
 SetIntl @{ sShortTime = 'h:mm tt'; sTimeFormat = 'h:mm:ss tt'; iFirstDayOfWeek = '0' }
 Check 'live change: time button reads 12:00 AM, the first day button is Monday' {
     $v = [H]::Uia([H]::GetDlgItem($main, 210), 30045); $id = FirstDayBtn; $n = [H]::Uia([H]::GetDlgItem($main, $id), 30005)
-    Note "value=$v, leftmost $id '$n'"; $v -eq '12:00 AM' -and $id -eq 220 -and $n -eq 'Monday' }
+    Note "value=$v, leftmost $id '$n'"; $v -eq "12:00$([char]0xA0)AM" -and $id -eq 220 -and $n -eq 'Monday' }
 } finally {   # restore exactly the values from before, whatever failed above
     StopApp
     SetIntl $saved
@@ -280,7 +280,7 @@ Check 'closing keeps the task; only a small tray process is left' { $p = @(Get-P
 StopApp
 schtasks /change /tn PowerNapp /st 21:29 2>$null | Out-Null
 $main = StartApp
-Check 'a time changed in Task Scheduler shows in the app' { $v = [H]::Uia([H]::GetDlgItem($main, 210), 30045); $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005); Note "time=$v button=$b"; $v -eq '9:30 PM' -and $b -eq 'Cancel' }
+Check 'a time changed in Task Scheduler shows in the app' { $v = [H]::Uia([H]::GetDlgItem($main, 210), 30045); $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005); Note "time=$v button=$b"; $v -eq "9:30$([char]0xA0)PM" -and $b -eq 'Cancel' }
 schtasks /delete /tn PowerNapp /f 2>$null | Out-Null
 [H]::SendMessage($main, 0x0006, [IntPtr]1, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 800   # WM_ACTIVATE
 Check 'a task deleted in Task Scheduler: back to Not scheduled' { $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005); Note "button=$b"; $b -eq 'Start' }

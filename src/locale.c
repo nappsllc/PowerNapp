@@ -78,7 +78,8 @@ static void fmt_hour_c(ClockFmt c, int h, wchar_t *out, size_t n)
 /* hour as shown in the time button / picker: "23", "09"/"9", or "11" (12-hour) */
 static void fmt_hour(int h, wchar_t *out, size_t n) { fmt_hour_c(clock_fmt(), h, out, n); }
 
-/* time in the order of a Windows time format: "23:05", "11:05 PM", "오후 11:05", "09:05 AM" */
+/* time in the order of a Windows time format: "23:05", "11:05 PM", "오후 11:05", "09:05 AM"
+   (a no-break space between the time and the marker) */
 static void fmt_time_with(const wchar_t *fmt, int h, int m, wchar_t *out, size_t n)
 {
     ClockFmt c = clock_parse(fmt);
@@ -86,8 +87,9 @@ static void fmt_time_with(const wchar_t *fmt, int h, int m, wchar_t *out, size_t
     fmt_hour_c(c, h, hh, 8);
     if (c.h24) { StringCchPrintfW(out, n, L"%ls:%02d", hh, m); return; }
     ampm(h >= 12, ap, 16);
-    if (c.ap_first) StringCchPrintfW(out, n, L"%ls %ls:%02d", ap, hh, m);
-    else StringCchPrintfW(out, n, L"%ls:%02d %ls", hh, m, ap);
+    /* no-break space: a wrapped line never leaves the AM/PM marker on its own */
+    if (c.ap_first) StringCchPrintfW(out, n, L"%ls\u00A0%ls:%02d", ap, hh, m);
+    else StringCchPrintfW(out, n, L"%ls:%02d\u00A0%ls", hh, m, ap);
 }
 /* with the user's regional clock */
 static void fmt_time(int h, int m, wchar_t *out, size_t n)
