@@ -78,6 +78,14 @@ static void fmt_hour_c(ClockFmt c, int h, wchar_t *out, size_t n)
 /* hour as shown in the time button / picker: "23", "09"/"9", or "11" (12-hour) */
 static void fmt_hour(int h, wchar_t *out, size_t n) { fmt_hour_c(clock_fmt(), h, out, n); }
 
+/* any Hebrew or Arabic-script letter (strong right-to-left) */
+static bool has_rtl_letters(const wchar_t *s)
+{
+    for (; s && *s; s++)
+        if ((*s >= 0x0590 && *s <= 0x08FF) || (*s >= 0xFB1D && *s <= 0xFDFF) || (*s >= 0xFE70 && *s <= 0xFEFC))
+            return true;
+    return false;
+}
 /* time in the order of a Windows time format: "23:05", "11:05 PM", "오후 11:05", "09:05 AM"
    (a no-break space between the time and the marker) */
 static void fmt_time_with(const wchar_t *fmt, int h, int m, wchar_t *out, size_t n)
@@ -90,6 +98,13 @@ static void fmt_time_with(const wchar_t *fmt, int h, int m, wchar_t *out, size_t
     /* no-break space: a wrapped line never leaves the AM/PM marker on its own */
     if (c.ap_first) StringCchPrintfW(out, n, L"%ls\u00A0%ls:%02d", ap, hh, m);
     else StringCchPrintfW(out, n, L"%ls:%02d\u00A0%ls", hh, m, ap);
+    /* right-to-left UI: a Latin marker would land before the time ("PM 11:00"), so the time reads
+       as one left-to-right embedding; a marker in an RTL script already reads right with the sentence */
+    if (lang_rtl() && !has_rtl_letters(ap)) {
+        wchar_t tmp[64];
+        StringCchCopyW(tmp, 64, out);
+        StringCchPrintfW(out, n, L"%lc%ls%lc", (wchar_t)0x202A, tmp, (wchar_t)0x202C); /* LRE ... PDF */
+    }
 }
 /* with the user's regional clock */
 static void fmt_time(int h, int m, wchar_t *out, size_t n)

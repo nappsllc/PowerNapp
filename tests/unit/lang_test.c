@@ -302,6 +302,21 @@ static void clock_and_day_names(void)
     day_name(6, true, t, 32); CHECK(wcscmp(t, L"Sonntag") == 0);
     ampm(false, t, 32); CHECK(t[0] != 0);
     day_name(7, true, t, 32); CHECK(t[0] == 0);         /* out of range: empty, no crash */
+    /* right-to-left UI: a Latin AM/PM marker keeps its place after the time (left-to-right
+       embedding); one in an RTL script reads with the sentence as is */
+    const char *xr = "@name = Xx\n@rtl = 1\n";
+    write_lang_file(L"xx", xr, strlen(xr));
+    lang_load(L"xx");                                   /* no Windows locale: English markers */
+    CHECK(lang_rtl());
+    fmt_time_with(L"h:mm tt", 23, 5, t, 32); CHECK(wcscmp(t, L"\u202A" L"11:05\u00A0PM\u202C") == 0);
+    fmt_time_with(L"HH:mm", 23, 5, t, 32); CHECK(wcscmp(t, L"23:05") == 0);
+    write_lang_file(L"ar", xr, strlen(xr));
+    lang_load(L"ar");
+    fmt_time_with(L"h:mm tt", 23, 5, t, 32); CHECK(t[0] == L'1' && has_rtl_letters(t));
+    CHECK(has_rtl_letters(L"\u05D0"));                  /* Hebrew */
+    CHECK(has_rtl_letters(L"x\u0645"));                 /* Arabic */
+    CHECK(!has_rtl_letters(L"PM"));
+    CHECK(!has_rtl_letters(L""));
     lang_load(L"en");
     g_clock_test = NULL;                                /* follows Windows */
     int f = first_day();

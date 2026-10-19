@@ -217,7 +217,12 @@ static void text_dir(HDC hdc, const wchar_t *s, RECT rc, HFONT font, COLORREF co
     SetTextColor(hdc, color);
     SelectObject(hdc, font);
     if (g_fit) fit_check(hdc, s, &rc, flags);
-    DrawTextW(hdc, s, -1, &rc, flags | DT_NOPREFIX | (rtl ? DT_RTLREADING : 0)); /* "&" is text, not a mnemonic */
+    /* DT_RTLREADING flips the reading order relative to the DC's: a mirrored DC (LAYOUT_RTL, every
+       right-to-left window and its buffers) already reads right to left, and the flag there makes
+       it left to right. So the flag goes on where the wanted order differs from the DC's. */
+    DWORD lay = GetLayout(hdc);
+    bool mirrored = lay != GDI_ERROR && (lay & LAYOUT_RTL);
+    DrawTextW(hdc, s, -1, &rc, flags | DT_NOPREFIX | (rtl != mirrored ? DT_RTLREADING : 0)); /* "&" is text, not a mnemonic */
 }
 
 /* UI text: reads right to left in Arabic and Hebrew (the mirrored DC already puts DT_LEFT on the right) */
