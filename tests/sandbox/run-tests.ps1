@@ -236,6 +236,20 @@ Check 'no lang folder: the picker lists only Windows default and English' {
 StopApp
 Rename-Item "$(Split-Path $exe)\lang-away" 'lang'; SetIni 'lang' ''
 
+# The tray-only process stays tiny in any language: Task Manager's "Memory" column (private working
+# set) once it has settled, with a translation loaded (de, ja) and following Windows (English here).
+Section 'Tray-only memory'
+foreach ($l in 'de', 'ja', '') {
+    StopApp; SetIni 'lang' $l; SetIni 'tray' 1
+    Check "tray-only process, lang='$l': private working set <= 256 KB after 6 s" {
+        $p = Start-Process $exe -ArgumentList '--tray' -PassThru; Start-Sleep -Seconds 6; $p.Refresh()
+        $ws = (Get-CimInstance Win32_PerfFormattedData_PerfProc_Process -Filter "IDProcess=$($p.Id)").WorkingSetPrivate
+        $kb = [math]::Round($ws / 1KB)
+        Note "private working set $kb KB (private bytes $([int]($p.PrivateMemorySize64 / 1KB)) KB), window=$([H]::F('PowerNappWnd') -ne [IntPtr]::Zero)"
+        -not $p.HasExited -and $ws -gt 0 -and $kb -le 256 -and [H]::F('PowerNappWnd') -eq [IntPtr]::Zero }
+}
+StopApp; SetIni 'lang' ''
+
 # ----------------------------------------------------------------------------- right-to-left
 # tests\sandbox\qps-plocm.txt: the Pseudo strings as a right-to-left language (@rtl = 1, @name = Pseudo Mirrored,
 # picked by name). Every window mirrors: caption buttons and controls on the left, the reminder card bottom left.
