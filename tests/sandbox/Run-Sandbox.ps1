@@ -3,6 +3,7 @@
 #   powershell -File tests\sandbox\Run-Sandbox.ps1                     # end-to-end suite (~11 min)
 #   powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         # Store package (~1 min)
 #   powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  # README screenshots
+#   ... -Suite screenshots -Languages all -NativeRegion   # each language in its own country's regional format
 #   ... -Suite screenshots -Languages all   # plus main window, Action and Language dropdowns, About and reminder card per language
 #
 # Needs the Windows Sandbox feature. Build first: build.bat and makensis (main, screenshots),
@@ -10,12 +11,13 @@
 # the sandbox as C:\Test; results (results.md, screenshots) land in its results folder.
 # The main suite ends with a real forced shutdown of the sandbox, run by PowerNapp itself.
 param([ValidateSet('main', 'msix', 'screenshots')][string]$Suite = 'main', [int]$TimeoutMinutes = 25,
-      [string]$Languages = '')   # screenshots only: all, or a comma-separated list of tags
+      [string]$Languages = '',   # screenshots only: all, or a comma-separated list of tags
+      [switch]$NativeRegion)     # screenshots only: each language gets its country's regional format (clock, first day)
 $ErrorActionPreference = 'Stop'
 $root  = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $stage = Join-Path $env:TEMP 'powernapp-sandbox'
 $script = @{ main = 'run-tests.ps1'; msix = 'msix-tests.ps1'; screenshots = 'screenshots.ps1' }[$Suite]
-$scriptArgs = if ($Suite -eq 'screenshots' -and $Languages) { " -Languages $Languages" } else { '' }
+$scriptArgs = if ($Suite -eq 'screenshots' -and $Languages) { " -Languages $Languages$(if ($NativeRegion) { ' -NativeRegion' })" } else { '' }
 
 if (Get-Process WindowsSandboxRemoteSession -ErrorAction SilentlyContinue) { throw 'Windows Sandbox is already running: close it first' }
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }

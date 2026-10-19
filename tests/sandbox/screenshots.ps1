@@ -6,8 +6,23 @@
 # screen), about.png and reminder.png. The dark theme also gets the English set in en-dark\.
 # Every capture is cropped to the visible window: the main window's invisible resize border (8 px left,
 # right and bottom at 100%) is cut off using DWM's extended frame bounds.
-param([string]$Languages = '')
+#
+# -NativeRegion: before each language's captures the sandbox user's regional format is switched to that
+# language's main country (de -> de-DE: 24-hour clock, Monday first), so the Store shots show what a user
+# there sees. The app is restarted, so it reads the new format. The English sets use en-US.
+param([string]$Languages = '', [switch]$NativeRegion)
 . "$PSScriptRoot\helpers.ps1"
+
+$Region = @{ ar = 'ar-SA'; bg = 'bg-BG'; cs = 'cs-CZ'; da = 'da-DK'; de = 'de-DE'; el = 'el-GR'; en = 'en-US'; es = 'es-ES'
+    fi = 'fi-FI'; fr = 'fr-FR'; he = 'he-IL'; hi = 'hi-IN'; hr = 'hr-HR'; hu = 'hu-HU'; id = 'id-ID'; it = 'it-IT'
+    ja = 'ja-JP'; ko = 'ko-KR'; ms = 'ms-MY'; nb = 'nb-NO'; nl = 'nl-NL'; pl = 'pl-PL'; 'pt-BR' = 'pt-BR'; 'pt-PT' = 'pt-PT'
+    ro = 'ro-RO'; ru = 'ru-RU'; sk = 'sk-SK'; 'sr-Latn' = 'sr-Latn-RS'; sv = 'sv-SE'; th = 'th-TH'; tr = 'tr-TR'
+    uk = 'uk-UA'; vi = 'vi-VN'; 'zh-Hans' = 'zh-CN'; 'zh-Hant' = 'zh-TW' }
+function SetRegion($tag) {
+    $name = $Region[$tag]; if (-not $name) { $name = 'en-US' }
+    Set-Culture $name; [H]::IntlChanged(); Start-Sleep -Milliseconds 700
+    Log "  region $name : short time '$([H]::LocaleInfo(0x79))', time '$([H]::LocaleInfo(0x1003))', first day $([H]::LocaleInfo(0x100C))"
+}
 
 Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
 using System; using System.Runtime.InteropServices; using System.Drawing;
@@ -95,6 +110,7 @@ if ($Languages) {
     foreach ($tag in $tags) {
         $d = "$R\$tag"; New-Item -ItemType Directory -Force $d | Out-Null
         SetIni 'lang' $tag
+        if ($NativeRegion) { StopApp; SetRegion $tag }
         $main = Fresh
         Log "- $tag : Start='$([H]::Uia([H]::GetDlgItem($main, 240), 30005))'"
         Shot 'PowerNappWnd' "$d\main.png"
