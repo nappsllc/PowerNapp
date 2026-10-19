@@ -239,14 +239,14 @@ Rename-Item "$(Split-Path $exe)\lang-away" 'lang'; SetIni 'lang' ''
 # The tray-only process stays tiny in any language: Task Manager's "Memory" column (private working
 # set) once it has settled, with a translation loaded (de, ja) and following Windows (English here).
 Section 'Tray-only memory'
-foreach ($l in 'de', 'ja', '') {
-    StopApp; SetIni 'lang' $l; SetIni 'tray' 1
-    Check "tray-only process, lang='$l': private working set <= 256 KB after 6 s" {
-        $p = Start-Process $exe -ArgumentList '--tray' -PassThru; Start-Sleep -Seconds 6; $p.Refresh()
-        $ws = (Get-CimInstance Win32_PerfFormattedData_PerfProc_Process -Filter "IDProcess=$($p.Id)").WorkingSetPrivate
-        $kb = [math]::Round($ws / 1KB)
-        Note "private working set $kb KB (private bytes $([int]($p.PrivateMemorySize64 / 1KB)) KB), window=$([H]::F('PowerNappWnd') -ne [IntPtr]::Zero)"
-        -not $p.HasExited -and $ws -gt 0 -and $kb -le 256 -and [H]::F('PowerNappWnd') -eq [IntPtr]::Zero }
+foreach ($l in '', 'de', 'ja', 'en') {
+    StopApp; SetIni 'lang' $l; SetIni 'tray' 1; Start-Sleep -Seconds 2
+    Check "tray-only process, lang='$l': private working set <= 256 KB once settled (read at 4, 6, 8 and 10 s)" {
+        $p = Start-Process $exe -ArgumentList '--tray' -PassThru; Start-Sleep -Seconds 2; $kb = @()
+        foreach ($i in 1..4) { Start-Sleep -Seconds 2; $kb += [math]::Round((Get-CimInstance Win32_PerfFormattedData_PerfProc_Process -Filter "IDProcess=$($p.Id)").WorkingSetPrivate / 1KB) }
+        $p.Refresh()
+        Note "private working set $($kb -join ' / ') KB (private bytes $([int]($p.PrivateMemorySize64 / 1KB)) KB), window=$([H]::F('PowerNappWnd') -ne [IntPtr]::Zero)"
+        -not $p.HasExited -and $kb[-1] -gt 0 -and $kb[-1] -le 256 -and [H]::F('PowerNappWnd') -eq [IntPtr]::Zero }
 }
 StopApp; SetIni 'lang' ''
 
