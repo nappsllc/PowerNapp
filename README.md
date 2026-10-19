@@ -304,7 +304,7 @@ names, 150% scaling, the regional format, the language picker and right-to-left
 and a forced shutdown of the sandbox at the end.
 
 ```bat
-powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 86 checks, ~11 min
+powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 97 checks, ~11 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         :: Store package, ~1 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  :: README screenshots
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots -Languages all
