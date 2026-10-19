@@ -16,25 +16,42 @@
 #define AB_FOOT 316  /* footer band top */
 enum { AB_CONTACT = 1, AB_SITE, AB_UPDATES, AB_OK, AB_N = AB_OK };
 static const StrId AB_NAMES[] = { L_COUNT, L_ABOUT_CONTACT_ACC, L_ABOUT_LINK_ACC, L_ABOUT_UPDATES_ACC, L_ABOUT_OK_ACC };
-static struct { HWND wnd; int hover, focus; } AB;
+static struct { HWND wnd; int hover, focus, w, h, dy, cw, lw; } AB; /* w h: size; dy: extra description lines; cw lw: Contact, link widths */
+
+/* Sized to the language: as wide as its longest line (400 in the design), taller when the
+ * description needs more than 3 lines, Contact us as wide as its text + 40. */
+static void ab_measure(void) {
+    HDC dc = GetDC(NULL);
+    HGDIOBJ o = SelectObject(dc, G.f_row);
+    wchar_t vs[64];
+    StringCchPrintfW(vs, 64, TR(L_ABOUT_VERSION), APP_VERSION);
+    const wchar_t *line[] = { TR(L_ABOUT_LINK), TR(L_ABOUT_CONTACT), vs, TR(L_ABOUT_ASK), TR(L_ABOUT_COPYRIGHT) };
+    int w = S(AB_W - 48);
+    for (int i = 0; i < 5; i++) {
+        SIZE sz = { 0 };
+        GetTextExtentPoint32W(dc, line[i], lstrlenW(line[i]), &sz);
+        if (i == 0) AB.lw = sz.cx;
+        else if (i == 1) AB.cw = sz.cx + S(40) > S(120) ? sz.cx + S(40) : S(120);
+        if (sz.cx > w) w = sz.cx;
+    }
+    RECT m = { 0, 0, w, 0 };
+    DrawTextW(dc, TR(L_ABOUT_DESC), -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    AB.dy = m.bottom > S(60) ? m.bottom - S(60) : 0;
+    AB.w = w + S(48);
+    AB.h = S(AB_H) + AB.dy;
+    SelectObject(dc, o);
+    ReleaseDC(NULL, dc);
+}
 
 static RECT ab_btn(int i) {
     RECT r = { 0 };
     switch (i) {
-    case AB_CONTACT: r = (RECT){ S(24), S(200), S(144), S(232) }; break;
-    case AB_SITE: { /* the link is as wide as its text */
-        HDC dc = GetDC(AB.wnd);
-        HGDIOBJ o = SelectObject(dc, G.f_row);
-        SIZE sz = { 0 };
-        GetTextExtentPoint32W(dc, TR(L_ABOUT_LINK), lstrlenW(TR(L_ABOUT_LINK)), &sz);
-        SelectObject(dc, o);
-        ReleaseDC(AB.wnd, dc);
-        r = (RECT){ S(24), S(248), S(24) + sz.cx, S(268) };
-        break;
+    case AB_CONTACT: r = (RECT){ S(24), S(200), S(24) + AB.cw, S(232) }; break;
+    case AB_SITE: r = (RECT){ S(24), S(248), S(24) + AB.lw, S(268) }; break; /* as wide as its text */
+    case AB_UPDATES: r = (RECT){ S(24), S(340), AB.w / 2 - S(8), S(372) }; break;
+    case AB_OK: r = (RECT){ AB.w / 2 + S(8), S(340), AB.w - S(24), S(372) }; break;
     }
-    case AB_UPDATES: r = (RECT){ S(24), S(340), S(192), S(372) }; break;
-    case AB_OK: r = (RECT){ S(208), S(340), S(376), S(372) }; break;
-    }
+    OffsetRect(&r, 0, AB.dy); /* all below the description */
     return r;
 }
 
@@ -68,44 +85,50 @@ static void about_press(int i) {
     else if (i) ShellExecuteW(NULL, L"open", URL[i], NULL, NULL, SW_SHOWNORMAL);
 }
 
+/* the dialog, into hdc */
+static void about_paint(HDC hdc) {
+    int W = AB.w, H = AB.h, ic = S(32), dy = AB.dy;
+    HICON icon = (HICON)LoadImageW(GetModuleHandleW(NULL), MAKEINTRESOURCEW(1), IMAGE_ICON, ic, ic, 0);
+    RECT all = { 0, 0, W, H }, foot = { 0, S(AB_FOOT) + dy, W, H };
+    fill_rect_c(hdc, &all, T_CARD);
+    fill_rect_c(hdc, &foot, T_WIN);
+    line_c(hdc, 0, foot.top, W, foot.top, T_CARDBRD, 1);
+    if (icon) { DrawIconEx(hdc, S(24), S(24), icon, ic, ic, 0, NULL, DI_NORMAL | DI_NOMIRROR); DestroyIcon(icon); }
+    RECT tr = { S(68), S(24), W - S(24), S(56) };
+    text_at(hdc, APP_NAME, tr, G.f_hero, T_T1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    RECT ver = { S(24), S(72), W - S(24), S(92) }, desc = { S(24), S(100), W - S(24), S(160) + dy },
+         ask = { S(24), S(172) + dy, W - S(24), S(192) + dy }, copy = { S(24), S(276) + dy, W - S(24), S(296) + dy };
+    wchar_t vs[64];
+    StringCchPrintfW(vs, 64, TR(L_ABOUT_VERSION), APP_VERSION);
+    text_at(hdc, vs, ver, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
+    text_at(hdc, TR(L_ABOUT_DESC), desc, G.f_row, T_T2, DT_LEFT | DT_WORDBREAK);
+    text_at(hdc, TR(L_ABOUT_ASK), ask, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
+    text_at(hdc, TR(L_ABOUT_COPYRIGHT), copy, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE);
+    RECT con = ab_btn(AB_CONTACT), site = ab_btn(AB_SITE), upd = ab_btn(AB_UPDATES), ok = ab_btn(AB_OK);
+    g_focus_cues = true; /* keyboard-only dialog: the focused control always shows it */
+    RECT f = ab_btn(AB.focus);
+    focus_ring(hdc, &f, AB.focus == AB_SITE ? 2 : 4, AB.focus >= AB_UPDATES ? T_WIN : T_CARD);
+    fill_round(hdc, &con, 4, AB.hover == AB_CONTACT ? T_CTLHOV : T_CTL, T_CTLBRD);
+    text_at(hdc, TR(L_ABOUT_CONTACT), con, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    text_at(hdc, TR(L_ABOUT_LINK), site, G.f_row, AB.hover == AB_SITE ? T_ACCHOV : T_ACCENT,
+        DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP);
+    fill_round(hdc, &upd, 4, AB.hover == AB_UPDATES ? T_CTLHOV : T_CTL, T_CTLBRD);
+    text_at(hdc, TR(L_ABOUT_UPDATES), upd, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    fill_round(hdc, &ok, 4, AB.hover == AB_OK ? T_ACCHOV : T_ACCENT, T_ACCENT);
+    text_at(hdc, TR(L_ABOUT_OK), ok, G.f_row, T_ONACC, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+}
+
 static LRESULT CALLBACK about_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_PAINT: {
-        int W = S(AB_W), H = S(AB_H), ic = S(32);
-        HICON icon = (HICON)LoadImageW(GetModuleHandleW(NULL), MAKEINTRESOURCEW(1), IMAGE_ICON, ic, ic, 0);
+        int W = AB.w, H = AB.h;
         PAINTSTRUCT ps;
         HDC wdc = BeginPaint(hwnd, &ps);
         HDC hdc = CreateCompatibleDC(wdc);
         HBITMAP bm = CreateCompatibleBitmap(wdc, W, H);
         HGDIOBJ ob = SelectObject(hdc, bm);
         dc_match(hdc, wdc);
-        RECT all = { 0, 0, W, H }, foot = { 0, S(AB_FOOT), W, H };
-        fill_rect_c(hdc, &all, T_CARD);
-        fill_rect_c(hdc, &foot, T_WIN);
-        line_c(hdc, 0, S(AB_FOOT), W, S(AB_FOOT), T_CARDBRD, 1);
-        if (icon) { DrawIconEx(hdc, S(24), S(24), icon, ic, ic, 0, NULL, DI_NORMAL | DI_NOMIRROR); DestroyIcon(icon); }
-        RECT tr = { S(68), S(24), W - S(24), S(56) };
-        text_at(hdc, APP_NAME, tr, G.f_hero, T_T1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-        RECT ver = { S(24), S(72), W - S(24), S(92) }, desc = { S(24), S(100), W - S(24), S(160) },
-             ask = { S(24), S(172), W - S(24), S(192) }, copy = { S(24), S(276), W - S(24), S(296) };
-        wchar_t vs[64];
-        StringCchPrintfW(vs, 64, TR(L_ABOUT_VERSION), APP_VERSION);
-        text_at(hdc, vs, ver, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
-        text_at(hdc, TR(L_ABOUT_DESC), desc, G.f_row, T_T2, DT_LEFT | DT_WORDBREAK);
-        text_at(hdc, TR(L_ABOUT_ASK), ask, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
-        text_at(hdc, TR(L_ABOUT_COPYRIGHT), copy, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE);
-        RECT con = ab_btn(AB_CONTACT), site = ab_btn(AB_SITE), upd = ab_btn(AB_UPDATES), ok = ab_btn(AB_OK);
-        g_focus_cues = true; /* keyboard-only dialog: the focused control always shows it */
-        RECT f = ab_btn(AB.focus);
-        focus_ring(hdc, &f, AB.focus == AB_SITE ? 2 : 4, AB.focus >= AB_UPDATES ? T_WIN : T_CARD);
-        fill_round(hdc, &con, 4, AB.hover == AB_CONTACT ? T_CTLHOV : T_CTL, T_CTLBRD);
-        text_at(hdc, TR(L_ABOUT_CONTACT), con, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-        text_at(hdc, TR(L_ABOUT_LINK), site, G.f_row, AB.hover == AB_SITE ? T_ACCHOV : T_ACCENT,
-            DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP);
-        fill_round(hdc, &upd, 4, AB.hover == AB_UPDATES ? T_CTLHOV : T_CTL, T_CTLBRD);
-        text_at(hdc, TR(L_ABOUT_UPDATES), upd, G.f_row, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-        fill_round(hdc, &ok, 4, AB.hover == AB_OK ? T_ACCHOV : T_ACCENT, T_ACCENT);
-        text_at(hdc, TR(L_ABOUT_OK), ok, G.f_row, T_ONACC, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        about_paint(hdc);
         BitBlt(wdc, 0, 0, W, H, hdc, 0, 0, SRCCOPY);
         SelectObject(hdc, ob);
         DeleteObject(bm);
@@ -156,7 +179,8 @@ static void about_open(void) {
     if (AB.wnd) { SetForegroundWindow(AB.wnd); return; }
     RECT mr;
     GetWindowRect(G.main, &mr);
-    int W = S(AB_W), H = S(AB_H);
+    ab_measure();
+    int W = AB.w, H = AB.h;
     int x = (mr.left + mr.right - W) / 2, y = (mr.top + mr.bottom - H) / 2;
     AB.hover = 0;
     AB.focus = AB_OK; /* as a ContentDialog's default button */

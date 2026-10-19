@@ -1,28 +1,26 @@
 /* PowerNapp: time picker flyout. Part of the unity build: included by powernapp.c, in order. */
 
 /* ------------------------------------------------------------------ time picker
- * WinUI TimePicker flyout as in the design: the 242x32 segmented button opens a
- * 242-wide popup with hour / minute / AM-PM columns (hour / minute on a 24-hour clock)
+ * WinUI TimePicker flyout as in the design: the 242x32 segmented button (wider when the
+ * AM/PM names need it, layout.c) opens a popup as wide with hour / minute / AM-PM columns (hour / minute on a 24-hour clock)
  * of 40 px rows, the selection in an accent band, wheel or click to change, then accept or cancel. Keyboard: Left /
  * Right pick a column, Up / Down change it, Enter accepts, Esc cancels. Geometry is in
  * design pixels (TP_*), scaled with S(). */
 
 #define TP_CLASS L"PowerNappTimePick"
-#define TP_W 242
 #define TP_ROW 40
 #define TP_COLS (7 * TP_ROW)        /* 280 */
 #define TP_H (TP_COLS + 41)         /* + divider + footer */
-/* column edges: hour / minute / AM-PM, or hour / minute on a 24-hour clock (regional format) */
-static const int TP_X3[4] = { 0, 81, 162, TP_W }, TP_X2[3] = { 0, 121, TP_W };
+/* columns: hour / minute / AM-PM (81 / 81 / 80 at the design's 242), or hour / minute halves
+   on a 24-hour clock (regional format); the AM/PM column is as wide as its names need (g_apw) */
 static int tp_ncols(void) { return clock_24h() ? 2 : 3; }
-static const int *tp_x(void) { return clock_24h() ? TP_X2 : TP_X3; }
 
 /* Column c's edges in client px of a box w px wide (the button body or the popup). Times read
  * left to right in every language, so in a mirrored (right-to-left) window, where client x
  * grows leftwards, the columns are placed from the other side: the hour stays on the left. */
 static void tp_col(int c, int w, int *l, int *r) {
-    const int *X = tp_x();
-    int a = c ? S(X[c]) : 0, b = c == tp_ncols() - 1 ? w : S(X[c + 1]);
+    int nc = tp_ncols(), hm = nc == 2 ? w / 2 : (w - g_apw) / 2; /* hour and minute widths */
+    int a = c * hm, b = c == nc - 1 ? w : a + hm;
     if (lang_rtl()) { *l = w - b; *r = w - a; }
     else { *l = a; *r = b; }
 }
@@ -118,16 +116,16 @@ static void tp_accept(void) {
 static void tp_hit(int x, int y, int *col, int *row, int *btn) {
     *col = *row = -1;
     *btn = 0;
-    if (x < 0 || x >= S(TP_W) || y < 0 || y >= S(TP_H)) return;
+    if (x < 0 || x >= g_sw || y < 0 || y >= S(TP_H)) return;
     if (y < S(TP_COLS)) {
         for (int c = 0, nc = tp_ncols(); c < nc; c++) {
             int l, r;
-            tp_col(c, S(TP_W), &l, &r);
+            tp_col(c, g_sw, &l, &r);
             if (x >= l && x < r) *col = c;
         }
         *row = y / S(TP_ROW);
     } else if (y > S(TP_COLS + 4) && y < S(TP_H - 4)) {
-        *btn = x < S(TP_W) / 2 ? 1 : 2;
+        *btn = x < g_sw / 2 ? 1 : 2;
     }
 }
 
@@ -151,7 +149,7 @@ static bool tp_key(WPARAM vk) {
 static LRESULT CALLBACK tp_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_PAINT: {
-        int W = S(TP_W), H = S(TP_H), R = S(TP_ROW), band = 3 * R;
+        int W = g_sw, H = S(TP_H), R = S(TP_ROW), band = 3 * R;
         PAINTSTRUCT ps;
         HDC wdc = BeginPaint(hwnd, &ps);
         HDC hdc = CreateCompatibleDC(wdc); /* buffered: aa_rrect reads the DC back */
@@ -214,7 +212,7 @@ static LRESULT CALLBACK tp_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     }
     case WM_LBUTTONDOWN: {
         int c, r, b, x = GET_X_LPARAM(lp), y = GET_Y_LPARAM(lp);
-        if (x < 0 || x >= S(TP_W) || y < 0 || y >= S(TP_H)) { tp_close(); return 0; } /* click outside */
+        if (x < 0 || x >= g_sw || y < 0 || y >= S(TP_H)) { tp_close(); return 0; } /* click outside */
         tp_hit(x, y, &c, &r, &b);
         if (b == 1) tp_accept();
         else if (b == 2) tp_close();
@@ -251,7 +249,7 @@ static void tp_open(HWND btn, int target, int h, int m) {
     fly_close();
     RECT br = ctl_body(btn);
     MapWindowPoints(btn, NULL, (POINT *)&br, 2);
-    int W = S(TP_W), H = S(TP_H);
+    int W = g_sw, H = S(TP_H);
     int x = br.left, y = (br.top + br.bottom) / 2 - (3 * S(TP_ROW) + S(TP_ROW) / 2); /* band on the button */
     HMONITOR mon = MonitorFromWindow(btn, MONITOR_DEFAULTTONEAREST);
     MONITORINFO mi;

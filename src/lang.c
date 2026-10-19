@@ -228,32 +228,40 @@ static bool lang_file_exists(const wchar_t *tag)
     return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-static void lang_load(const wchar_t *tag)
+/* Loads the file at path as language tag (NULL path: English); false if it can't be read or parsed. */
+static bool lang_load_file(const wchar_t *path, const wchar_t *tag)
 {
     for (int i = 0; i < L_COUNT; i++) g_lang_cur[i] = NULL;
     if (g_lang_blk) { HeapFree(GetProcessHeap(), 0, g_lang_blk); g_lang_blk = NULL; }
     g_lang_rtl = false;
     StringCchCopyW(g_lang_tag, LANG_TAG_MAX, L"en");
     StringCchCopyW(g_lang_name, LANG_NAME_MAX, L"English");
-    if (!tag || !lang_tag_ok(tag) || _wcsicmp(tag, L"en") == 0) return;
-    wchar_t dir[MAX_PATH], path[MAX_PATH + 32];
-    lang_dir(dir, MAX_PATH);
-    StringCchPrintfW(path, MAX_PATH + 32, L"%ls\\%ls.txt", dir, tag);
-    path[MAX_PATH + 31] = 0;
+    if (!path) return true;
     size_t len = 0;
     char *data = lang_read_file(path, &len);
-    if (!data) return;
+    if (!data) return false;
     wchar_t name[LANG_NAME_MAX];
     bool rtl = false;
     bool ok = lang_parse(data, len, g_lang_cur, name, LANG_NAME_MAX, &rtl);
     HeapFree(GetProcessHeap(), 0, data);
     if (!ok) {
         for (int i = 0; i < L_COUNT; i++) g_lang_cur[i] = NULL;
-        return;
+        return false;
     }
     StringCchCopyW(g_lang_tag, LANG_TAG_MAX, tag);
     StringCchCopyW(g_lang_name, LANG_NAME_MAX, name[0] ? name : tag); /* no @name: the tag */
     g_lang_rtl = rtl;
+    return true;
+}
+
+static void lang_load(const wchar_t *tag)
+{
+    wchar_t dir[MAX_PATH], path[MAX_PATH + 32];
+    if (!tag || !lang_tag_ok(tag) || _wcsicmp(tag, L"en") == 0) { lang_load_file(NULL, NULL); return; }
+    lang_dir(dir, MAX_PATH);
+    StringCchPrintfW(path, MAX_PATH + 32, L"%ls\\%ls.txt", dir, tag);
+    path[MAX_PATH + 31] = 0;
+    lang_load_file(path, tag);
 }
 
 /* ---- listing ---- */

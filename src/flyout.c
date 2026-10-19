@@ -51,6 +51,21 @@ static void fly_close(void) {
     }
 }
 
+/* design: 208 wide, or the control's width + 8, or the widest item + its 2 x 16 px padding */
+static int fly_width(const RECT *btn_rc, const FlyItem *items, int count) {
+    int w = btn_rc->right - btn_rc->left + S(8);
+    HDC dc = GetDC(NULL);
+    HGDIOBJ o = SelectObject(dc, G.f_row);
+    for (int i = 0; i < count; i++) {
+        SIZE sz = { 0 };
+        GetTextExtentPoint32W(dc, items[i].label, lstrlenW(items[i].label), &sz);
+        if (sz.cx + S(32) > w) w = sz.cx + S(32);
+    }
+    SelectObject(dc, o);
+    ReleaseDC(NULL, dc);
+    return w < S(208) ? S(208) : w;
+}
+
 static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, int sel,
         const RECT *btn_rc) {
     fly_close();
@@ -65,8 +80,7 @@ static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, 
     /* design: 208 wide (or the control's width + 8), 2 px padding, 36 px items, opened
      * over the control so the selected item sits on it: left -4, top -(sel*36 + 6).
      * A list longer than FLY_ROWS (or the screen) scrolls, the selection near the middle. */
-    int ih = S(36), w = btn_rc->right - btn_rc->left + S(8);
-    if (w < S(208)) w = S(208);
+    int ih = S(36), w = fly_width(btn_rc, items, count);
     RECT sr = *btn_rc; /* to screen; both corners at once keep left < right from a mirrored owner */
     MapWindowPoints(owner, NULL, (POINT *)&sr, 2);
     /* over the control from its leading edge: the left one, or the right one in right-to-left */
@@ -136,6 +150,27 @@ static bool fly_key(WPARAM vk) {
     return true;
 }
 
+/* the open list, into hdc (client coordinates of the popup, rc its client rect) */
+static void fly_paint(HDC hdc, const RECT *rc) {
+    fill_rect_c(hdc, rc, T_FLY); /* DWM rounds the window and draws its border */
+    for (int i = FLY.top; i < FLY.top + FLY.rows; i++) {
+        int r = i - FLY.top;
+        RECT ir = { S(4), S(2) + r * S(36), rc->right - S(4), S(2) + (r + 1) * S(36) };
+        if (i == FLY.sel || i == FLY.hover)
+            fill_round(hdc, &ir, 4, T_SUBTLE, T_SUBTLE);
+        if (i == FLY.sel) /* WinUI selection pill */
+            aa_rrect(hdc, (float)ir.left, (float)ir.top + SF(10), SF(3), SF(16), SF(1.5f), T_ACCENT, T_ACCENT, 0);
+        RECT tr = { ir.left + S(12), ir.top, ir.right - S(12), ir.bottom };
+        text_at(hdc, FLY.items[i].label, tr, G.f_row, T_T1,
+            DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
+    }
+    if (FLY.rows < FLY.count) { /* WinUI's collapsed scroll bar: a thin thumb at the right */
+        float track = (float)(rc->bottom - S(8)), th = track * FLY.rows / FLY.count;
+        float ty = SF(4) + track * FLY.top / FLY.count;
+        aa_rrect(hdc, (float)rc->right - SF(4), ty, SF(2), th, SF(1), T_T2, T_T2, 0);
+    }
+}
+
 static LRESULT CALLBACK fly_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_PAINT: {
@@ -147,23 +182,7 @@ static LRESULT CALLBACK fly_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HBITMAP bm = CreateCompatibleBitmap(wdc, rc.right, rc.bottom);
         HGDIOBJ ob = SelectObject(hdc, bm);
         dc_match(hdc, wdc);
-        fill_rect_c(hdc, &rc, T_FLY); /* DWM rounds the window and draws its border */
-        for (int i = FLY.top; i < FLY.top + FLY.rows; i++) {
-            int r = i - FLY.top;
-            RECT ir = { S(4), S(2) + r * S(36), rc.right - S(4), S(2) + (r + 1) * S(36) };
-            if (i == FLY.sel || i == FLY.hover)
-                fill_round(hdc, &ir, 4, T_SUBTLE, T_SUBTLE);
-            if (i == FLY.sel) /* WinUI selection pill */
-                aa_rrect(hdc, (float)ir.left, (float)ir.top + SF(10), SF(3), SF(16), SF(1.5f), T_ACCENT, T_ACCENT, 0);
-            RECT tr = { ir.left + S(12), ir.top, ir.right - S(12), ir.bottom };
-            text_at(hdc, FLY.items[i].label, tr, G.f_row, T_T1,
-                DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
-        }
-        if (FLY.rows < FLY.count) { /* WinUI's collapsed scroll bar: a thin thumb at the right */
-            float track = (float)(rc.bottom - S(8)), th = track * FLY.rows / FLY.count;
-            float ty = SF(4) + track * FLY.top / FLY.count;
-            aa_rrect(hdc, (float)rc.right - SF(4), ty, SF(2), th, SF(1), T_T2, T_T2, 0);
-        }
+        fly_paint(hdc, &rc);
         BitBlt(wdc, 0, 0, rc.right, rc.bottom, hdc, 0, 0, SRCCOPY);
         SelectObject(hdc, ob);
         DeleteObject(bm);

@@ -294,20 +294,22 @@ static void focus_ring(HDC hdc, const RECT *rc, int rad, COLORREF under) {
 }
 
 static void paint_row(HDC hdc, const RECT *rc, IconId ic,
-        const wchar_t *title, const wchar_t *sub, int ctl_w) { /* ctl_w: right control + gap, design px */
+        const wchar_t *title, const wchar_t *sub, int ctl_w) { /* ctl_w: right control + gap, device px */
     paint_card(hdc, rc);
     int cy = (rc->top + rc->bottom) / 2;
     icon_bg(hdc, rc->left + S(18), cy - S(10), S(20), ic, T_T1, T_CARD);
     if (!sub) { /* v3 Options row: one 14/20 line, 16 px after the icon */
-        RECT tr = { rc->left + S(18 + 20 + 16), cy - S(10), rc->right - S(16 + ctl_w), cy + S(10) };
+        RECT tr = { rc->left + S(18 + 20 + 16), cy - S(10), rc->right - S(16) - ctl_w, cy + S(10) };
         text_at(hdc, title, tr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
         return;
     }
     /* design: 14/20 title directly over a 12/16 subtitle, block centered in the row */
-    RECT tr = { rc->left + S(18 + 20 + 18), cy - S(18), rc->right - S(16 + ctl_w), cy + S(2) };
+    RECT tr = { rc->left + S(18 + 20 + 18), cy - S(18), rc->right - S(16) - ctl_w, cy + S(2) };
     text_at(hdc, title, tr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
     RECT sr = { tr.left, cy + S(2), tr.right, cy + S(18) };
+    g_fit_skip = true; /* a subtitle may ellipsize */
     text_at(hdc, sub, sr, G.f_sub, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    g_fit_skip = false;
 }
 
 static RECT ctl_body(HWND btn) { /* the drawn control inside its padded window */

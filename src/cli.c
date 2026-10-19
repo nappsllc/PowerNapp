@@ -221,6 +221,30 @@ int wmain(int argc, wchar_t **argv) {
         print_help();
         return 0;
     }
+    { /* --check-fit <tag | file.txt> [--dpi N]: does every text fit? Offscreen, before any startup work */
+        const wchar_t *fit = arg_val(argc, argv, L"--check-fit"), *dpi = arg_val(argc, argv, L"--dpi");
+        if (fit) {
+            const wchar_t *b = fit, *q;
+            for (q = fit; *q; q++) if (*q == L'\\' || *q == L'/') b = q + 1;
+            size_t n = wcslen(b);
+            bool txt = n > 4 && !_wcsicmp(b + n - 4, L".txt"), file = b != fit || txt;
+            wchar_t tag[LANG_TAG_MAX] = L"", path[MAX_PATH + 32];
+            if (n - (txt ? 4 : 0) < LANG_TAG_MAX) StringCchCopyNW(tag, LANG_TAG_MAX, b, n - (txt ? 4 : 0));
+            if (file) StringCchCopyW(path, MAX_PATH + 32, fit);
+            else {
+                lang_dir(path, MAX_PATH);
+                StringCchCatW(path, MAX_PATH + 32, L"\\");
+                StringCchCatW(path, MAX_PATH + 32, tag);
+                StringCchCatW(path, MAX_PATH + 32, L".txt");
+            }
+            if (!lang_tag_ok(tag) || !lang_load_file(!file && !_wcsicmp(tag, L"en") ? NULL : path, tag)) {
+                fwprintf(stderr, L"PowerNapp: no language file for '%ls'.\n", fit);
+                return -1;
+            }
+            SetEnvironmentVariableW(L"POWERNAPP_TEST_DPI", dpi ? dpi : L"96"); /* this process only */
+            return check_fit();
+        }
+    }
     if (has_flag(argc, argv, L"--migrate")) { /* the installer, upgrading from PowerOff 1.x */
         migrate_from_poweroff();
         return 0;

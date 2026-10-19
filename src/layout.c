@@ -169,9 +169,54 @@ static void move_ctl(HWND h, int x, int y, int w, int hh) { /* device px, unpadd
     move(h, x - p, y - p, w + 2 * p, hh + 2 * p);
 }
 
-/* right-aligned control slot of a row: w x h design px, 16 px from the right edge */
+/* right-aligned control slot of a row: w device px x hh design px, 16 px from the right edge */
 static void place_right(HWND h, const RECT *row, int w, int hh) {
-    move_ctl(h, row->right - S(16) - S(w), (row->top + row->bottom - S(hh)) / 2, S(w), S(hh));
+    move_ctl(h, row->right - S(16) - w, (row->top + row->bottom - S(hh)) / 2, w, S(hh));
+}
+
+/* Control widths from their text, device px: the design's width, or wider where a language
+ * needs it (combos: widest item + 48, up to what the row's title leaves). Set by layout(). */
+static int g_cw, g_sw, g_lw, g_bw, g_ow, g_dw, g_apw; /* combos, time slot, Language, Start, On/Off, day, AM/PM */
+
+static int max_i(int a, int b) { return a > b ? a : b; }
+
+/* design width d, or text + pad; at most what a row with this title leaves (never under d) */
+static int ctl_w(int d, int text, int pad, int content, int title) {
+    int cap = content - S(18 + 20 + 18 + 16 + 16) - title;
+    int w = max_i(S(d), text + S(pad));
+    return w > cap ? max_i(S(d), cap) : w;
+}
+
+static void measure_ctls(HWND hwnd, int content) {
+    wchar_t t[96];
+    int a = 0, b = 0;
+    for (int i = 0; i < NTASKS + NGUI_MODES; i++) /* TASK_* then MODE_*, adjacent in strings.h */
+        a = max_i(a, text_w(hwnd, G.f_row, TR((StrId)(L_TASK_SHUTDOWN + i))));
+    g_cw = ctl_w(200, a, 48, content,
+        max_i(text_w(hwnd, G.f_row, TR(L_ACTION_TITLE)), text_w(hwnd, G.f_row, TR(L_SCHED_TITLE))));
+    a = 0;
+    for (int i = 0; i < NCDS + NIDLES; i++) {
+        dur_label(i < NCDS ? CDS[i] : IDLES[i - NCDS], t, 96);
+        a = max_i(a, text_w(hwnd, G.f_row, t));
+    }
+    for (int pm = 0; pm < 2; pm++) {
+        ampm(pm, t, 96);
+        b = max_i(b, text_w(hwnd, G.f_row, t));
+    }
+    g_apw = max_i(S(80), b + S(16));
+    a = max_i(a + S(48), S(162) + g_apw);
+    g_sw = ctl_w(242, a, 0, content,
+        max_i(text_w(hwnd, G.f_row, TR(L_TIME_TITLE)), text_w(hwnd, G.f_row, TR(L_OPT_WAKE_TIME))));
+    get_text(G.combo_lang, t, 96);
+    g_lw = ctl_w(200, text_w(hwnd, G.f_row, t), 48, content, text_w(hwnd, G.f_row, TR(L_LANGUAGE_TITLE)));
+    g_bw = S(40) + max_i(text_w(hwnd, G.f_hdr, TR(L_BTN_START)), text_w(hwnd, G.f_hdr, TR(L_BTN_CANCEL)));
+    g_bw = max_i(S(120), g_bw);
+    g_ow = max_i(S(34), max_i(text_w(hwnd, G.f_row, TR(L_OPT_ON)), text_w(hwnd, G.f_row, TR(L_OPT_OFF))));
+    g_dw = S(44);
+    for (int i = 0; i < 7; i++) {
+        day_name(i, false, t, 96);
+        g_dw = max_i(g_dw, text_w(hwnd, G.f_row, t) + S(16));
+    }
 }
 
 /* resize the window so its client area is w x h device px (frame added as it is) */
@@ -193,6 +238,7 @@ static void layout(HWND hwnd) {
     }
     int w = crc.right; /* client width */
     int px = S(PAGE_X), content = w - px * 2;
+    measure_ctls(hwnd, content);
 
     g_cy = S(TITLE_H + 8);
     G.rc_sched_hdr = (RECT){ px, g_cy, px + content, g_cy + S(20) };
@@ -232,26 +278,26 @@ static void layout(HWND hwnd) {
 
     /* --- position children --- */
     Mode m = G.rt.plan.mode;
-    place_right(G.combo_action, &G.rc_action, 200, 32);
-    place_right(G.combo_mode, &G.rc_sched, 200, 32);
+    place_right(G.combo_action, &G.rc_action, g_cw, 32);
+    place_right(G.combo_mode, &G.rc_sched, g_cw, 32);
 
-    /* Time row: one 242-wide slot for the countdown / idle combos or the time picker */
+    /* Time row: one slot (242 wide in the design) for the countdown / idle combos or the time picker */
     bool show_seg = (m == M_DAILY || m == M_WEEKLY);
     ShowWindow(G.combo_cd, m == M_COUNTDOWN ? SW_SHOW : SW_HIDE);
     ShowWindow(G.combo_idle, m == M_IDLE ? SW_SHOW : SW_HIDE);
     ShowWindow(G.time_btn, show_seg ? SW_SHOW : SW_HIDE);
-    place_right(G.combo_cd, &G.rc_time, 242, 32);
-    place_right(G.combo_idle, &G.rc_time, 242, 32);
-    place_right(G.time_btn, &G.rc_time, 242, 32);
+    place_right(G.combo_cd, &G.rc_time, g_sw, 32);
+    place_right(G.combo_idle, &G.rc_time, g_sw, 32);
+    place_right(G.time_btn, &G.rc_time, g_sw, 32);
 
-    /* day buttons: 7 x 44, 4 apart, right-aligned, from the regional first day of the week;
+    /* day buttons: 7 x 44 (or the widest day name + 16), 4 apart, right-aligned, from the regional first day of the week;
        the Tab order (z-order after the Time button) follows, should the region change */
     HWND prev = G.time_btn;
     for (int k = 0, first = first_day(); k < 7; k++) {
         int i = (first + k) % 7;
         if (weekly) {
-            int bx = G.rc_days.right - S(16) - S(7 * 44 + 6 * 4) + k * S(48);
-            move_ctl(G.day[i], bx, (G.rc_days.top + G.rc_days.bottom - S(32)) / 2, S(44), S(32));
+            int bx = G.rc_days.right - S(16) - 7 * g_dw - S(6 * 4) + k * (g_dw + S(4));
+            move_ctl(G.day[i], bx, (G.rc_days.top + G.rc_days.bottom - S(32)) / 2, g_dw, S(32));
         }
         SetWindowPos(G.day[i], prev, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOREDRAW);
         prev = G.day[i];
@@ -259,19 +305,19 @@ static void layout(HWND hwnd) {
     }
 
     /* toggle pills */
-    place_right(G.tg_remind, &G.rc_remind, 40, 20);
-    place_right(G.tg_force, &G.rc_force, 40, 20);
-    place_right(G.tg_auto, &G.rc_auto, 40, 20);
-    place_right(G.tg_tray, &G.rc_tray, 40, 20);
+    place_right(G.tg_remind, &G.rc_remind, S(40), 20);
+    place_right(G.tg_force, &G.rc_force, S(40), 20);
+    place_right(G.tg_auto, &G.rc_auto, S(40), 20);
+    place_right(G.tg_tray, &G.rc_tray, S(40), 20);
     ShowWindow(G.tg_wake, wake_applies() ? SW_SHOW : SW_HIDE);
-    place_right(G.tg_wake, &G.rc_wake, 40, 20);
+    place_right(G.tg_wake, &G.rc_wake, S(40), 20);
     ShowWindow(G.wake_btn, wake_applies() && G.wake_on ? SW_SHOW : SW_HIDE);
-    place_right(G.wake_btn, &G.rc_wake_time, 242, 32);
-    place_right(G.combo_lang, &G.rc_lang, 200, 32);
+    place_right(G.wake_btn, &G.rc_wake_time, g_sw, 32);
+    place_right(G.combo_lang, &G.rc_lang, g_lw, 32);
 
-    /* hero start button: 120 x 32, 20 px from the right */
-    move_ctl(G.btn_start, G.rc_hero.right - S(20 + 120), (G.rc_hero.top + G.rc_hero.bottom - S(32)) / 2,
-        S(120), S(32));
+    /* hero start button: 120 (or its text + 40) x 32, 20 px from the right */
+    move_ctl(G.btn_start, G.rc_hero.right - S(20) - g_bw, (G.rc_hero.top + G.rc_hero.bottom - S(32)) / 2,
+        g_bw, S(32));
 
     /* footer links: padded like the other controls, so the focus ring fits around the text */
     move_ctl(G.rel_power, G.rc_rel1.left, G.rc_rel1.top, G.rc_rel1.right - G.rc_rel1.left, S(20));

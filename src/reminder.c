@@ -24,14 +24,42 @@ static struct {
     bool keys;                 /* keyboard used: show the focus ring */
     HFONT f_title, f_text;
     void (*done)(int result);
+    int w, h, dy, x[5];        /* measured: size, extra description lines, button edges */
 } RM;
 
 /* "PowerNapp will ... when the countdown ends.": L_RM_SHUTDOWN.., index-aligned with Task */
 #define RM_WHAT(t) TR((StrId)(L_RM_SHUTDOWN + (t)))
 
-static RECT rm_btn(int i) { /* primary 152 wide, the others 112, 8 apart, 24 margins */
-    static const int X0[4] = { 0, 24, 184, 304 }, X1[4] = { 0, 176, 296, 416 };
-    RECT r = { S(X0[i]), S(136), S(X1[i]), S(168) };
+static void rm_label(int i, wchar_t *out, size_t n) { /* 1 "<Action> now", 2 Snooze, 3 Stop */
+    if (i == 1) StringCchPrintfW(out, n, TR(L_RM_NOW), TASK_TR(RM.task));
+    else StringCchCopyW(out, n, TR(i == 2 ? L_RM_SNOOZE : L_RM_STOP));
+}
+
+/* Sized to the language: buttons 152 / 112 / 112 or their text + 32, 8 apart, 24 margins (the card
+ * widens to hold them); the description wraps, the card growing by its extra lines. */
+static void rm_measure(void) {
+    HDC dc = GetDC(NULL);
+    HGDIOBJ o = SelectObject(dc, RM.f_text);
+    wchar_t l[96];
+    RM.x[1] = S(24);
+    for (int i = 1; i <= 3; i++) { /* x[i]: button i's left edge; x[4]: past the last one's gap */
+        SIZE sz = { 0 };
+        int d = S(i == 1 ? 152 : 112);
+        rm_label(i, l, 96);
+        GetTextExtentPoint32W(dc, l, lstrlenW(l), &sz);
+        RM.x[i + 1] = RM.x[i] + (sz.cx + S(32) > d ? sz.cx + S(32) : d) + S(8);
+    }
+    RM.w = RM.x[4] + S(16) > S(RM_W) ? RM.x[4] + S(16) : S(RM_W);
+    RECT m = { 0, 0, RM.w - S(48), 0 };
+    DrawTextW(dc, RM_WHAT(RM.task), -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    RM.dy = m.bottom > S(20) ? m.bottom - S(20) : 0;
+    RM.h = S(RM_H) + RM.dy;
+    SelectObject(dc, o);
+    ReleaseDC(NULL, dc);
+}
+
+static RECT rm_btn(int i) {
+    RECT r = { RM.x[i], S(136) + RM.dy, RM.x[i + 1] - S(8), S(168) + RM.dy };
     return r;
 }
 
@@ -56,10 +84,46 @@ static void rm_finish(int result) {
     if (done) done(result);
 }
 
+/* the card with secs left of `left` ms, into hdc */
+static void rm_paint(HDC hdc, int secs, LONGLONG left) {
+    int W = RM.w, H = RM.h, dy = RM.dy;
+    RECT all = { 0, 0, W, H }, foot = { 0, S(RM_FOOT) + dy, W, H };
+    fill_rect_c(hdc, &all, T_CARD);
+    fill_rect_c(hdc, &foot, T_WIN);
+    line_c(hdc, 0, foot.top, W, foot.top, T_CARDBRD, 1);
+    icon_bg(hdc, S(24), S(24), S(32), TASK_ICON[RM.task], TASK_COLOR[RM.task], T_CARD);
+    wchar_t t[128], mmss[16];
+    StringCchPrintfW(mmss, 16, L"%d:%02d", secs / 60, secs % 60);
+    StringCchPrintfW(t, 128, TR(L_RM_TITLE), TASK_TR(RM.task), mmss);
+    RECT tr = { S(68), S(24), W - S(24), S(56) };
+    text_at(hdc, t, tr, RM.f_title, T_T1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    RECT dr = { S(24), S(64), W - S(24), S(84) + dy };
+    text_at(hdc, RM_WHAT(RM.task), dr, RM.f_text, T_T2, DT_LEFT | DT_WORDBREAK);
+    /* WinUI ProgressBar: 1 px track, 3 px rounded fill, draining */
+    float px = SF(24), pw = (float)(W - S(48)), py = SF(96) + (float)dy;
+    line_c(hdc, S(24), S(97) + dy, W - S(24), S(97) + dy, T_CTLBRD, 1);
+    float frac = RM.span ? (float)left / (float)RM.span : 0;
+    if (frac > 0) aa_rrect(hdc, px, py, pw * frac, SF(3), SF(1.5f), T_ACCENT, T_ACCENT, 0);
+    for (int i = 1; i <= 3; i++) {
+        RECT r = rm_btn(i);
+        wchar_t lbl[96];
+        rm_label(i, lbl, 96);
+        g_focus_cues = RM.keys && RM.focus == i;
+        focus_ring(hdc, &r, 4, T_WIN);
+        if (i == 1) {
+            fill_round(hdc, &r, 4, RM.hover == 1 ? T_ACCHOV : T_ACCENT, T_ACCENT);
+            text_at(hdc, lbl, r, RM.f_text, T_ONACC, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        } else {
+            fill_round(hdc, &r, 4, RM.hover == i ? T_CTLHOV : T_CTL, T_CTLBRD);
+            text_at(hdc, lbl, r, RM.f_text, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        }
+    }
+}
+
 static LRESULT CALLBACK rm_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_PAINT: {
-        int W = S(RM_W), H = S(RM_H);
+        int W = RM.w, H = RM.h;
         ULONGLONG now = GetTickCount64();
         LONGLONG left = (LONGLONG)(RM.deadline - now);
         if (left < 0) left = 0;
@@ -70,38 +134,7 @@ static LRESULT CALLBACK rm_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HBITMAP bm = CreateCompatibleBitmap(wdc, W, H);
         HGDIOBJ ob = SelectObject(hdc, bm);
         dc_match(hdc, wdc);
-        RECT all = { 0, 0, W, H }, foot = { 0, S(RM_FOOT), W, H };
-        fill_rect_c(hdc, &all, T_CARD);
-        fill_rect_c(hdc, &foot, T_WIN);
-        line_c(hdc, 0, S(RM_FOOT), W, S(RM_FOOT), T_CARDBRD, 1);
-        icon_bg(hdc, S(24), S(24), S(32), TASK_ICON[RM.task], TASK_COLOR[RM.task], T_CARD);
-        wchar_t t[128], mmss[16];
-        StringCchPrintfW(mmss, 16, L"%d:%02d", secs / 60, secs % 60);
-        StringCchPrintfW(t, 128, TR(L_RM_TITLE), TASK_TR(RM.task), mmss);
-        RECT tr = { S(68), S(24), W - S(24), S(56) };
-        text_at(hdc, t, tr, RM.f_title, T_T1, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-        RECT dr = { S(24), S(64), W - S(24), S(84) };
-        text_at(hdc, RM_WHAT(RM.task), dr, RM.f_text, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-        /* WinUI ProgressBar: 1 px track, 3 px rounded fill, draining */
-        float px = SF(24), pw = (float)(W - S(48)), py = SF(96);
-        line_c(hdc, S(24), S(97), W - S(24), S(97), T_CTLBRD, 1);
-        float frac = RM.span ? (float)left / (float)RM.span : 0;
-        if (frac > 0) aa_rrect(hdc, px, py, pw * frac, SF(3), SF(1.5f), T_ACCENT, T_ACCENT, 0);
-        for (int i = 1; i <= 3; i++) {
-            RECT r = rm_btn(i);
-            wchar_t now_lbl[96];
-            const wchar_t *lbl = TR(i == 2 ? L_RM_SNOOZE : L_RM_STOP);
-            if (i == 1) { StringCchPrintfW(now_lbl, 96, TR(L_RM_NOW), TASK_TR(RM.task)); lbl = now_lbl; }
-            g_focus_cues = RM.keys && RM.focus == i;
-            focus_ring(hdc, &r, 4, T_WIN);
-            if (i == 1) {
-                fill_round(hdc, &r, 4, RM.hover == 1 ? T_ACCHOV : T_ACCENT, T_ACCENT);
-                text_at(hdc, lbl, r, RM.f_text, T_ONACC, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
-            } else {
-                fill_round(hdc, &r, 4, RM.hover == i ? T_CTLHOV : T_CTL, T_CTLBRD);
-                text_at(hdc, lbl, r, RM.f_text, T_T1, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-            }
-        }
+        rm_paint(hdc, secs, left);
         BitBlt(wdc, 0, 0, W, H, hdc, 0, 0, SRCCOPY);
         SelectObject(hdc, ob);
         DeleteObject(bm);
@@ -201,7 +234,8 @@ static void reminder_show(Task task, unsigned secs, void (*done)(int result)) {
     MONITORINFO mi;
     mi.cbSize = sizeof(mi);
     GetMonitorInfoW(MonitorFromWindow(G.main, MONITOR_DEFAULTTOPRIMARY), &mi);
-    int W = S(RM_W), H = S(RM_H);
+    rm_measure();
+    int W = RM.w, H = RM.h;
     int x = lang_rtl() ? mi.rcWork.left + S(12) : mi.rcWork.right - W - S(12); /* bottom left in right-to-left */
     RM.wnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW | wnd_ex_dir(), RM_CLASS, TR(L_RM_WINDOW), WS_POPUP,
         x, mi.rcWork.bottom - H - S(12), W, H, NULL, NULL, GetModuleHandleW(NULL), NULL);

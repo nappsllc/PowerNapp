@@ -367,6 +367,115 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
     return 0;
 }
 
+/* the window's own drawing (cards, rows, labels); the controls draw themselves (draw_ctl) */
+static void paint_main(HDC hdc, bool title) {
+    Plan *p = &G.rt.plan;
+    if (title) paint_title(hdc);
+    /* hero */
+    paint_card(hdc, &G.rc_hero);
+    int hcy = (G.rc_hero.top + G.rc_hero.bottom) / 2;
+    icon_bg(hdc, G.rc_hero.left + S(24), hcy - S(16), S(32), TASK_ICON[p->task], TASK_COLOR[p->task], T_CARD);
+    wchar_t ht[128], hs[128];
+    hero_strings(ht, 128, hs, 128);
+    /* design: 20/28 title, 2 px gap, 14/20 subtitle, centered. A long title wraps to two lines;
+       longer still (many days in a long language), it takes the 14 px heading font, up to three. */
+    RECT htr = { G.rc_hero.left + S(24 + 32 + 20), 0, G.rc_hero.right - S(20 + 16) - g_bw, 0 };
+    RECT m = { 0, 0, htr.right - htr.left, 0 };
+    HFONT hf = G.f_hero;
+    SelectObject(hdc, hf);
+    DrawTextW(hdc, ht, -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    if (m.bottom > S(56)) {
+        SelectObject(hdc, hf = G.f_hdr);
+        m.right = htr.right - htr.left;
+        DrawTextW(hdc, ht, -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    }
+    int th = m.bottom < S(28) ? S(28) : m.bottom > S(60) ? S(60) : m.bottom;
+    htr.top = hcy - (th + S(22)) / 2;
+    htr.bottom = htr.top + th;
+    text_at(hdc, ht, htr, hf, T_T1, DT_LEFT | DT_WORDBREAK);
+    RECT hsr = { htr.left, htr.bottom + S(2), htr.right, htr.bottom + S(22) };
+    g_fit_skip = true; /* subtitles may ellipsize */
+    text_at(hdc, hs, hsr, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+    g_fit_skip = false;
+    /* section headers: 14 px semibold, as in the design */
+    text_at(hdc, TR(L_HDR_SCHEDULE), G.rc_sched_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
+    text_at(hdc, TR(L_HDR_TASK), G.rc_task_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
+    text_at(hdc, TR(L_HDR_OPTIONS), G.rc_opts_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
+    /* task rows */
+    wchar_t sub[128];
+    paint_row(hdc, &G.rc_action, TASK_ICON[p->task],
+        TR(L_ACTION_TITLE), TR(L_ACTION_SUB), g_cw + S(16));
+    paint_row(hdc, &G.rc_sched, IC_CALCLK, TR(L_SCHED_TITLE),
+        TR(L_SCHED_SUB), g_cw + S(16));
+    time_row_sub(sub, 128);
+    paint_row(hdc, &G.rc_time, IC_CLOCK, TR(L_TIME_TITLE), sub, g_sw + S(16));
+    /* days row */
+    if (p->mode == M_WEEKLY) {
+        paint_card(hdc, &G.rc_days);
+        wchar_t d[96];
+        days_text(p->days, d, 96);
+        int dcy = (G.rc_days.top + G.rc_days.bottom) / 2;
+        RECT dr = { G.rc_days.left + S(18), dcy - S(18),
+                    G.rc_days.right - S(16 + 6 * 4 + 18) - 7 * g_dw, dcy + S(2) };
+        text_at(hdc, TR(L_DAYS_TITLE), dr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
+        RECT dsr = { dr.left, dcy + S(2), dr.right, dcy + S(18) };
+        StringCchPrintfW(sub, 128, TR(L_DAYS_SUB), d);
+        g_fit_skip = true;
+        text_at(hdc, sub, dsr, G.f_sub, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+        g_fit_skip = false;
+    }
+    /* options rows (On/Off labels left of the pill children) */
+    static const struct { RECT *rc; IconId ic; StrId t; bool *on; } OPTS[] = {
+        { &G.rc_remind, IC_ALERT, L_OPT_REMIND, &G.remind_on },
+        { &G.rc_force, IC_APPS, L_OPT_FORCE, &G.force_on },
+        { &G.rc_auto, IC_ROCKET, L_OPT_AUTO, &G.auto_on },
+        { &G.rc_tray, IC_MONITOR, L_OPT_TRAY, &G.tray_on },
+        { &G.rc_wake, IC_SUN, L_OPT_WAKE, &G.wake_on },
+    };
+    for (int i = 0; i < (wake_applies() ? 5 : 4); i++) { /* Wake up is last */
+        paint_row(hdc, OPTS[i].rc, OPTS[i].ic, TR(OPTS[i].t), NULL, S(40 + 12 + 18) + g_ow); /* v3: single line */
+        int ocy = (OPTS[i].rc->top + OPTS[i].rc->bottom) / 2;
+        RECT lr = { OPTS[i].rc->right - S(16 + 40 + 12) - g_ow, ocy - S(10),
+                    OPTS[i].rc->right - S(16 + 40 + 12), ocy + S(10) };
+        text_at(hdc, TR(*OPTS[i].on ? L_OPT_ON : L_OPT_OFF), lr, G.f_row, T_T1,
+            DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
+    }
+    if (wake_applies() && G.wake_on) {
+        paint_row(hdc, &G.rc_wake_time, IC_CLOCK, TR(L_OPT_WAKE_TIME), NULL, g_sw + S(16));
+    }
+    paint_row(hdc, &G.rc_lang, IC_LANG, TR(L_LANGUAGE_TITLE), NULL, g_lw + S(16));
+    /* footer links are owner-drawn buttons (see WM_DRAWITEM) */
+}
+
+/* an owner-drawn control, into hdc in its own client coordinates */
+static void draw_ctl(HDC hdc, HWND h, int id) {
+    if (id == ID_COMBO_ACTION || id == ID_COMBO_MODE || id == ID_COMBO_CD || id == ID_COMBO_IDLE ||
+            id == ID_COMBO_LANG)
+        paint_combo_btn(hdc, h);
+    else if (id == ID_TIME) {
+        paint_time_btn(hdc, h, G.rt.plan.h, G.rt.plan.m);
+    } else if (id == ID_WAKE_TIME) {
+        paint_time_btn(hdc, h, G.wake_h, G.wake_m);
+    } else if (id >= ID_DAY0 && id < ID_DAY0 + 7) {
+        paint_day_btn(hdc, h, (G.rt.plan.days >> (id - ID_DAY0)) & 1);
+    } else if (id == ID_TG_REMIND)
+        paint_toggle(hdc, h, G.remind_on);
+    else if (id == ID_TG_FORCE)
+        paint_toggle(hdc, h, G.force_on);
+    else if (id == ID_TG_AUTO)
+        paint_toggle(hdc, h, G.auto_on);
+    else if (id == ID_TG_TRAY)
+        paint_toggle(hdc, h, G.tray_on);
+    else if (id == ID_TG_WAKE)
+        paint_toggle(hdc, h, G.wake_on);
+    else if (id == ID_START)
+        paint_start_btn(hdc, h, G.rt.active);
+    else if (id == ID_REL_POWER)
+        paint_link(hdc, h, TR(L_LINK_POWER));
+    else if (id == ID_REL_ABOUT)
+        paint_link(hdc, h, TR(L_LINK_ABOUT));
+}
+
 static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_CREATE: {
@@ -447,68 +556,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         RECT crc;
         GetClientRect(hwnd, &crc);
         fill_rect_c(hdc, &dirty, T_WIN);
-        if (G.ready) {
-            Plan *p = &G.rt.plan;
-            if (dirty.top < S(TITLE_H)) paint_title(hdc);
-            /* hero */
-            paint_card(hdc, &G.rc_hero);
-            int hcy = (G.rc_hero.top + G.rc_hero.bottom) / 2;
-            icon_bg(hdc, G.rc_hero.left + S(24), hcy - S(16), S(32), TASK_ICON[p->task], TASK_COLOR[p->task], T_CARD);
-            wchar_t ht[128], hs[128];
-            hero_strings(ht, 128, hs, 128);
-            /* design: 20/28 title, 2 px gap, 14/20 subtitle, centered */
-            RECT htr = { G.rc_hero.left + S(24 + 32 + 20), hcy - S(25),
-                         G.rc_hero.right - S(20 + 120 + 16), hcy + S(3) };
-            text_at(hdc, ht, htr, G.f_hero, T_T1, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-            RECT hsr = { htr.left, hcy + S(5), htr.right, hcy + S(25) };
-            text_at(hdc, hs, hsr, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-            /* section headers: 14 px semibold, as in the design */
-            text_at(hdc, TR(L_HDR_SCHEDULE), G.rc_sched_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
-            text_at(hdc, TR(L_HDR_TASK), G.rc_task_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
-            text_at(hdc, TR(L_HDR_OPTIONS), G.rc_opts_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
-            /* task rows */
-            wchar_t sub[128];
-            paint_row(hdc, &G.rc_action, TASK_ICON[p->task],
-                TR(L_ACTION_TITLE), TR(L_ACTION_SUB), 216);
-            paint_row(hdc, &G.rc_sched, IC_CALCLK, TR(L_SCHED_TITLE),
-                TR(L_SCHED_SUB), 216);
-            time_row_sub(sub, 128);
-            paint_row(hdc, &G.rc_time, IC_CLOCK, TR(L_TIME_TITLE), sub, 258);
-            /* days row */
-            if (p->mode == M_WEEKLY) {
-                paint_card(hdc, &G.rc_days);
-                wchar_t d[96];
-                days_text(p->days, d, 96);
-                int dcy = (G.rc_days.top + G.rc_days.bottom) / 2;
-                RECT dr = { G.rc_days.left + S(18), dcy - S(18),
-                            G.rc_days.right - S(16 + 7 * 44 + 6 * 4 + 18), dcy + S(2) };
-                text_at(hdc, TR(L_DAYS_TITLE), dr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
-                RECT dsr = { dr.left, dcy + S(2), dr.right, dcy + S(18) };
-                StringCchPrintfW(sub, 128, TR(L_DAYS_SUB), d);
-                text_at(hdc, sub, dsr, G.f_sub, T_T2, DT_LEFT | DT_SINGLELINE);
-            }
-            /* options rows (On/Off labels left of the pill children) */
-            static const struct { RECT *rc; IconId ic; StrId t; bool *on; } OPTS[] = {
-                { &G.rc_remind, IC_ALERT, L_OPT_REMIND, &G.remind_on },
-                { &G.rc_force, IC_APPS, L_OPT_FORCE, &G.force_on },
-                { &G.rc_auto, IC_ROCKET, L_OPT_AUTO, &G.auto_on },
-                { &G.rc_tray, IC_MONITOR, L_OPT_TRAY, &G.tray_on },
-                { &G.rc_wake, IC_SUN, L_OPT_WAKE, &G.wake_on },
-            };
-            for (int i = 0; i < (wake_applies() ? 5 : 4); i++) { /* Wake up is last */
-                paint_row(hdc, OPTS[i].rc, OPTS[i].ic, TR(OPTS[i].t), NULL, 104); /* v3: single line */
-                int ocy = (OPTS[i].rc->top + OPTS[i].rc->bottom) / 2;
-                RECT lr = { OPTS[i].rc->right - S(16 + 40 + 12 + 34), ocy - S(10),
-                            OPTS[i].rc->right - S(16 + 40 + 12), ocy + S(10) };
-                text_at(hdc, TR(*OPTS[i].on ? L_OPT_ON : L_OPT_OFF), lr, G.f_row, T_T1,
-                    DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
-            }
-            if (wake_applies() && G.wake_on) {
-                paint_row(hdc, &G.rc_wake_time, IC_CLOCK, TR(L_OPT_WAKE_TIME), NULL, 258);
-            }
-            paint_row(hdc, &G.rc_lang, IC_LANG, TR(L_LANGUAGE_TITLE), NULL, 216);
-            /* footer links are owner-drawn buttons (see WM_DRAWITEM) */
-        }
+        if (G.ready) paint_main(hdc, dirty.top < S(TITLE_H));
         SetViewportOrgEx(hdc, 0, 0, NULL);
         BitBlt(wdc, dirty.left, dirty.top, dw, dh, hdc, 0, 0, SRCCOPY);
         SelectObject(hdc, obuf);
@@ -527,7 +575,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_DRAWITEM: {
         if (!G.ready) return 0;
         /* painted into a bitmap and blitted once, so a repaint never shows half-drawn */
-        DRAWITEMSTRUCT dis = *(DRAWITEMSTRUCT *)lp, *di = &dis;
+        const DRAWITEMSTRUCT *di = (const DRAWITEMSTRUCT *)lp;
         HDC screen = di->hDC;
         int bw = di->rcItem.right - di->rcItem.left, bh = di->rcItem.bottom - di->rcItem.top;
         HDC mem = CreateCompatibleDC(screen);
@@ -535,37 +583,9 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         HGDIOBJ obmp = SelectObject(mem, bmp);
         dc_match(mem, screen);
         SetViewportOrgEx(mem, -di->rcItem.left, -di->rcItem.top, NULL);
-        di->hDC = mem;
-        int id = (int)di->CtlID;
-        bool pressed = (di->itemState & ODS_SELECTED) != 0;
         /* focus ring only when focus came from the keyboard */
         g_focus_cues = (di->itemState & ODS_FOCUS) && G.kbd_nav;
-        if (id == ID_COMBO_ACTION || id == ID_COMBO_MODE || id == ID_COMBO_CD || id == ID_COMBO_IDLE ||
-                id == ID_COMBO_LANG)
-            paint_combo_btn(di->hDC, di->hwndItem);
-        else if (id == ID_TIME) {
-            paint_time_btn(di->hDC, di->hwndItem, G.rt.plan.h, G.rt.plan.m);
-        } else if (id == ID_WAKE_TIME) {
-            paint_time_btn(di->hDC, di->hwndItem, G.wake_h, G.wake_m);
-        } else if (id >= ID_DAY0 && id < ID_DAY0 + 7) {
-            paint_day_btn(di->hDC, di->hwndItem, (G.rt.plan.days >> (id - ID_DAY0)) & 1);
-        } else if (id == ID_TG_REMIND)
-            paint_toggle(di->hDC, di->hwndItem, G.remind_on);
-        else if (id == ID_TG_FORCE)
-            paint_toggle(di->hDC, di->hwndItem, G.force_on);
-        else if (id == ID_TG_AUTO)
-            paint_toggle(di->hDC, di->hwndItem, G.auto_on);
-        else if (id == ID_TG_TRAY)
-            paint_toggle(di->hDC, di->hwndItem, G.tray_on);
-        else if (id == ID_TG_WAKE)
-            paint_toggle(di->hDC, di->hwndItem, G.wake_on);
-        else if (id == ID_START)
-            paint_start_btn(di->hDC, di->hwndItem, G.rt.active);
-        else if (id == ID_REL_POWER)
-            paint_link(di->hDC, di->hwndItem, TR(L_LINK_POWER));
-        else if (id == ID_REL_ABOUT)
-            paint_link(di->hDC, di->hwndItem, TR(L_LINK_ABOUT));
-        (void)pressed;
+        draw_ctl(mem, di->hwndItem, (int)di->CtlID);
         SetViewportOrgEx(mem, 0, 0, NULL);
         BitBlt(screen, di->rcItem.left, di->rcItem.top, bw, bh, mem, 0, 0, SRCCOPY);
         SelectObject(mem, obmp);
@@ -943,4 +963,88 @@ static void run_gui(bool tray) {
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }
+}
+
+/* ------------------------------------------------------------------ --check-fit
+ * Lays out and paints every state of the window, every dropdown's items, About and the
+ * reminder card into a memory bitmap, and reports each text wider than its box (theme.c).
+ * Pure offscreen: the window is never shown and has its own class (a running copy never
+ * finds it); no settings, scheduled tasks, startup entry or tray icon are read or written. */
+static int check_fit(void) {
+    HINSTANCE hi = GetModuleHandleW(NULL);
+    WNDCLASSW wc;
+    memset(&wc, 0, sizeof(wc));
+    wc.lpfnWndProc = wndproc;
+    wc.hInstance = hi;
+    wc.lpszClassName = L"PowerNappFit";
+    RegisterClassW(&wc);
+    g_fit = true;
+    g_clock_test = L"h:mm tt"; /* 12-hour: the AM/PM column is the tight one */
+    read_theme();
+    theme_tokens();
+    Plan *p = &G.rt.plan;
+    p->h = 23; p->cd = 90; p->idle = 15;
+    p->days = 0x3F; /* six days: the longest list */
+    G.wake_h = 7;
+    HWND hwnd = CreateWindowExW(wnd_ex_dir(), L"PowerNappFit", APP_NAME,
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN,
+        -32000, -32000, 640, 700, NULL, NULL, hi, NULL); /* hidden: no WS_VISIBLE, never shown */
+    if (!hwnd) return -1;
+    HDC sdc = GetDC(NULL), hdc = CreateCompatibleDC(sdc);
+    HBITMAP bm = CreateCompatibleBitmap(sdc, S(PAGE_W), S(1200));
+    ReleaseDC(NULL, sdc);
+    HGDIOBJ ob = SelectObject(hdc, bm);
+    for (int st = 0; st < NTASKS * NGUI_MODES * 4; st++) { /* task x mode x Start/Cancel x options off/on */
+        int k = st / (NTASKS * NGUI_MODES);
+        p->task = (Task)(st % NTASKS);
+        p->mode = GUI_MODES[st / NTASKS % NGUI_MODES];
+        G.rt.active = k & 1;
+        G.rt.fire_at = local_now_secs() + 5400;
+        G.remind_on = G.force_on = G.auto_on = G.tray_on = G.wake_on = k >> 1;
+        update_combo_texts();
+        layout(hwnd);
+        update_views();
+        paint_main(hdc, true);
+        for (HWND c = GetWindow(hwnd, GW_CHILD); c; c = GetWindow(c, GW_HWNDNEXT))
+            if (GetWindowLongW(c, GWL_STYLE) & WS_VISIBLE) draw_ctl(hdc, c, GetDlgCtrlID(c));
+    }
+    /* every dropdown, opened from its control */
+    static wchar_t lbl[NCDS + NIDLES][32];
+    HWND owner[5] = { G.combo_action, G.combo_mode, G.combo_cd, G.combo_idle, G.combo_lang };
+    for (int f = 0; f < 5; f++) {
+        int n = f == 0 ? NTASKS : f == 1 ? NGUI_MODES : f == 2 ? NCDS : f == 3 ? NIDLES : 0;
+        if (f == 4) { lang_picker_build(); n = g_lang_n; }
+        for (int i = 0; i < n; i++) {
+            const wchar_t *t;
+            if (f == 0) t = TASK_TR(i);
+            else if (f == 1) t = MODE_TR(i);
+            else if (f == 4) t = g_lang_items[i].label;
+            else {
+                wchar_t *d = lbl[(f == 3 ? NCDS : 0) + i];
+                dur_label(f == 2 ? CDS[i] : IDLES[i], d, 32);
+                t = d;
+            }
+            FLY.items[i].label = t;
+            FLY.items[i].ic = (IconId)-1;
+        }
+        RECT br = ctl_rect_in(hwnd, owner[f]);
+        FLY.count = FLY.rows = n;
+        FLY.top = 0; FLY.sel = 0; FLY.hover = -1;
+        RECT rc = { 0, 0, fly_width(&br, FLY.items, n), n * S(36) + S(4) };
+        fly_paint(hdc, &rc);
+    }
+    ab_measure();
+    about_paint(hdc);
+    RM.f_title = make_font(L"Segoe UI Variable Text", L"Segoe UI", -20, FW_SEMIBOLD);
+    RM.f_text = make_font(L"Segoe UI Variable Text", L"Segoe UI", -14, FW_NORMAL);
+    for (int t = 0; t < NTASKS; t++) {
+        RM.task = (Task)t;
+        rm_measure();
+        rm_paint(hdc, 60, 60000);
+    }
+    SelectObject(hdc, ob);
+    DeleteObject(bm);
+    DeleteDC(hdc);
+    DestroyWindow(hwnd);
+    return g_fit_n;
 }
