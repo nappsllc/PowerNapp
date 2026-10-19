@@ -60,7 +60,10 @@ Check 'lang\ installed next to the exe: every repo translation (de.txt among the
     Note "$($got.Count) of $($want.Count) files, de.txt=$de"
     $got.Count -gt 0 -and -not (Compare-Object $want $got) -and $de -and -not ($got -like 'qps-*') }
 Check 'Start menu shortcut points at the exe' { $s = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk); Note $s.TargetPath; $s.TargetPath -eq $exe }
-Check 'Settings > Apps entry' { $k = Get-ItemProperty $ukey; Note "$($k.DisplayName) $($k.DisplayVersion)"; $k.DisplayName -eq 'PowerNapp' -and $k.UninstallString }
+Check 'Settings > Apps entry, its size counts the exe and lang\' {
+    $k = Get-ItemProperty $ukey; $kb = [int]((Get-ChildItem (Split-Path $exe) -Recurse -File | Measure-Object Length -Sum).Sum / 1KB)
+    Note "$($k.DisplayName) $($k.DisplayVersion) EstimatedSize=$($k.EstimatedSize) KB, files $kb KB"
+    $k.DisplayName -eq 'PowerNapp' -and $k.UninstallString -and [math]::Abs($k.EstimatedSize - $kb) -le 64 }
 Check 'upgrade: settings carried over' { Note "task=$(Ini 'task') h=$(Ini 'h') m=$(Ini 'm')"; (Ini 'task') -eq '2' -and (Ini 'h') -eq '22' -and (Ini 'm') -eq '15' }
 Check 'upgrade: tasks renamed and run PowerNapp' {
     $a = (TaskXml 'PowerNapp').Task.Actions.Exec; $w = (TaskXml 'PowerNapp wake').Task.Actions.Exec

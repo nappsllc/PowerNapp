@@ -26,6 +26,7 @@ VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "LegalCopyright" ""
 
 !include "MUI2.nsh"
+!include "FileFunc.nsh"   ; GetSize
 !define MUI_ABORTWARNING
 !define MUI_FINISHPAGE_RUN "$INSTDIR\powernapp.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Open ${APP}"
@@ -65,7 +66,10 @@ Section "Install"
   WriteRegStr HKCU "${UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\uninstall.exe" /S'
   WriteRegDWORD HKCU "${UNINST_KEY}" "NoModify" 1
   WriteRegDWORD HKCU "${UNINST_KEY}" "NoRepair" 1
-  WriteRegDWORD HKCU "${UNINST_KEY}" "EstimatedSize" 100
+  ; what is installed (exe, lang\, uninstaller), in KB
+  ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
+  IntFmt $0 "0x%08X" $0
+  WriteRegDWORD HKCU "${UNINST_KEY}" "EstimatedSize" "$0"
 
   ; Upgrade from PowerOff 1.x (the app's old name): carry its settings, scheduled tasks and
   ; startup entry over to PowerNapp, then remove it with its own uninstaller.
