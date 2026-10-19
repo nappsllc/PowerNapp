@@ -210,14 +210,32 @@ static void measure_ctls(int content) {
     g_dw = max_i(S(44), b + S(8) > a ? a : b + S(8));
 }
 
+/* Moves the window up (never above the top) so its bottom is inside the monitor's work area.
+ * CW_USEDEFAULT cascades the window for its first, smaller size; grown to the content it could
+ * reach past the taskbar or the screen edge, and the part off the screen is never painted. */
+static void keep_on_screen(HWND hwnd) {
+    MONITORINFO mi;
+    RECT wr;
+    mi.cbSize = sizeof(mi);
+    if (!GetWindowRect(hwnd, &wr) || !GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi))
+        return;
+    int top = wr.top;
+    if (wr.bottom > mi.rcWork.bottom) top -= wr.bottom - mi.rcWork.bottom;
+    if (top < mi.rcWork.top) top = mi.rcWork.top;
+    if (top != wr.top)
+        SetWindowPos(hwnd, NULL, wr.left, top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
 /* resize the window so its client area is w x h device px (frame added as it is) */
 static void size_client(HWND hwnd, int w, int h) {
     RECT wr, cr;
     GetWindowRect(hwnd, &wr);
     GetClientRect(hwnd, &cr);
     int ww = w + (wr.right - wr.left - cr.right), wh = h + (wr.bottom - wr.top - cr.bottom);
-    if (ww != wr.right - wr.left || wh != wr.bottom - wr.top)
+    if (ww != wr.right - wr.left || wh != wr.bottom - wr.top) {
         SetWindowPos(hwnd, NULL, 0, 0, ww, wh, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        if (wh > wr.bottom - wr.top && IsWindowVisible(hwnd)) keep_on_screen(hwnd); /* grew: a row appeared */
+    }
 }
 
 static void layout(HWND hwnd) {

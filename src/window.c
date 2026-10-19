@@ -824,6 +824,7 @@ static HWND create_main(int x, int y) {
     apply_dark_mode(hwnd);
     SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     layout(hwnd); /* height from the custom frame */
+    keep_on_screen(hwnd); /* placed for the first estimate, now taller */
     ShowWindow(hwnd, SW_SHOW);
     SetForegroundWindow(hwnd);
     return hwnd;
