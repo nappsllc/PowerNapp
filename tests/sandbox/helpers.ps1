@@ -95,7 +95,12 @@ function SetIni($k, $v) {
     Set-Content $ini $c
 }
 function Cmd($id) { $m = [H]::F('PowerNappWnd'); [H]::PostMessage($m, $WM_COMMAND, [IntPtr]$id, [H]::GetDlgItem($m, $id)) | Out-Null; Start-Sleep -Milliseconds 700 }
-function Key($vk) { $m = [H]::F('PowerNappWnd'); $t = [H]::Focus($m); if ($t -eq [IntPtr]::Zero) { $t = $m }
+# A key posted to the focused control. Another program can take the foreground for a moment (seen:
+# rgnupdt.exe flashing a console window early in the session); the window then has no focused control,
+# and gets its focus back when activated again: bring it back to the front first.
+function Key($vk) { $m = [H]::F('PowerNappWnd')
+    for ($i = 0; $m -ne [IntPtr]::Zero -and $i -lt 30 -and [H]::GetForegroundWindow() -ne $m; $i++) { [H]::SetForegroundWindow($m) | Out-Null; Start-Sleep -Milliseconds 100 }
+    $t = [H]::Focus($m); if ($t -eq [IntPtr]::Zero) { $t = $m }
     [H]::PostMessage($t, $WM_KEYDOWN, [IntPtr]$vk, [IntPtr]1) | Out-Null; [H]::PostMessage($t, $WM_KEYUP, [IntPtr]$vk, [IntPtr]0xC0000001) | Out-Null; Start-Sleep -Milliseconds 350 }
 function TaskExists($n) { schtasks /query /tn $n 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
 function TaskXml($n) { [xml](schtasks /query /tn $n /xml 2>$null | Out-String) }

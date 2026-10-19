@@ -93,7 +93,11 @@ Check 'Tab order: Start > Action > Schedule > Time > Remind' {
     $o = @(); for ($i = 0; $i -lt 5; $i++) { Key 0x09; $o += [H]::GetDlgCtrlID([H]::Focus($main)) }
     Note ($o -join ' > '); ($o -join ',') -eq '240,200,201,210,230' }
 Check 'Space toggles Force apps to close (and back)' {
-    Key 0x09; $a = Ini 'force'; Key 0x20; $b = Ini 'force'; Key 0x20; $c = Ini 'force'; Note "$a > $b > $c"; $a -eq '0' -and $b -eq '1' -and $c -eq '0' }
+    # Tab until Force has the focus: a Tab that lands while another program is briefly in front is undone
+    # when the window is activated again (it puts the focus back where it was, as dialogs do)
+    for ($i = 0; $i -lt 10 -and [H]::GetDlgCtrlID([H]::Focus($main)) -ne 231; $i++) { Key 0x09 }
+    $f = [H]::GetDlgCtrlID([H]::Focus($main)); $a = Ini 'force'; Key 0x20; $b = Ini 'force'; Key 0x20; $c = Ini 'force'
+    Note "focus $f after $i Tab(s): $a > $b > $c"; $f -eq 231 -and $a -eq '0' -and $b -eq '1' -and $c -eq '0' }
 Check 'time picker by keyboard: Down + Enter changes the hour' {
     StopApp; $main = StartApp; for ($i = 0; $i -lt 10 -and [H]::GetDlgCtrlID([H]::Focus($main)) -ne 210; $i++) { Key 0x09 }   # focus Time
     function WaitWin($cls, $want) { for ($i = 0; $i -lt 40 -and (([H]::F($cls) -ne [IntPtr]::Zero) -ne $want); $i++) { Start-Sleep -Milliseconds 100 } }
