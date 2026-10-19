@@ -1,7 +1,19 @@
-# PowerNapp
+<p align="center">
+  <img src="assets/msix/Square44x44Logo.targetsize-256.png" alt="PowerNapp" width="128" height="128">
+</p>
+
+<h1 align="center">PowerNapp</h1>
+
+[![C](https://img.shields.io/badge/C-Win32-00599C?style=flat-square&logo=c&logoColor=white)](https://learn.microsoft.com/windows/win32/)
+[![release](https://img.shields.io/github/v/release/nappsllc/PowerNapp?sort=semver&style=flat-square&color=007ec6&label=release)](https://github.com/nappsllc/PowerNapp/releases/latest)
+[![downloads](https://img.shields.io/github/downloads/nappsllc/PowerNapp/total?style=flat-square&color=44cc11&logo=github&label=Downloads)](https://github.com/nappsllc/PowerNapp/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/nappsllc/PowerNapp/build.yml?branch=main&style=flat-square&label=CI)](https://github.com/nappsllc/PowerNapp/actions/workflows/build.yml)
+[![tests](https://img.shields.io/badge/tests-290%2B-brightgreen?style=flat-square)](tests)
+[![languages](https://img.shields.io/badge/languages-35-blueviolet?style=flat-square)](lang)
+[![Buy me a coffee](https://raw.githubusercontent.com/pachadotdev/buymeacoffee-badges/main/bmc-yellow.svg)](https://buymeacoffee.com/denis.platonov)
 
 **Shut down, restart or sleep your PC on a schedule — in an app that looks
-like it shipped with Windows 11, weighs ~160 KB and, once you close it,
+like it shipped with Windows 11, weighs under 200 KB and, once you close it,
 uses no memory at all.**
 
 <p>
@@ -18,7 +30,7 @@ uses no memory at all.**
   put a PC to sleep. PowerNapp also wakes it: sleep at 11 PM, and have it
   up and ready at 7:00 the next morning, every day, using the same wake
   timers Windows Update uses.
-- ⚡ **Highly optimized, tiny, zero dependencies.** One ~160 KB exe in
+- ⚡ **Highly optimized, tiny, zero dependencies.** One ~195 KB exe in
   plain C. No .NET, no Electron, no VC++ Redistributable, no runtime.
 - 🎨 **Designed as an extension of Windows Settings**, on purpose — same
   cards, toggles, flyouts, fonts and spacing as the real Settings app,
@@ -79,13 +91,14 @@ Malay, Norwegian Bokmål, Polish, Portuguese (Brazil and Portugal),
 Romanian, Russian, Serbian (Latin), Slovak, Spanish, Swedish, Thai,
 Turkish, Ukrainian and Vietnamese.
 
-- **Language** (the globe button in the title bar, showing the current
-  language's own name) lists *Windows default* and every language by its
-  own name. Windows default follows your Windows display language
+- **Language** (the globe link at the bottom left of the window, showing
+  the current language's own name) opens a list above it with *Windows
+  default* and every language by its own name. Windows default follows
+  your Windows display language
   (falling back to English); picking another switches the window at once,
   no restart, and is remembered.
 - Arabic and Hebrew mirror every window: title bar buttons and controls on
-  the left, the reminder card bottom-left.
+  the left, the Language link bottom right, the reminder card bottom-left.
 - **The clock and the week follow the Windows regional format**, in every
   language: 12-hour with AM/PM or 24-hour (the time picker drops its AM/PM
   column), and *Repeat on* starts the week on your first day of the week.
@@ -99,11 +112,11 @@ Turkish, Ukrainian and Vietnamese.
 
 - One page, laid out like a Windows 11 Settings page: **Schedule** (the
   hero card: what will happen, when, how long is left, Start / Cancel),
-  **Task** (Action, Schedule, Time, Repeat on), **Options**, and footer
-  links to **Power settings** (opens the real Windows page) and **About**.
+  **Task** (Action, Schedule, Time, Repeat on), **Options**, and a footer
+  with the **Language** picker and **About**.
 - WinUI-style toggle switches, dropdowns with the accent selection pill,
   the Windows 11 time picker flyout, ContentDialog-style About box, 48 px
-  custom title bar with the Language button, hover highlights, Segoe UI Variable, follows the
+  custom title bar, hover highlights, Segoe UI Variable, follows the
   system light/dark theme.
 - The live countdown repaints just its own text — no flicker.
 - **About** has a short description, a **Contact us** button
@@ -145,7 +158,7 @@ Memory, as Task Manager shows it:
 
 ## Optimized to the bone
 
-- **~160 KB exe** including 13 full-color icons (losslessly squeezed), the app icon and the
+- **~195 KB exe** including 13 full-color icons (losslessly squeezed), the app icon and the
   manifest. ~4,000 lines of C, one translation unit.
 - **No dependencies.** The C runtime is linked statically against the
   Universal CRT that ships with Windows 10/11 — nothing to install.
@@ -304,7 +317,7 @@ names, 150% scaling, the regional format, the language picker and right-to-left
 and a forced shutdown of the sandbox at the end.
 
 ```bat
-powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 97 checks, ~11 min
+powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 96 checks, ~11 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         :: Store package, ~1 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  :: README screenshots
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots -Languages all
