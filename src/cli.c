@@ -165,7 +165,7 @@ static bool task_from_arg(const wchar_t *s, Task *out) {
     if (!wcscmp(clean, L"reboot")) { *out = T_RESTART; return true; }
     if (!wcscmp(clean, L"logout")) { *out = T_LOGOFF; return true; }
     if (!wcscmp(clean, L"signout")) { *out = T_LOGOFF; return true; }
-    if (!wcscmp(clean, L"powernapp")) { *out = T_SHUTDOWN; return true; }
+    if (!wcscmp(clean, L"poweroff")) { *out = T_SHUTDOWN; return true; }   /* PowerOff 1.x scripts */
     if (!wcscmp(clean, L"monitoroff")) { *out = T_DISPLAY; return true; }
     if (!wcscmp(clean, L"suspend")) { *out = T_SLEEP; return true; }
     return false;

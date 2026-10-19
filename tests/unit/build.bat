@@ -13,5 +13,10 @@ if errorlevel 1 (echo cl.exe not found: install Visual Studio Build Tools with t
 if not exist out mkdir out
 cl /nologo /W3 /MT /Fo:out\ /Fe:out\lang_test.exe lang_test.c /link user32.lib
 if errorlevel 1 exit /b 1
+cl /nologo /W3 /MT /Fo:out\ /Fe:out\app_test.exe app_test.c
+if errorlevel 1 exit /b 1
 out\lang_test.exe
-exit /b %errorlevel%
+set FAILS=%errorlevel%
+out\app_test.exe
+set /a FAILS+=%errorlevel%
+exit /b %FAILS%
