@@ -6,7 +6,7 @@ Reads store/listing/<tag>.txt (sections: # Description, # Short description,
 # Features, # Keywords, # What's new) for every language column in the exported
 template, fills Title, Description, ReleaseNotes, ShortDescription, DevStudio,
 copyright, Feature1-20 and SearchTerm1-7, and points DesktopScreenshot1-3 at
-<tag>/1.png .. 3.png. The screenshots zip (folders per language, 1.png .. 3.png)
+<out-dir name>/<tag>/1.png .. 3.png. The screenshots zip (folders per language, 1.png .. 3.png)
 is unpacked next to the CSV, so in Partner Center choose Import listings and
 select the whole out-dir folder.
 """
@@ -70,6 +70,7 @@ def main():
                     f.write(z.read(name))
                 have_shots.add((tag, int(m.group(2))))
 
+    folder = os.path.basename(os.path.normpath(out_dir))
     for r in rows[1:]:
         if not r or not r[0]:
             continue
@@ -92,7 +93,8 @@ def main():
                 val = L['keywords'][n - 1] if n <= len(L['keywords']) else ''
             elif (m := re.match(r'^DesktopScreenshot(\d+)$', field)):
                 n = int(m.group(1))
-                val = f'{tag}/{n}.png' if (tag, n) in have_shots else ''
+                # Partner Center wants the path from the imported folder itself: <folder>/<tag>/<n>.png
+                val = f'{folder}/{tag}/{n}.png' if (tag, n) in have_shots else ''
             if val is not None:
                 while len(r) <= col:
                     r.append('')
