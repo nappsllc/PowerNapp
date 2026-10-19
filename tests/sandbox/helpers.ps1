@@ -109,5 +109,7 @@ function Key($vk) { $m = [H]::F('PowerNappWnd')
     [H]::PostMessage($t, $WM_KEYDOWN, [IntPtr]$vk, [IntPtr]1) | Out-Null; [H]::PostMessage($t, $WM_KEYUP, [IntPtr]$vk, [IntPtr]0xC0000001) | Out-Null; Start-Sleep -Milliseconds 350 }
 function TaskExists($n) { schtasks /query /tn $n 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
 function TaskXml($n) { [xml](schtasks /query /tn $n /xml 2>$null | Out-String) }
-function Snap($cls, $name) { $h = [H]::F($cls); if ($h -ne [IntPtr]::Zero) { [H]::Capture($h, "$R\$name.png") | Out-Null } }
+# a screenshot for the log; a failed capture (GDI+ can throw one off) is retried once, never fails a check
+function Snap($cls, $name) { $h = [H]::F($cls); if ($h -eq [IntPtr]::Zero) { return }
+    foreach ($try in 1, 2) { try { [H]::Capture($h, "$R\$name.png") | Out-Null; return } catch { Start-Sleep -Milliseconds 300 } } }
 function RunCli([string[]]$a) { $p = Start-Process $exe -ArgumentList $a -PassThru -Wait -WindowStyle Hidden; $p.ExitCode }
