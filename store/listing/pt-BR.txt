@@ -1,5 +1,5 @@
 # Description
-O PowerNapp desliga, reinicia ou suspende o seu PC em um horário programado, em um aplicativo que parece ter vindo com o Windows 11. Ele tem cerca de 160 KB, não tem dependências e, depois de fechado, não usa nenhuma memória.
+O PowerNapp desliga, reinicia ou suspende o seu PC em um horário programado, em um aplicativo que parece ter vindo com o Windows 11. Ele tem cerca de 200 KB, não tem dependências e, depois de fechado, não usa nenhuma memória.
 
 A programação é uma tarefa do Agendador de Tarefas do Windows, então continua funcionando após reinicializações e com o aplicativo fechado. Desative o ícone da bandeja e nada do PowerNapp fica em execução: 0 MB. Com o ícone da bandeja ativado, ele usa cerca de 0,1 MB, e com a janela aberta, cerca de 2,3 MB.
 

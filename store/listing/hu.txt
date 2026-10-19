@@ -1,5 +1,5 @@
 # Description
-A PowerNapp ütemezés szerint leállítja, újraindítja vagy alvó állapotba helyezi a számítógépet, egy olyan alkalmazásban, amely úgy néz ki, mintha a Windows 11 része lenne. Körülbelül 160 KB, nincsenek függőségei, és bezárás után egyáltalán nem használ memóriát.
+A PowerNapp ütemezés szerint leállítja, újraindítja vagy alvó állapotba helyezi a számítógépet, egy olyan alkalmazásban, amely úgy néz ki, mintha a Windows 11 része lenne. Körülbelül 200 KB, nincsenek függőségei, és bezárás után egyáltalán nem használ memóriát.
 
 Az ütemezés egy Windows Feladatütemező-feladat, így újraindítás után és bezárt alkalmazás mellett is működik. Kapcsolja ki az értesítési területi ikont, és a PowerNappból semmi sem marad futva: 0 MB. Bekapcsolt értesítési területi ikonnal körülbelül 0,1 MB-ot használ, megnyitott ablakkal körülbelül 2,3 MB-ot.
 

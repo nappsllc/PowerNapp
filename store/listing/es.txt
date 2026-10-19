@@ -1,5 +1,5 @@
 # Description
-PowerNapp apaga, reinicia o suspende tu PC según un horario, en una aplicación que parece venir con Windows 11. Ocupa unos 160 KB, no tiene dependencias y, al cerrarla, no usa nada de memoria.
+PowerNapp apaga, reinicia o suspende tu PC según un horario, en una aplicación que parece venir con Windows 11. Ocupa unos 200 KB, no tiene dependencias y, al cerrarla, no usa nada de memoria.
 
 El horario es una tarea del Programador de tareas de Windows, así que sigue funcionando tras reiniciar y con la aplicación cerrada. Desactiva el icono de la bandeja y no queda nada de PowerNapp en ejecución: 0 MB. Con el icono de la bandeja activado usa unos 0,1 MB, y con la ventana abierta, unos 2,3 MB.
 

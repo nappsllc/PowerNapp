@@ -1,5 +1,5 @@
 # Description
-PowerNapp lukker, genstarter eller sætter din pc i slumretilstand efter en plan, i en app, der ser ud, som om den fulgte med Windows 11. Den fylder omkring 160 KB, har ingen afhængigheder, og når du lukker den, bruger den slet ingen hukommelse.
+PowerNapp lukker, genstarter eller sætter din pc i slumretilstand efter en plan, i en app, der ser ud, som om den fulgte med Windows 11. Den fylder omkring 200 KB, har ingen afhængigheder, og når du lukker den, bruger den slet ingen hukommelse.
 
 Planen er en opgave i Windows Jobplanlægning, så den virker stadig efter genstart og med appen lukket. Slå ikonet i meddelelsesområdet fra, og der kører intet af PowerNapp: 0 MB. Med ikonet i meddelelsesområdet bruger appen omkring 0,1 MB, og med vinduet åbent omkring 2,3 MB.
 

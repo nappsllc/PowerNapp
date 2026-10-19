@@ -1,5 +1,5 @@
 # Description
-PowerNapp stänger av, startar om eller försätter datorn i strömsparläge enligt ett schema, i en app som ser ut som om den hörde till Windows 11. Den är cirka 160 kB, har inga beroenden och när du stänger den använder den inget minne alls.
+PowerNapp stänger av, startar om eller försätter datorn i strömsparläge enligt ett schema, i en app som ser ut som om den hörde till Windows 11. Den är cirka 200 kB, har inga beroenden och när du stänger den använder den inget minne alls.
 
 Schemat är en aktivitet i Schemaläggaren i Windows, så det fortsätter att fungera efter omstarter och med appen stängd. Stäng av ikonen i meddelandefältet så körs ingenting av PowerNapp: 0 MB. Med ikonen i meddelandefältet använder appen cirka 0,1 MB, och med fönstret öppet cirka 2,3 MB.
 

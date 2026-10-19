@@ -1,5 +1,5 @@
 # Description
-PowerNapp mematikan, memulai ulang, atau menidurkan PC Anda sesuai jadwal, dalam aplikasi yang terlihat seperti bawaan Windows 11. Ukurannya sekitar 160 KB, tanpa dependensi, dan setelah ditutup, aplikasi ini sama sekali tidak memakai memori.
+PowerNapp mematikan, memulai ulang, atau menidurkan PC Anda sesuai jadwal, dalam aplikasi yang terlihat seperti bawaan Windows 11. Ukurannya sekitar 200 KB, tanpa dependensi, dan setelah ditutup, aplikasi ini sama sekali tidak memakai memori.
 
 Jadwal disimpan sebagai tugas Penjadwal Tugas Windows, sehingga tetap berjalan setelah PC dimulai ulang dan saat aplikasi ditutup. Nonaktifkan ikon baki dan tidak ada bagian PowerNapp yang tetap berjalan: 0 MB. Dengan ikon baki aktif, pemakaiannya sekitar 0,1 MB, dan dengan jendela terbuka sekitar 2,3 MB.
 

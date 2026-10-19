@@ -1,5 +1,5 @@
 # Description
-PowerNapp slår av, starter på nytt eller setter PC-en i hvilemodus etter en tidsplan, i en app som ser ut som om den fulgte med Windows 11. Den er omtrent 160 KB, har ingen avhengigheter, og når du lukker den, bruker den ikke minne i det hele tatt.
+PowerNapp slår av, starter på nytt eller setter PC-en i hvilemodus etter en tidsplan, i en app som ser ut som om den fulgte med Windows 11. Den er omtrent 200 KB, har ingen avhengigheter, og når du lukker den, bruker den ikke minne i det hele tatt.
 
 Tidsplanen er en oppgave i Windows Oppgaveplanlegger, så den fortsetter å fungere etter omstart og med appen lukket. Slå av ikonet i systemstatusfeltet, så kjører ingenting av PowerNapp: 0 MB. Med ikonet i systemstatusfeltet bruker appen omtrent 0,1 MB, og med vinduet åpent omtrent 2,3 MB.
 

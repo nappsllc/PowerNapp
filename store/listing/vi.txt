@@ -1,5 +1,5 @@
 # Description
-PowerNapp tắt máy, khởi động lại hoặc cho PC ngủ theo lịch, trong một ứng dụng trông như có sẵn trong Windows 11. Ứng dụng chỉ khoảng 160 KB, không cần thành phần phụ thuộc nào và sau khi đóng thì hoàn toàn không dùng bộ nhớ.
+PowerNapp tắt máy, khởi động lại hoặc cho PC ngủ theo lịch, trong một ứng dụng trông như có sẵn trong Windows 11. Ứng dụng chỉ khoảng 200 KB, không cần thành phần phụ thuộc nào và sau khi đóng thì hoàn toàn không dùng bộ nhớ.
 
 Lịch được lưu thành một tác vụ trong Bộ lập lịch Tác vụ của Windows, nên vẫn hoạt động sau khi khởi động lại và cả khi ứng dụng đã đóng. Tắt biểu tượng khay hệ thống là PowerNapp không còn chạy gì cả: 0 MB. Khi bật biểu tượng khay, ứng dụng dùng khoảng 0,1 MB, còn khi mở cửa sổ thì khoảng 2,3 MB.
 

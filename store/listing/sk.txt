@@ -1,5 +1,5 @@
 # Description
-PowerNapp podľa plánu vypína, reštartuje alebo uspáva počítač, a to v aplikácii, ktorá vyzerá, akoby bola súčasťou Windowsu 11. Má približne 160 KB, nemá žiadne závislosti a po zavretí nezaberá vôbec žiadnu pamäť.
+PowerNapp podľa plánu vypína, reštartuje alebo uspáva počítač, a to v aplikácii, ktorá vyzerá, akoby bola súčasťou Windowsu 11. Má približne 200 KB, nemá žiadne závislosti a po zavretí nezaberá vôbec žiadnu pamäť.
 
 Plán je úloha v Plánovači úloh Windowsu, takže funguje aj po reštarte a so zavretou aplikáciou. Vypnite ikonu v oblasti oznámení a z PowerNapp nezostane spustené nič: 0 MB. So zapnutou ikonou v oblasti oznámení zaberá približne 0,1 MB a s otvoreným oknom približne 2,3 MB.
 

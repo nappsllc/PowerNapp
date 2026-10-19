@@ -1,5 +1,5 @@
 # Description
-PowerNapp sluit uw pc volgens een schema af, start hem opnieuw op of zet hem in de slaapstand, in een app die eruitziet alsof hij bij Windows 11 hoort. De app is ongeveer 160 KB groot, heeft geen afhankelijkheden en gebruikt zodra u hem sluit helemaal geen geheugen meer.
+PowerNapp sluit uw pc volgens een schema af, start hem opnieuw op of zet hem in de slaapstand, in een app die eruitziet alsof hij bij Windows 11 hoort. De app is ongeveer 200 KB groot, heeft geen afhankelijkheden en gebruikt zodra u hem sluit helemaal geen geheugen meer.
 
 Het schema is een taak in Windows Taakplanner, dus het blijft werken na het opnieuw opstarten en met gesloten app. Zet het pictogram in het systeemvak uit en er draait niets meer van PowerNapp: 0 MB. Met het pictogram in het systeemvak gebruikt de app ongeveer 0,1 MB en met geopend venster ongeveer 2,3 MB.
 

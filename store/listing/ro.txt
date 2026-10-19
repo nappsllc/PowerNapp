@@ -1,5 +1,5 @@
 # Description
-PowerNapp oprește, repornește sau trece în repaus computerul după un program, într-o aplicație care arată ca și cum ar fi venit cu Windows 11. Are aproximativ 160 KB, nu are dependențe și, după ce o închideți, nu ocupă deloc memorie.
+PowerNapp oprește, repornește sau trece în repaus computerul după un program, într-o aplicație care arată ca și cum ar fi venit cu Windows 11. Are aproximativ 200 KB, nu are dependențe și, după ce o închideți, nu ocupă deloc memorie.
 
 Programul este o activitate din Planificatorul de activități Windows, așa că funcționează și după reporniri, cu aplicația închisă. Dezactivați pictograma din zona de notificare și din PowerNapp nu mai rămâne nimic în execuție: 0 MB. Cu pictograma activată folosește aproximativ 0,1 MB, iar cu fereastra deschisă aproximativ 2,3 MB.
 

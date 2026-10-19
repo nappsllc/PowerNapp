@@ -1,5 +1,5 @@
 # Description
-PowerNapp zamyka, uruchamia ponownie lub usypia komputer według harmonogramu, w aplikacji wyglądającej tak, jakby była częścią systemu Windows 11. Zajmuje około 160 KB, nie ma żadnych zależności, a po zamknięciu w ogóle nie zużywa pamięci.
+PowerNapp zamyka, uruchamia ponownie lub usypia komputer według harmonogramu, w aplikacji wyglądającej tak, jakby była częścią systemu Windows 11. Zajmuje około 200 KB, nie ma żadnych zależności, a po zamknięciu w ogóle nie zużywa pamięci.
 
 Harmonogram jest zadaniem w Harmonogramie zadań systemu Windows, dlatego działa po ponownym uruchomieniu komputera i przy zamkniętej aplikacji. Wyłącz ikonę w obszarze powiadomień, a z PowerNapp nie zostanie nic działającego: 0 MB. Z włączoną ikoną w obszarze powiadomień aplikacja zajmuje około 0,1 MB, a z otwartym oknem około 2,3 MB.
 

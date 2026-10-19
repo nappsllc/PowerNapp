@@ -1,5 +1,5 @@
 # Description
-PowerNapp fährt Ihren PC nach Zeitplan herunter, startet ihn neu oder versetzt ihn in den Energiesparmodus – in einer App, die aussieht, als gehörte sie zu Windows 11. Sie ist etwa 160 KB groß, kommt ohne Abhängigkeiten aus und belegt nach dem Schließen überhaupt keinen Arbeitsspeicher mehr.
+PowerNapp fährt Ihren PC nach Zeitplan herunter, startet ihn neu oder versetzt ihn in den Energiesparmodus – in einer App, die aussieht, als gehörte sie zu Windows 11. Sie ist etwa 200 KB groß, kommt ohne Abhängigkeiten aus und belegt nach dem Schließen überhaupt keinen Arbeitsspeicher mehr.
 
 Der Zeitplan ist eine Aufgabe der Windows-Aufgabenplanung und funktioniert daher auch nach Neustarts und bei geschlossener App weiter. Schalten Sie das Symbol im Infobereich aus, und von PowerNapp läuft nichts mehr: 0 MB. Mit Symbol im Infobereich sind es etwa 0,1 MB, bei geöffnetem Fenster etwa 2,3 MB.
 

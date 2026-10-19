@@ -1,5 +1,5 @@
 # Description
-PowerNapp sammuttaa tietokoneen, käynnistää sen uudelleen tai siirtää sen lepotilaan aikataulun mukaan, ja sovellus näyttää siltä kuin se olisi tullut Windows 11:n mukana. Se on noin 160 kt:n kokoinen, sillä ei ole riippuvuuksia, ja kun suljet sen, se ei käytä muistia lainkaan.
+PowerNapp sammuttaa tietokoneen, käynnistää sen uudelleen tai siirtää sen lepotilaan aikataulun mukaan, ja sovellus näyttää siltä kuin se olisi tullut Windows 11:n mukana. Se on noin 200 kt:n kokoinen, sillä ei ole riippuvuuksia, ja kun suljet sen, se ei käytä muistia lainkaan.
 
 Aikataulu on Windowsin Tehtävien ajoituksen tehtävä, joten se toimii uudelleenkäynnistysten jälkeenkin ja silloin, kun sovellus on suljettu. Kun poistat ilmaisinalueen kuvakkeen käytöstä, PowerNappista ei jää mitään käyntiin: 0 Mt. Kuvakkeen kanssa se käyttää noin 0,1 Mt ja ikkuna avattuna noin 2,3 Mt.
 

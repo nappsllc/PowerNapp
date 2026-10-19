@@ -1,5 +1,5 @@
 # Description
-PowerNapp shuts down, restarts or sleeps your PC on a schedule, in an app that looks like it shipped with Windows 11. It is about 160 KB, has no dependencies, and once you close it, it uses no memory at all.
+PowerNapp shuts down, restarts or sleeps your PC on a schedule, in an app that looks like it shipped with Windows 11. It is about 200 KB, has no dependencies, and once you close it, it uses no memory at all.
 
 The schedule is a Windows Task Scheduler task, so it keeps working after reboots and with the app closed. Turn the tray icon off and nothing of PowerNapp is left running: 0 MB. With the tray icon on it uses about 0.1 MB, and with the window open about 2.3 MB.
 

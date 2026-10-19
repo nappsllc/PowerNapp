@@ -1,5 +1,5 @@
 # Description
-PowerNapp po rasporedu isključuje, ponovo pokreće ili uspavljuje vaš računar, u aplikaciji koja izgleda kao da je stigla uz Windows 11. Velika je oko 160 KB, nema zavisnosti, a kada je zatvorite, uopšte ne troši memoriju.
+PowerNapp po rasporedu isključuje, ponovo pokreće ili uspavljuje vaš računar, u aplikaciji koja izgleda kao da je stigla uz Windows 11. Velika je oko 200 KB, nema zavisnosti, a kada je zatvorite, uopšte ne troši memoriju.
 
 Raspored je zadatak u Windows Planeru zadataka, pa radi i posle ponovnog pokretanja i kada je aplikacija zatvorena. Isključite ikonu u sistemskoj traci i od aplikacije PowerNapp ništa ne ostaje pokrenuto: 0 MB. Sa uključenom ikonom troši oko 0,1 MB, a sa otvorenim prozorom oko 2,3 MB.
 

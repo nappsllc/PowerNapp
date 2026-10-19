@@ -1,5 +1,5 @@
 # Description
-PowerNapp mematikan, memulakan semula atau menidurkan PC anda mengikut jadual, dalam apl yang kelihatan seperti disertakan bersama Windows 11. Saiznya kira-kira 160 KB, tiada kebergantungan, dan setelah anda menutupnya, ia langsung tidak menggunakan memori.
+PowerNapp mematikan, memulakan semula atau menidurkan PC anda mengikut jadual, dalam apl yang kelihatan seperti disertakan bersama Windows 11. Saiznya kira-kira 200 KB, tiada kebergantungan, dan setelah anda menutupnya, ia langsung tidak menggunakan memori.
 
 Jadual disimpan sebagai tugas Penjadual Tugas Windows, jadi ia terus berfungsi selepas but semula dan ketika apl ditutup. Matikan ikon dulang dan tiada bahagian PowerNapp yang masih berjalan: 0 MB. Dengan ikon dulang dihidupkan, ia menggunakan kira-kira 0.1 MB, dan dengan tetingkap terbuka kira-kira 2.3 MB.
 

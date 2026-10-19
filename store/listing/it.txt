@@ -1,5 +1,5 @@
 # Description
-PowerNapp arresta, riavvia o sospende il PC in base a una pianificazione, in un'app che sembra fornita con Windows 11. Pesa circa 160 KB, non ha dipendenze e, una volta chiusa, non usa affatto memoria.
+PowerNapp arresta, riavvia o sospende il PC in base a una pianificazione, in un'app che sembra fornita con Windows 11. Pesa circa 200 KB, non ha dipendenze e, una volta chiusa, non usa affatto memoria.
 
 La pianificazione è un'attività di Utilità di pianificazione di Windows, quindi continua a funzionare dopo i riavvii e con l'app chiusa. Disattiva l'icona nell'area di notifica e di PowerNapp non resta in esecuzione nulla: 0 MB. Con l'icona attiva usa circa 0,1 MB e con la finestra aperta circa 2,3 MB.
 

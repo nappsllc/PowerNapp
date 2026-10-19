@@ -1,5 +1,5 @@
 # Description
-PowerNapp arrête, redémarre ou met en veille votre PC selon un planning, dans une application qui semble livrée avec Windows 11. Elle pèse environ 160 Ko, n'a aucune dépendance et, une fois fermée, n'utilise absolument aucune mémoire.
+PowerNapp arrête, redémarre ou met en veille votre PC selon un planning, dans une application qui semble livrée avec Windows 11. Elle pèse environ 200 Ko, n'a aucune dépendance et, une fois fermée, n'utilise absolument aucune mémoire.
 
 Le planning est une tâche du Planificateur de tâches Windows : il continue donc de fonctionner après un redémarrage et application fermée. Désactivez l'icône de la barre d'état et plus rien de PowerNapp ne reste en cours d'exécution : 0 Mo. Avec l'icône activée, elle utilise environ 0,1 Mo, et environ 2,3 Mo avec la fenêtre ouverte.
 

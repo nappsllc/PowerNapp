@@ -1,5 +1,5 @@
 # Description
-PowerNapp, bilgisayarınızı bir zamanlamaya göre kapatır, yeniden başlatır veya uyku moduna alır; üstelik Windows 11 ile birlikte gelmiş gibi görünen bir uygulamada. Yaklaşık 160 KB boyutundadır, hiçbir bağımlılığı yoktur ve kapattığınızda hiç bellek kullanmaz.
+PowerNapp, bilgisayarınızı bir zamanlamaya göre kapatır, yeniden başlatır veya uyku moduna alır; üstelik Windows 11 ile birlikte gelmiş gibi görünen bir uygulamada. Yaklaşık 200 KB boyutundadır, hiçbir bağımlılığı yoktur ve kapattığınızda hiç bellek kullanmaz.
 
 Zamanlama bir Windows Görev Zamanlayıcı görevidir; bu yüzden yeniden başlatmalardan sonra ve uygulama kapalıyken de çalışmaya devam eder. Tepsi simgesini kapatın, PowerNapp'ten hiçbir şey çalışır durumda kalmaz: 0 MB. Tepsi simgesi açıkken yaklaşık 0,1 MB, pencere açıkken yaklaşık 2,3 MB kullanır.
 
