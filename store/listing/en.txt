@@ -1,0 +1,39 @@
+# Description
+PowerNapp shuts down, restarts or sleeps your PC on a schedule, in an app that looks like it shipped with Windows 11. It is about 160 KB, has no dependencies, and once you close it, it uses no memory at all.
+
+The schedule is a Windows Task Scheduler task, so it keeps working after reboots and with the app closed. Turn the tray icon off and nothing of PowerNapp is left running: 0 MB. With the tray icon on it uses about 0.1 MB, and with the window open about 2.3 MB.
+
+Pick an action (shut down, restart, sleep, hibernate, sign out, lock, or turn off the display) and when it should happen: at a specific time every day, on chosen days of the week, after a countdown, or when the PC has been idle. For sleep and hibernate, PowerNapp can also wake the PC on a timer, for example sleep at 11 PM and be ready at 7 AM.
+
+One minute before the action, a small reminder card counts down and lets you run it now, snooze for 10 minutes or stop it.
+
+PowerNapp follows the look of the Windows Settings app (cards, toggles, flyouts, light and dark theme), with full-color icons. It works with the keyboard and Narrator and stays sharp on every monitor and DPI setting. It is available in 35 languages, with a language picker in the app.
+
+PowerNapp is free and open source (GPL-3.0).
+
+# Short description
+Shut down, restart or sleep your PC on a schedule. Windows Task Scheduler does the work, so PowerNapp uses 0 MB when closed. It can also wake the PC on a timer. Looks like Windows Settings.
+
+# Features
+Shut down, restart, sleep, hibernate, sign out, lock or turn off the display
+Daily, weekly, countdown or idle schedules
+Wake the PC from sleep or hibernate on a timer
+Uses 0 MB when closed: Windows Task Scheduler does the work, even after reboots
+About 0.1 MB with the tray icon, 2.3 MB with the window open
+Looks like Windows Settings, with full-color icons and light and dark themes
+1-minute reminder with run now, snooze 10 minutes and stop
+Keyboard, Narrator and per-monitor DPI support
+35 languages with a language picker
+Free and open source (GPL-3.0)
+
+# Keywords
+shutdown timer
+sleep timer
+schedule shutdown
+wake timer
+power off
+auto shutdown
+task scheduler
+
+# What's new
+PowerNapp is now available in 35 languages, with a language picker in the app.
