@@ -178,6 +178,9 @@ static int ctl_w(int d, int text, int pad, int content, int title) {
     return w > cap ? max_i(S(d), cap) : w;
 }
 
+/* measure_ctls walks TASK_* and MODE_* as one range: MODE_* must follow TASK_* in strings.h */
+typedef char task_mode_strings_adjacent[(L_MODE_DAILY == L_TASK_SHUTDOWN + NTASKS) ? 1 : -1];
+
 static void measure_ctls(int content) {
     wchar_t t[96];
     int a = 0, b = 0;
