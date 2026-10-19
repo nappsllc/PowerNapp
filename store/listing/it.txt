@@ -1,0 +1,39 @@
+# Description
+PowerNapp arresta, riavvia o sospende il PC in base a una pianificazione, in un'app che sembra fornita con Windows 11. Pesa circa 160 KB, non ha dipendenze e, una volta chiusa, non usa affatto memoria.
+
+La pianificazione è un'attività di Utilità di pianificazione di Windows, quindi continua a funzionare dopo i riavvii e con l'app chiusa. Disattiva l'icona nell'area di notifica e di PowerNapp non resta in esecuzione nulla: 0 MB. Con l'icona attiva usa circa 0,1 MB e con la finestra aperta circa 2,3 MB.
+
+Scegli un'azione (arresta, riavvia, sospendi, iberna, disconnetti, blocca o spegni lo schermo) e quando deve avvenire: a un'ora specifica ogni giorno, nei giorni della settimana che preferisci, dopo un conto alla rovescia o quando il PC è inattivo. Per sospensione e ibernazione, PowerNapp può anche riattivare il PC con un timer, ad esempio sospendere alle 23:00 ed essere pronto alle 7:00.
+
+Un minuto prima dell'azione, una piccola scheda di promemoria mostra il conto alla rovescia e ti permette di eseguirla subito, posticiparla di 10 minuti o fermarla.
+
+PowerNapp segue l'aspetto dell'app Impostazioni di Windows (schede, interruttori, riquadri a comparsa, tema chiaro e scuro), con icone a colori. Funziona con la tastiera e con Assistente vocale e resta nitida su ogni monitor e impostazione DPI. È disponibile in 35 lingue, con un selettore della lingua nell'app.
+
+PowerNapp è gratuita e open source (GPL-3.0).
+
+# Short description
+Arresta, riavvia o sospendi il PC in base a una pianificazione. Se ne occupa Utilità di pianificazione di Windows, quindi PowerNapp usa 0 MB da chiusa. Può anche riattivare il PC. Sembra Impostazioni di Windows.
+
+# Features
+Arresta, riavvia, sospendi, iberna, disconnetti, blocca o spegni lo schermo
+Pianificazioni giornaliere, settimanali, con conto alla rovescia o per inattività
+Riattiva il PC dalla sospensione o dall'ibernazione con un timer
+0 MB da chiusa: Utilità di pianificazione di Windows fa il lavoro, anche dopo i riavvii
+Circa 0,1 MB con l'icona nell'area di notifica, 2,3 MB con la finestra aperta
+Aspetto di Impostazioni di Windows, con icone a colori e temi chiaro e scuro
+Promemoria di 1 minuto: esegui ora, posticipa di 10 minuti o ferma
+Supporto per tastiera, Assistente vocale e DPI per monitor
+35 lingue con selettore della lingua
+Gratuita e open source (GPL-3.0)
+
+# Keywords
+spegnere PC
+timer spegnimento
+programmare spegnimento
+spegnimento automatico
+timer sospensione
+riattivare PC
+utilità di pianificazione
+
+# What's new
+PowerNapp è ora disponibile in 35 lingue, con un selettore della lingua nell'app.

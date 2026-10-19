@@ -1,0 +1,39 @@
+# Description
+PowerNapp podle plánu vypíná, restartuje nebo uspává počítač, a to v aplikaci, která vypadá, jako by byla součástí Windows 11. Má asi 160 KB, nemá žádné závislosti a po zavření nezabírá vůbec žádnou paměť.
+
+Plán je úloha v Plánovači úloh Windows, takže funguje i po restartu a se zavřenou aplikací. Vypněte ikonu v oznamovací oblasti a po PowerNapp nezůstane spuštěno nic: 0 MB. Se zapnutou ikonou v oznamovací oblasti zabírá asi 0,1 MB a s otevřeným oknem asi 2,3 MB.
+
+Vyberte akci (vypnout, restartovat, uspat, hibernovat, odhlásit, zamknout nebo vypnout displej) a kdy se má provést: v určitou dobu každý den, ve vybrané dny v týdnu, po odpočtu nebo když je počítač nečinný. U uspání a hibernace umí PowerNapp počítač také probudit v nastavenou dobu, například uspat ve 23:00 a mít ho připravený v 7:00.
+
+Minutu před akcí odpočítává malá karta s připomenutím a umožní akci provést hned, odložit ji o 10 minut nebo ji zastavit.
+
+PowerNapp přebírá vzhled aplikace Nastavení Windows (karty, přepínače, vysouvací nabídky, světlý a tmavý motiv) a má plnobarevné ikony. Ovládat ho lze klávesnicí i Předčítáním a je ostrý na každém monitoru při jakémkoli nastavení DPI. Je k dispozici v 35 jazycích a v aplikaci je výběr jazyka.
+
+PowerNapp je zdarma a s otevřeným zdrojovým kódem (GPL-3.0).
+
+# Short description
+Vypínejte, restartujte nebo uspávejte počítač podle plánu. Práci odvádí Plánovač úloh Windows, takže PowerNapp po zavření zabírá 0 MB. Umí také probudit počítač v nastavenou dobu. Vypadá jako Nastavení Windows.
+
+# Features
+Vypnutí, restart, uspání, hibernace, odhlášení, zamknutí nebo vypnutí displeje
+Denní, týdenní plány, odpočet nebo plán podle nečinnosti
+Probuzení počítače z uspání nebo hibernace v nastavenou dobu
+Po zavření 0 MB: práci odvádí Plánovač úloh Windows, i po restartu
+Asi 0,1 MB s ikonou v oznamovací oblasti, 2,3 MB s otevřeným oknem
+Vzhled Nastavení Windows s plnobarevnými ikonami a světlým i tmavým motivem
+Připomenutí 1 minutu předem: provést hned, odložit o 10 minut nebo zastavit
+Podpora klávesnice, Předčítání a DPI pro jednotlivé monitory
+35 jazyků s výběrem jazyka
+Zdarma a s otevřeným zdrojovým kódem (GPL-3.0)
+
+# Keywords
+časovač vypnutí
+časovač uspání
+naplánovat vypnutí počítače
+vypnutí počítače v určitou dobu
+automatické vypnutí
+probuzení počítače
+plánovač úloh
+
+# What's new
+PowerNapp je nově k dispozici v 35 jazycích a v aplikaci je výběr jazyka.

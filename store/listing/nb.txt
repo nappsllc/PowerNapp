@@ -1,0 +1,39 @@
+# Description
+PowerNapp slår av, starter på nytt eller setter PC-en i hvilemodus etter en tidsplan, i en app som ser ut som om den fulgte med Windows 11. Den er omtrent 160 KB, har ingen avhengigheter, og når du lukker den, bruker den ikke minne i det hele tatt.
+
+Tidsplanen er en oppgave i Windows Oppgaveplanlegger, så den fortsetter å fungere etter omstart og med appen lukket. Slå av ikonet i systemstatusfeltet, så kjører ingenting av PowerNapp: 0 MB. Med ikonet i systemstatusfeltet bruker appen omtrent 0,1 MB, og med vinduet åpent omtrent 2,3 MB.
+
+Velg en handling (slå av, start på nytt, hvilemodus, dvalemodus, logg av, lås eller slå av skjermen) og når den skal skje: på et bestemt tidspunkt hver dag, på valgte ukedager, etter en nedtelling eller når PC-en har vært inaktiv. For hvilemodus og dvalemodus kan PowerNapp også vekke PC-en med en timer, for eksempel hvilemodus kl. 23 og klar kl. 7.
+
+Ett minutt før handlingen teller et lite påminnelseskort ned, og du kan utføre handlingen med en gang, slumre i 10 minutter eller stoppe den.
+
+PowerNapp følger utseendet til Innstillinger-appen i Windows (kort, brytere, utvidbare menyer, lyst og mørkt tema) med ikoner i full farge. Den fungerer med tastaturet og Skjermleser og forblir skarp på alle skjermer og DPI-innstillinger. Den er tilgjengelig på 35 språk, med en språkvelger i appen.
+
+PowerNapp er gratis og åpen kildekode (GPL-3.0).
+
+# Short description
+Slå av, start på nytt eller sett PC-en i hvilemodus etter en tidsplan. Windows Oppgaveplanlegger gjør jobben, så PowerNapp bruker 0 MB når den er lukket. Kan også vekke PC-en med en timer. Ser ut som Windows-innstillinger.
+
+# Features
+Slå av, start på nytt, hvilemodus, dvalemodus, logg av, lås eller slå av skjermen
+Daglige og ukentlige tidsplaner, nedtelling eller inaktivitet
+Vekk PC-en fra hvilemodus eller dvalemodus med en timer
+Bruker 0 MB når appen er lukket: Windows Oppgaveplanlegger gjør jobben, også etter omstart
+Omtrent 0,1 MB med ikonet i systemstatusfeltet, 2,3 MB med vinduet åpent
+Ser ut som Windows-innstillinger, med ikoner i full farge og lyst og mørkt tema
+Påminnelse 1 minutt før med kjør nå, slumre 10 minutter og stopp
+Støtte for tastatur, Skjermleser og DPI per skjerm
+35 språk med språkvelger
+Gratis og åpen kildekode (GPL-3.0)
+
+# Keywords
+avslåingstimer
+hvilemodus timer
+planlegg avslåing av PC
+vekk PC timer
+slå av PC automatisk
+oppgaveplanlegger
+stenge PC automatisk
+
+# What's new
+PowerNapp er nå tilgjengelig på 35 språk, med en språkvelger i appen.

@@ -1,0 +1,39 @@
+# Description
+PowerNapp, bilgisayarınızı bir zamanlamaya göre kapatır, yeniden başlatır veya uyku moduna alır; üstelik Windows 11 ile birlikte gelmiş gibi görünen bir uygulamada. Yaklaşık 160 KB boyutundadır, hiçbir bağımlılığı yoktur ve kapattığınızda hiç bellek kullanmaz.
+
+Zamanlama bir Windows Görev Zamanlayıcı görevidir; bu yüzden yeniden başlatmalardan sonra ve uygulama kapalıyken de çalışmaya devam eder. Tepsi simgesini kapatın, PowerNapp'ten hiçbir şey çalışır durumda kalmaz: 0 MB. Tepsi simgesi açıkken yaklaşık 0,1 MB, pencere açıkken yaklaşık 2,3 MB kullanır.
+
+Bir eylem seçin (kapat, yeniden başlat, uyku, hazırda beklet, oturumu kapat, kilitle veya ekranı kapat) ve ne zaman olacağını belirleyin: her gün belirli bir saatte, haftanın seçili günlerinde, bir geri sayımdan sonra veya bilgisayar boşta kaldığında. Uyku ve hazırda bekletme için PowerNapp bilgisayarı bir zamanlayıcıyla uyandırabilir de; örneğin 23.00'te uyusun, 07.00'de hazır olsun.
+
+Eylemden bir dakika önce küçük bir hatırlatma kartı geri sayar ve eylemi hemen çalıştırmanıza, 10 dakika ertelemenize veya durdurmanıza olanak tanır.
+
+PowerNapp, Windows Ayarlar uygulamasının görünümünü izler (kartlar, iki durumlu düğmeler, açılır menüler, açık ve koyu tema) ve tam renkli simgeler kullanır. Klavye ve Ekran Okuyucusu ile çalışır, her monitörde ve her DPI ayarında net kalır. Uygulama içi dil seçiciyle 35 dilde kullanılabilir.
+
+PowerNapp ücretsiz ve açık kaynaklıdır (GPL-3.0).
+
+# Short description
+Bilgisayarınızı bir zamanlamaya göre kapatın, yeniden başlatın veya uyku moduna alın. İşi Windows Görev Zamanlayıcı yapar, bu yüzden PowerNapp kapalıyken 0 MB kullanır. Bilgisayarı bir zamanlayıcıyla uyandırabilir de. Windows Ayarlar gibi görünür.
+
+# Features
+Kapat, yeniden başlat, uyku, hazırda beklet, oturumu kapat, kilitle veya ekranı kapat
+Günlük, haftalık, geri sayımlı veya boşta kalma zamanlamaları
+Bilgisayarı zamanlayıcıyla uykudan veya hazırda bekletmeden uyandırma
+Kapalıyken 0 MB: işi Windows Görev Zamanlayıcı yapar, yeniden başlatmalardan sonra bile
+Tepsi simgesiyle yaklaşık 0,1 MB, pencere açıkken 2,3 MB
+Tam renkli simgeler, açık ve koyu temalarla Windows Ayarlar görünümü
+Şimdi çalıştır, 10 dakika ertele ve durdur seçenekli 1 dakikalık hatırlatıcı
+Klavye, Ekran Okuyucusu ve monitör başına DPI desteği
+Dil seçiciyle 35 dil
+Ücretsiz ve açık kaynak (GPL-3.0)
+
+# Keywords
+bilgisayar kapatma zamanlayıcısı
+otomatik kapatma
+zamanlı kapatma
+uyku zamanlayıcısı
+bilgisayarı kapat
+uyandırma zamanlayıcısı
+görev zamanlayıcı
+
+# What's new
+PowerNapp artık uygulama içi dil seçiciyle 35 dilde kullanılabilir.

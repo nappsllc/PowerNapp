@@ -1,0 +1,39 @@
+# Description
+PowerNapp fährt Ihren PC nach Zeitplan herunter, startet ihn neu oder versetzt ihn in den Energiesparmodus – in einer App, die aussieht, als gehörte sie zu Windows 11. Sie ist etwa 160 KB groß, kommt ohne Abhängigkeiten aus und belegt nach dem Schließen überhaupt keinen Arbeitsspeicher mehr.
+
+Der Zeitplan ist eine Aufgabe der Windows-Aufgabenplanung und funktioniert daher auch nach Neustarts und bei geschlossener App weiter. Schalten Sie das Symbol im Infobereich aus, und von PowerNapp läuft nichts mehr: 0 MB. Mit Symbol im Infobereich sind es etwa 0,1 MB, bei geöffnetem Fenster etwa 2,3 MB.
+
+Wählen Sie eine Aktion (Herunterfahren, Neu starten, Energiesparmodus, Ruhezustand, Abmelden, Sperren oder Bildschirm ausschalten) und den Zeitpunkt: zu einer bestimmten Uhrzeit jeden Tag, an ausgewählten Wochentagen, nach einem Countdown oder wenn der PC im Leerlauf ist. Für Energiesparmodus und Ruhezustand kann PowerNapp den PC außerdem per Timer aufwecken, zum Beispiel um 23 Uhr schlafen legen und um 7 Uhr startklar haben.
+
+Eine Minute vor der Aktion zählt eine kleine Erinnerungskarte herunter. Sie können die Aktion sofort ausführen, 10 Minuten schlummern lassen oder stoppen.
+
+PowerNapp folgt dem Look der Windows-Einstellungen (Karten, Schalter, Flyouts, helles und dunkles Design) mit farbigen Symbolen. Die App lässt sich per Tastatur und mit der Sprachausgabe bedienen und bleibt auf jedem Monitor und bei jeder DPI-Einstellung gestochen scharf. Sie ist in 35 Sprachen verfügbar, mit einer Sprachauswahl in der App.
+
+PowerNapp ist kostenlos und Open Source (GPL-3.0).
+
+# Short description
+PC nach Zeitplan herunterfahren, neu starten oder in den Energiesparmodus versetzen. Die Windows-Aufgabenplanung erledigt die Arbeit, daher belegt PowerNapp geschlossen 0 MB. Weckt den PC auch per Timer. Sieht aus wie die Windows-Einstellungen.
+
+# Features
+Herunterfahren, Neu starten, Energiesparmodus, Ruhezustand, Abmelden, Sperren oder Bildschirm ausschalten
+Zeitpläne täglich, wöchentlich, per Countdown oder bei Leerlauf
+PC per Timer aus Energiesparmodus oder Ruhezustand aufwecken
+Belegt 0 MB, wenn die App geschlossen ist: Die Windows-Aufgabenplanung erledigt die Arbeit, auch nach Neustarts
+Etwa 0,1 MB mit Symbol im Infobereich, 2,3 MB bei geöffnetem Fenster
+Sieht aus wie die Windows-Einstellungen, mit farbigen Symbolen sowie hellem und dunklem Design
+Erinnerung 1 Minute vorher mit Sofort ausführen, 10 Minuten schlummern und Stopp
+Unterstützung für Tastatur, Sprachausgabe und DPI pro Monitor
+35 Sprachen mit Sprachauswahl
+Kostenlos und Open Source (GPL-3.0)
+
+# Keywords
+Herunterfahren Timer
+Energiesparmodus Timer
+PC automatisch ausschalten
+Herunterfahren planen
+Zeitschaltuhr PC
+Aufgabenplanung
+PC aufwecken Timer
+
+# What's new
+PowerNapp ist jetzt in 35 Sprachen verfügbar, mit einer Sprachauswahl in der App.

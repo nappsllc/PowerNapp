@@ -1,0 +1,39 @@
+# Description
+O PowerNapp encerra, reinicia ou suspende o seu PC com base num horário, numa aplicação que parece ter vindo com o Windows 11. Tem cerca de 160 KB, não tem dependências e, depois de fechada, não utiliza qualquer memória.
+
+O horário é uma tarefa do Agendador de Tarefas do Windows, por isso continua a funcionar após reinícios e com a aplicação fechada. Desative o ícone da área de notificação e nada do PowerNapp fica em execução: 0 MB. Com o ícone ativado, utiliza cerca de 0,1 MB e, com a janela aberta, cerca de 2,3 MB.
+
+Escolha uma ação (encerrar, reiniciar, suspender, hibernar, terminar sessão, bloquear ou desligar o ecrã) e quando deve acontecer: a uma hora específica todos os dias, em dias da semana à sua escolha, após uma contagem decrescente ou quando o PC estiver inativo. Para suspender e hibernar, o PowerNapp também pode reativar o PC com um temporizador, por exemplo suspender às 23h00 e tê-lo pronto às 7h00.
+
+Um minuto antes da ação, um pequeno cartão de lembrete faz a contagem decrescente e permite executá-la já, adiá-la 10 minutos ou pará-la.
+
+O PowerNapp segue o aspeto da aplicação Definições do Windows (cartões, interruptores, painéis flutuantes, tema claro e escuro), com ícones a cores. Funciona com o teclado e o Narrador e mantém-se nítido em qualquer monitor e definição de DPI. Está disponível em 35 idiomas, com um seletor de idioma na aplicação.
+
+O PowerNapp é gratuito e de código aberto (GPL-3.0).
+
+# Short description
+Encerre, reinicie ou suspenda o PC com base num horário. O Agendador de Tarefas do Windows faz o trabalho, por isso o PowerNapp utiliza 0 MB quando fechado. Também pode reativar o PC. Parece as Definições do Windows.
+
+# Features
+Encerrar, reiniciar, suspender, hibernar, terminar sessão, bloquear ou desligar o ecrã
+Horários diários, semanais, por contagem decrescente ou por inatividade
+Reativa o PC da suspensão ou hibernação com um temporizador
+0 MB quando fechado: o Agendador de Tarefas do Windows faz o trabalho, mesmo após reinícios
+Cerca de 0,1 MB com o ícone da área de notificação, 2,3 MB com a janela aberta
+Aspeto das Definições do Windows, com ícones a cores e temas claro e escuro
+Lembrete de 1 minuto: executar já, adiar 10 minutos ou parar
+Suporte para teclado, Narrador e DPI por monitor
+35 idiomas com seletor de idioma
+Gratuito e de código aberto (GPL-3.0)
+
+# Keywords
+encerrar PC
+temporizador de encerramento
+agendar encerramento
+encerramento automático
+temporizador de suspensão
+reativar PC
+agendador de tarefas
+
+# What's new
+O PowerNapp está agora disponível em 35 idiomas, com um seletor de idioma na aplicação.

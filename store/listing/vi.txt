@@ -1,0 +1,39 @@
+# Description
+PowerNapp tắt máy, khởi động lại hoặc cho PC ngủ theo lịch, trong một ứng dụng trông như có sẵn trong Windows 11. Ứng dụng chỉ khoảng 160 KB, không cần thành phần phụ thuộc nào và sau khi đóng thì hoàn toàn không dùng bộ nhớ.
+
+Lịch được lưu thành một tác vụ trong Bộ lập lịch Tác vụ của Windows, nên vẫn hoạt động sau khi khởi động lại và cả khi ứng dụng đã đóng. Tắt biểu tượng khay hệ thống là PowerNapp không còn chạy gì cả: 0 MB. Khi bật biểu tượng khay, ứng dụng dùng khoảng 0,1 MB, còn khi mở cửa sổ thì khoảng 2,3 MB.
+
+Chọn một hành động (tắt máy, khởi động lại, ngủ, ngủ đông, đăng xuất, khóa hoặc tắt màn hình) và thời điểm thực hiện: vào một giờ cụ thể mỗi ngày, vào các ngày đã chọn trong tuần, sau khi đếm ngược hoặc khi PC không hoạt động. Với chế độ ngủ và ngủ đông, PowerNapp còn có thể đánh thức PC theo hẹn giờ, chẳng hạn ngủ lúc 23:00 và sẵn sàng lúc 7:00.
+
+Một phút trước khi thực hiện, một thẻ nhắc nhỏ sẽ đếm ngược và cho phép bạn chạy ngay, báo lại sau 10 phút hoặc dừng.
+
+PowerNapp theo phong cách của ứng dụng Cài đặt Windows (thẻ, công tắc, menu bật lên, chủ đề sáng và tối) với biểu tượng đủ màu. Ứng dụng dùng được bằng bàn phím và Trình tường thuật, hiển thị sắc nét trên mọi màn hình và mọi thiết lập DPI. Ứng dụng có 35 ngôn ngữ và cho phép chọn ngôn ngữ ngay trong ứng dụng.
+
+PowerNapp miễn phí và mã nguồn mở (GPL-3.0).
+
+# Short description
+Tắt máy, khởi động lại hoặc cho PC ngủ theo lịch. Bộ lập lịch Tác vụ của Windows đảm nhận công việc, nên PowerNapp dùng 0 MB khi đã đóng. Ứng dụng còn có thể đánh thức PC theo hẹn giờ. Giao diện giống Cài đặt Windows.
+
+# Features
+Tắt máy, khởi động lại, ngủ, ngủ đông, đăng xuất, khóa hoặc tắt màn hình
+Lịch hằng ngày, hằng tuần, đếm ngược hoặc khi không hoạt động
+Đánh thức PC khỏi chế độ ngủ hoặc ngủ đông theo hẹn giờ
+Dùng 0 MB khi đóng: Bộ lập lịch Tác vụ của Windows đảm nhận, kể cả sau khi khởi động lại
+Khoảng 0,1 MB khi có biểu tượng khay, 2,3 MB khi mở cửa sổ
+Giao diện giống Cài đặt Windows, biểu tượng đủ màu, chủ đề sáng và tối
+Nhắc trước 1 phút: chạy ngay, báo lại sau 10 phút hoặc dừng
+Hỗ trợ bàn phím, Trình tường thuật và DPI theo từng màn hình
+35 ngôn ngữ, có bộ chọn ngôn ngữ
+Miễn phí và mã nguồn mở (GPL-3.0)
+
+# Keywords
+hẹn giờ tắt máy
+tự động tắt máy
+hẹn giờ ngủ
+tắt máy tính
+lên lịch tắt máy
+hẹn giờ đánh thức
+lập lịch tác vụ
+
+# What's new
+PowerNapp hiện đã có 35 ngôn ngữ, với bộ chọn ngôn ngữ ngay trong ứng dụng.

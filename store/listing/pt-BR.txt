@@ -1,0 +1,39 @@
+# Description
+O PowerNapp desliga, reinicia ou suspende o seu PC em um horário programado, em um aplicativo que parece ter vindo com o Windows 11. Ele tem cerca de 160 KB, não tem dependências e, depois de fechado, não usa nenhuma memória.
+
+A programação é uma tarefa do Agendador de Tarefas do Windows, então continua funcionando após reinicializações e com o aplicativo fechado. Desative o ícone da bandeja e nada do PowerNapp fica em execução: 0 MB. Com o ícone da bandeja ativado, ele usa cerca de 0,1 MB, e com a janela aberta, cerca de 2,3 MB.
+
+Escolha uma ação (desligar, reiniciar, suspender, hibernar, sair, bloquear ou desligar a tela) e quando ela deve acontecer: em um horário específico todos os dias, em dias da semana escolhidos, após uma contagem regressiva ou quando o PC ficar ocioso. Para suspender e hibernar, o PowerNapp também pode despertar o PC com um temporizador, por exemplo suspender às 23h e deixá-lo pronto às 7h.
+
+Um minuto antes da ação, um pequeno cartão de lembrete faz a contagem regressiva e permite executá-la agora, adiá-la por 10 minutos ou pará-la.
+
+O PowerNapp segue o visual do aplicativo Configurações do Windows (cartões, botões de alternância, menus suspensos, tema claro e escuro), com ícones coloridos. Funciona com o teclado e o Narrador e continua nítido em qualquer monitor e configuração de DPI. Está disponível em 35 idiomas, com um seletor de idioma no aplicativo.
+
+O PowerNapp é gratuito e de código aberto (GPL-3.0).
+
+# Short description
+Desligue, reinicie ou suspenda o PC em um horário programado. O Agendador de Tarefas do Windows faz o trabalho, então o PowerNapp usa 0 MB quando fechado. Também pode despertar o PC. Parece as Configurações do Windows.
+
+# Features
+Desligar, reiniciar, suspender, hibernar, sair, bloquear ou desligar a tela
+Programações diárias, semanais, por contagem regressiva ou por inatividade
+Desperta o PC da suspensão ou hibernação com um temporizador
+0 MB quando fechado: o Agendador de Tarefas do Windows faz o trabalho, mesmo após reinicializações
+Cerca de 0,1 MB com o ícone da bandeja, 2,3 MB com a janela aberta
+Visual das Configurações do Windows, com ícones coloridos e temas claro e escuro
+Lembrete de 1 minuto: executar agora, adiar 10 minutos ou parar
+Suporte a teclado, Narrador e DPI por monitor
+35 idiomas com seletor de idioma
+Gratuito e de código aberto (GPL-3.0)
+
+# Keywords
+desligar PC
+temporizador de desligamento
+agendar desligamento
+desligamento automático
+temporizador de suspensão
+despertar PC
+agendador de tarefas
+
+# What's new
+O PowerNapp agora está disponível em 35 idiomas, com um seletor de idioma no aplicativo.

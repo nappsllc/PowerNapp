@@ -1,0 +1,39 @@
+# Description
+PowerNapp oprește, repornește sau trece în repaus computerul după un program, într-o aplicație care arată ca și cum ar fi venit cu Windows 11. Are aproximativ 160 KB, nu are dependențe și, după ce o închideți, nu ocupă deloc memorie.
+
+Programul este o activitate din Planificatorul de activități Windows, așa că funcționează și după reporniri, cu aplicația închisă. Dezactivați pictograma din zona de notificare și din PowerNapp nu mai rămâne nimic în execuție: 0 MB. Cu pictograma activată folosește aproximativ 0,1 MB, iar cu fereastra deschisă aproximativ 2,3 MB.
+
+Alegeți o acțiune (închidere, repornire, repaus, hibernare, deconectare, blocare sau dezactivarea afișajului) și momentul în care să aibă loc: la o oră anume în fiecare zi, în zilele alese ale săptămânii, după o numărătoare inversă sau când computerul este inactiv. Pentru repaus și hibernare, PowerNapp poate reactiva computerul și la o oră stabilită, de exemplu repaus la 23:00 și gata la 7:00.
+
+Cu un minut înainte de acțiune, un mic card de memento numără invers și vă permite să o executați imediat, să o amânați cu 10 minute sau să o opriți.
+
+PowerNapp preia aspectul aplicației Setări din Windows (carduri, comutatoare, meniuri derulante, tema luminoasă și întunecată), cu pictograme color. Funcționează cu tastatura și cu Povestitorul și rămâne clar pe orice monitor și la orice setare DPI. Este disponibil în 35 de limbi, cu selector de limbă în aplicație.
+
+PowerNapp este gratuit și open source (GPL-3.0).
+
+# Short description
+Opriți, reporniți sau treceți în repaus computerul după un program. Planificatorul de activități Windows face treaba, așa că PowerNapp folosește 0 MB când este închis. Poate reactiva și computerul la o oră stabilită. Arată ca Setările Windows.
+
+# Features
+Închidere, repornire, repaus, hibernare, deconectare, blocare sau dezactivarea afișajului
+Programe zilnice, săptămânale, cu numărătoare inversă sau la inactivitate
+Reactivarea computerului din repaus sau hibernare la o oră stabilită
+0 MB când este închis: Planificatorul de activități Windows face treaba, chiar și după reporniri
+Aproximativ 0,1 MB cu pictograma din zona de notificare, 2,3 MB cu fereastra deschisă
+Arată ca Setările Windows, cu pictograme color și teme luminoasă și întunecată
+Memento de 1 minut: execută acum, amână 10 minute sau oprește
+Suport pentru tastatură, Povestitor și DPI separat pentru fiecare monitor
+35 de limbi, cu selector de limbă
+Gratuit și open source (GPL-3.0)
+
+# Keywords
+temporizator oprire
+temporizator repaus
+programare oprire computer
+oprire automată
+oprire PC la o anumită oră
+reactivare computer
+planificator de activități
+
+# What's new
+PowerNapp este acum disponibil în 35 de limbi, cu selector de limbă în aplicație.

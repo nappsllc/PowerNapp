@@ -1,0 +1,39 @@
+# Description
+PowerNapp zamyka, uruchamia ponownie lub usypia komputer według harmonogramu, w aplikacji wyglądającej tak, jakby była częścią systemu Windows 11. Zajmuje około 160 KB, nie ma żadnych zależności, a po zamknięciu w ogóle nie zużywa pamięci.
+
+Harmonogram jest zadaniem w Harmonogramie zadań systemu Windows, dlatego działa po ponownym uruchomieniu komputera i przy zamkniętej aplikacji. Wyłącz ikonę w obszarze powiadomień, a z PowerNapp nie zostanie nic działającego: 0 MB. Z włączoną ikoną w obszarze powiadomień aplikacja zajmuje około 0,1 MB, a z otwartym oknem około 2,3 MB.
+
+Wybierz akcję (zamknij, uruchom ponownie, uśpij, hibernuj, wyloguj, zablokuj lub wyłącz ekran) oraz moment jej wykonania: o określonej godzinie każdego dnia, w wybrane dni tygodnia, po odliczaniu albo gdy komputer jest bezczynny. W przypadku uśpienia i hibernacji PowerNapp może też wybudzić komputer o wskazanej porze, na przykład uśpić go o 23:00 i przygotować na 7:00.
+
+Minutę przed akcją niewielka karta z przypomnieniem odlicza czas i pozwala wykonać akcję od razu, odłożyć ją o 10 minut albo zatrzymać.
+
+PowerNapp naśladuje wygląd aplikacji Ustawienia systemu Windows (karty, przełączniki, menu rozwijane, jasny i ciemny motyw) i ma wielobarwne ikony. Działa z klawiaturą i Narratorem oraz pozostaje ostry na każdym monitorze i przy każdym ustawieniu DPI. Jest dostępny w 35 językach, a w aplikacji znajdziesz wybór języka.
+
+PowerNapp jest bezpłatny i ma otwarty kod źródłowy (GPL-3.0).
+
+# Short description
+Zamykaj, uruchamiaj ponownie lub usypiaj komputer według harmonogramu. Pracę wykonuje Harmonogram zadań systemu Windows, więc po zamknięciu PowerNapp zajmuje 0 MB. Potrafi też wybudzić komputer o wskazanej porze. Wygląda jak Ustawienia systemu Windows.
+
+# Features
+Zamykanie, ponowne uruchamianie, usypianie, hibernacja, wylogowanie, blokowanie lub wyłączanie ekranu
+Harmonogramy dzienne, tygodniowe, z odliczaniem lub według bezczynności
+Wybudzanie komputera z uśpienia lub hibernacji o wskazanej porze
+Po zamknięciu zajmuje 0 MB: pracę wykonuje Harmonogram zadań systemu Windows, także po ponownym uruchomieniu
+Około 0,1 MB z ikoną w obszarze powiadomień, 2,3 MB z otwartym oknem
+Wygląda jak Ustawienia systemu Windows: wielobarwne ikony, jasny i ciemny motyw
+Przypomnienie na 1 minutę przed: wykonaj teraz, drzemka 10 minut lub zatrzymaj
+Obsługa klawiatury, Narratora i DPI dla poszczególnych monitorów
+35 języków z wyborem języka
+Bezpłatny i z otwartym kodem źródłowym (GPL-3.0)
+
+# Keywords
+wyłącznik czasowy
+timer uśpienia
+zaplanuj wyłączenie komputera
+wyłączenie komputera o godzinie
+automatyczne wyłączanie
+wybudzanie komputera
+harmonogram zadań
+
+# What's new
+PowerNapp jest teraz dostępny w 35 językach, a w aplikacji znajdziesz wybór języka.

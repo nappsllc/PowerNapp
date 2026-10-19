@@ -1,0 +1,39 @@
+# Description
+PowerNapp sluit uw pc volgens een schema af, start hem opnieuw op of zet hem in de slaapstand, in een app die eruitziet alsof hij bij Windows 11 hoort. De app is ongeveer 160 KB groot, heeft geen afhankelijkheden en gebruikt zodra u hem sluit helemaal geen geheugen meer.
+
+Het schema is een taak in Windows Taakplanner, dus het blijft werken na het opnieuw opstarten en met gesloten app. Zet het pictogram in het systeemvak uit en er draait niets meer van PowerNapp: 0 MB. Met het pictogram in het systeemvak gebruikt de app ongeveer 0,1 MB en met geopend venster ongeveer 2,3 MB.
+
+Kies een actie (afsluiten, opnieuw opstarten, slaapstand, sluimerstand, afmelden, vergrendelen of beeldscherm uitschakelen) en wanneer die moet plaatsvinden: elke dag op een bepaald tijdstip, op gekozen dagen van de week, na een aftelling of wanneer de pc niet actief is. Voor de slaapstand en sluimerstand kan PowerNapp de pc ook met een timer activeren, bijvoorbeeld om 23.00 uur in slaapstand en om 07.00 uur weer klaar.
+
+Een minuut voor de actie telt een kleine herinneringskaart af. U kunt de actie dan meteen uitvoeren, 10 minuten sluimeren of stoppen.
+
+PowerNapp volgt de stijl van de app Windows-instellingen (kaarten, schakelaars, flyouts, lichte en donkere modus), met pictogrammen in volle kleur. De app werkt met het toetsenbord en Verteller en blijft scherp op elke monitor en bij elke dpi-instelling. Hij is beschikbaar in 35 talen, met een taalkiezer in de app.
+
+PowerNapp is gratis en open source (GPL-3.0).
+
+# Short description
+Sluit uw pc volgens een schema af, start hem opnieuw op of zet hem in de slaapstand. Windows Taakplanner doet het werk, dus PowerNapp gebruikt 0 MB als de app is gesloten. Kan de pc ook met een timer activeren. Ziet eruit als Windows-instellingen.
+
+# Features
+Afsluiten, opnieuw opstarten, slaapstand, sluimerstand, afmelden, vergrendelen of beeldscherm uitschakelen
+Dagelijkse, wekelijkse, aftel- of inactiviteitsschema's
+De pc met een timer uit de slaapstand of sluimerstand halen
+Gebruikt 0 MB als de app is gesloten: Windows Taakplanner doet het werk, ook na opnieuw opstarten
+Ongeveer 0,1 MB met pictogram in het systeemvak, 2,3 MB met geopend venster
+Ziet eruit als Windows-instellingen, met pictogrammen in volle kleur en een lichte en donkere modus
+Herinnering 1 minuut van tevoren met nu uitvoeren, 10 minuten sluimeren en stoppen
+Ondersteuning voor toetsenbord, Verteller en dpi per monitor
+35 talen met een taalkiezer
+Gratis en open source (GPL-3.0)
+
+# Keywords
+afsluittimer
+slaapstand timer
+pc automatisch uitzetten
+afsluiten plannen
+pc op tijd uitzetten
+taakplanner
+pc activeren timer
+
+# What's new
+PowerNapp is nu beschikbaar in 35 talen, met een taalkiezer in de app.

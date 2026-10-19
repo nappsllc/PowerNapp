@@ -1,0 +1,39 @@
+# Description
+PowerNapp mematikan, memulai ulang, atau menidurkan PC Anda sesuai jadwal, dalam aplikasi yang terlihat seperti bawaan Windows 11. Ukurannya sekitar 160 KB, tanpa dependensi, dan setelah ditutup, aplikasi ini sama sekali tidak memakai memori.
+
+Jadwal disimpan sebagai tugas Penjadwal Tugas Windows, sehingga tetap berjalan setelah PC dimulai ulang dan saat aplikasi ditutup. Nonaktifkan ikon baki dan tidak ada bagian PowerNapp yang tetap berjalan: 0 MB. Dengan ikon baki aktif, pemakaiannya sekitar 0,1 MB, dan dengan jendela terbuka sekitar 2,3 MB.
+
+Pilih tindakan (matikan, mulai ulang, tidur, hibernasi, keluar, kunci, atau matikan layar) dan kapan harus terjadi: pada waktu tertentu setiap hari, pada hari-hari pilihan dalam seminggu, setelah hitung mundur, atau saat PC tidak aktif. Untuk tidur dan hibernasi, PowerNapp juga dapat membangunkan PC dengan timer, misalnya tidur pukul 23.00 dan siap pukul 07.00.
+
+Satu menit sebelum tindakan, kartu pengingat kecil menghitung mundur dan memungkinkan Anda menjalankannya sekarang, menundanya 10 menit, atau menghentikannya.
+
+PowerNapp mengikuti tampilan aplikasi Pengaturan Windows (kartu, sakelar, flyout, tema terang dan gelap), dengan ikon berwarna penuh. Aplikasi ini mendukung keyboard dan Narator serta tetap tajam di setiap monitor dan pengaturan DPI. Tersedia dalam 35 bahasa, dengan pemilih bahasa di dalam aplikasi.
+
+PowerNapp gratis dan sumber terbuka (GPL-3.0).
+
+# Short description
+Matikan, mulai ulang, atau tidurkan PC Anda sesuai jadwal. Penjadwal Tugas Windows yang menjalankannya, jadi PowerNapp memakai 0 MB saat ditutup. Juga dapat membangunkan PC dengan timer. Tampilannya seperti Pengaturan Windows.
+
+# Features
+Matikan, mulai ulang, tidur, hibernasi, keluar, kunci, atau matikan layar
+Jadwal harian, mingguan, hitung mundur, atau saat tidak aktif
+Bangunkan PC dari tidur atau hibernasi dengan timer
+Memakai 0 MB saat ditutup: Penjadwal Tugas Windows yang menjalankannya, bahkan setelah PC dimulai ulang
+Sekitar 0,1 MB dengan ikon baki, 2,3 MB dengan jendela terbuka
+Tampilan seperti Pengaturan Windows, dengan ikon berwarna penuh serta tema terang dan gelap
+Pengingat 1 menit dengan jalankan sekarang, tunda 10 menit, dan hentikan
+Dukungan keyboard, Narator, dan DPI per monitor
+35 bahasa dengan pemilih bahasa
+Gratis dan sumber terbuka (GPL-3.0)
+
+# Keywords
+timer matikan PC
+jadwal shutdown
+shutdown otomatis
+timer tidur
+matikan komputer otomatis
+timer bangun
+penjadwal tugas
+
+# What's new
+PowerNapp kini tersedia dalam 35 bahasa, dengan pemilih bahasa di dalam aplikasi.

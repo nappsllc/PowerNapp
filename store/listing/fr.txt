@@ -1,0 +1,39 @@
+# Description
+PowerNapp arrête, redémarre ou met en veille votre PC selon un planning, dans une application qui semble livrée avec Windows 11. Elle pèse environ 160 Ko, n'a aucune dépendance et, une fois fermée, n'utilise absolument aucune mémoire.
+
+Le planning est une tâche du Planificateur de tâches Windows : il continue donc de fonctionner après un redémarrage et application fermée. Désactivez l'icône de la barre d'état et plus rien de PowerNapp ne reste en cours d'exécution : 0 Mo. Avec l'icône activée, elle utilise environ 0,1 Mo, et environ 2,3 Mo avec la fenêtre ouverte.
+
+Choisissez une action (arrêter, redémarrer, mettre en veille, mettre en veille prolongée, se déconnecter, verrouiller ou éteindre l'écran) et le moment où elle doit avoir lieu : à une heure précise tous les jours, certains jours de la semaine, après un compte à rebours ou quand le PC est inactif. Pour la veille et la veille prolongée, PowerNapp peut aussi réveiller le PC à l'heure voulue, par exemple mise en veille à 23 h et PC prêt à 7 h.
+
+Une minute avant l'action, une petite carte de rappel affiche le compte à rebours et vous permet de l'exécuter tout de suite, de la reporter de 10 minutes ou de l'arrêter.
+
+PowerNapp reprend l'apparence de l'application Paramètres de Windows (cartes, boutons bascule, volets, thèmes clair et sombre), avec des icônes en couleur. Elle fonctionne au clavier et avec le Narrateur, et reste nette sur tous les écrans et tous les réglages de DPI. Elle est disponible en 35 langues, avec un sélecteur de langue dans l'application.
+
+PowerNapp est gratuite et open source (GPL-3.0).
+
+# Short description
+Arrêtez, redémarrez ou mettez en veille votre PC selon un planning. Le Planificateur de tâches Windows fait le travail : PowerNapp utilise 0 Mo une fois fermée. Peut aussi réveiller le PC. Ressemble aux Paramètres Windows.
+
+# Features
+Arrêter, redémarrer, mettre en veille, en veille prolongée, se déconnecter, verrouiller ou éteindre l'écran
+Plannings quotidiens, hebdomadaires, avec compte à rebours ou à l'inactivité
+Réveil du PC depuis la veille ou la veille prolongée à l'heure voulue
+0 Mo une fois fermée : le Planificateur de tâches Windows fait le travail, même après un redémarrage
+Environ 0,1 Mo avec l'icône de la barre d'état, 2,3 Mo avec la fenêtre ouverte
+Aspect des Paramètres Windows, icônes en couleur, thèmes clair et sombre
+Rappel 1 minute avant : exécuter maintenant, reporter de 10 minutes ou arrêter
+Prise en charge du clavier, du Narrateur et du DPI par écran
+35 langues avec un sélecteur de langue
+Gratuite et open source (GPL-3.0)
+
+# Keywords
+minuteur d'arrêt
+programmer l'arrêt du PC
+minuteur de veille
+arrêt automatique
+éteindre le PC
+réveil du PC
+planificateur de tâches
+
+# What's new
+PowerNapp est désormais disponible en 35 langues, avec un sélecteur de langue dans l'application.

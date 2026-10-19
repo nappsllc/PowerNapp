@@ -1,0 +1,39 @@
+# Description
+PowerNapp lukker, genstarter eller sætter din pc i slumretilstand efter en plan, i en app, der ser ud, som om den fulgte med Windows 11. Den fylder omkring 160 KB, har ingen afhængigheder, og når du lukker den, bruger den slet ingen hukommelse.
+
+Planen er en opgave i Windows Jobplanlægning, så den virker stadig efter genstart og med appen lukket. Slå ikonet i meddelelsesområdet fra, og der kører intet af PowerNapp: 0 MB. Med ikonet i meddelelsesområdet bruger appen omkring 0,1 MB, og med vinduet åbent omkring 2,3 MB.
+
+Vælg en handling (luk computeren, genstart, slumretilstand, dvaletilstand, log af, lås eller sluk skærmen) og hvornår den skal ske: på et bestemt tidspunkt hver dag, på udvalgte ugedage, efter en nedtælling eller når pc'en har været inaktiv. Til slumretilstand og dvaletilstand kan PowerNapp også vække pc'en med en timer, for eksempel slumretilstand kl. 23 og klar kl. 7.
+
+Et minut før handlingen tæller et lille påmindelseskort ned, og du kan udføre handlingen med det samme, udsætte den i 10 minutter eller stoppe den.
+
+PowerNapp følger udseendet i appen Indstillinger i Windows (kort, kontakter, pop op-menuer, lyst og mørkt tema) med ikoner i fuld farve. Den kan bruges med tastaturet og Oplæser og forbliver skarp på alle skærme og DPI-indstillinger. Den findes på 35 sprog med en sprogvælger i appen.
+
+PowerNapp er gratis og open source (GPL-3.0).
+
+# Short description
+Luk, genstart eller sæt din pc i slumretilstand efter en plan. Windows Jobplanlægning klarer arbejdet, så PowerNapp bruger 0 MB, når den er lukket. Kan også vække pc'en med en timer. Ligner Windows-indstillinger.
+
+# Features
+Luk computeren, genstart, slumretilstand, dvaletilstand, log af, lås eller sluk skærmen
+Daglige og ugentlige planer, nedtælling eller inaktivitet
+Væk pc'en fra slumretilstand eller dvaletilstand med en timer
+Bruger 0 MB, når appen er lukket: Windows Jobplanlægning klarer arbejdet, også efter genstart
+Omkring 0,1 MB med ikonet i meddelelsesområdet, 2,3 MB med vinduet åbent
+Ligner Windows-indstillinger med ikoner i fuld farve og lyst og mørkt tema
+Påmindelse 1 minut før med kør nu, udsæt 10 minutter og stop
+Understøtter tastatur, Oplæser og DPI pr. skærm
+35 sprog med en sprogvælger
+Gratis og open source (GPL-3.0)
+
+# Keywords
+timer til nedlukning
+slumretimer pc
+planlæg nedlukning
+væk pc timer
+sluk pc automatisk
+jobplanlægning
+luk computeren automatisk
+
+# What's new
+PowerNapp findes nu på 35 sprog med en sprogvælger i appen.

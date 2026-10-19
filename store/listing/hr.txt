@@ -1,0 +1,39 @@
+# Description
+PowerNapp prema rasporedu isključuje, ponovno pokreće ili uspavljuje vaš PC, u aplikaciji koja izgleda kao da je stigla sa sustavom Windows 11. Velika je oko 160 KB, nema ovisnosti, a kad je zatvorite, uopće ne troši memoriju.
+
+Raspored je zadatak u Planeru zadataka sustava Windows, pa radi i nakon ponovnog pokretanja i kad je aplikacija zatvorena. Isključite ikonu na traci sustava i od aplikacije PowerNapp ništa ne ostaje pokrenuto: 0 MB. S uključenom ikonom troši oko 0,1 MB, a s otvorenim prozorom oko 2,3 MB.
+
+Odaberite radnju (isključivanje, ponovno pokretanje, stanje mirovanja, hibernacija, odjava, zaključavanje ili isključivanje zaslona) i kada se treba dogoditi: u određeno vrijeme svaki dan, odabranim danima u tjednu, nakon odbrojavanja ili kad je PC neaktivan. Za stanje mirovanja i hibernaciju PowerNapp može i probuditi PC u zadano vrijeme, primjerice uspavati ga u 23:00 i imati ga spremnog u 7:00.
+
+Minutu prije radnje mala kartica podsjetnika odbrojava i omogućuje vam da je pokrenete odmah, odgodite za 10 minuta ili zaustavite.
+
+PowerNapp prati izgled aplikacije Postavke sustava Windows (kartice, prekidači, skočni izbornici, svijetla i tamna tema) i koristi ikone u punoj boji. Radi s tipkovnicom i Pripovjedačem te ostaje oštar na svakom monitoru i pri svakoj postavci DPI-ja. Dostupan je na 35 jezika, uz odabir jezika u aplikaciji.
+
+PowerNapp je besplatan softver otvorenog koda (GPL-3.0).
+
+# Short description
+Isključite, ponovno pokrenite ili uspavajte PC prema rasporedu. Posao obavlja Planer zadataka sustava Windows, pa zatvoreni PowerNapp troši 0 MB. Može i probuditi PC u zadano vrijeme. Izgleda kao Postavke sustava Windows.
+
+# Features
+Isključivanje, ponovno pokretanje, stanje mirovanja, hibernacija, odjava, zaključavanje ili isključivanje zaslona
+Dnevni i tjedni rasporedi, odbrojavanje ili neaktivnost
+Buđenje PC-ja iz stanja mirovanja ili hibernacije u zadano vrijeme
+0 MB kad je zatvoren: posao obavlja Planer zadataka sustava Windows, čak i nakon ponovnog pokretanja
+Oko 0,1 MB s ikonom na traci sustava, 2,3 MB s otvorenim prozorom
+Izgleda kao Postavke sustava Windows, s ikonama u punoj boji te svijetlom i tamnom temom
+Podsjetnik 1 minutu prije: pokreni sada, odgodi 10 minuta ili zaustavi
+Podrška za tipkovnicu, Pripovjedač i DPI po monitoru
+35 jezika uz odabir jezika
+Besplatan softver otvorenog koda (GPL-3.0)
+
+# Keywords
+isključivanje računala
+automatsko gašenje
+timer za gašenje
+zakazano isključivanje
+timer za mirovanje
+buđenje računala
+planer zadataka
+
+# What's new
+PowerNapp je sada dostupan na 35 jezika, uz odabir jezika u aplikaciji.

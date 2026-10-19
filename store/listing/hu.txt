@@ -1,0 +1,39 @@
+# Description
+A PowerNapp ütemezés szerint leállítja, újraindítja vagy alvó állapotba helyezi a számítógépet, egy olyan alkalmazásban, amely úgy néz ki, mintha a Windows 11 része lenne. Körülbelül 160 KB, nincsenek függőségei, és bezárás után egyáltalán nem használ memóriát.
+
+Az ütemezés egy Windows Feladatütemező-feladat, így újraindítás után és bezárt alkalmazás mellett is működik. Kapcsolja ki az értesítési területi ikont, és a PowerNappból semmi sem marad futva: 0 MB. Bekapcsolt értesítési területi ikonnal körülbelül 0,1 MB-ot használ, megnyitott ablakkal körülbelül 2,3 MB-ot.
+
+Válasszon műveletet (leállítás, újraindítás, alvó állapot, hibernálás, kijelentkezés, zárolás vagy a kijelző kikapcsolása), és azt, hogy mikor történjen: minden nap adott időpontban, a hét kiválasztott napjain, visszaszámlálás után, vagy ha a számítógép tétlen. Alvó állapotnál és hibernálásnál a PowerNapp időzítővel fel is tudja ébreszteni a gépet, például este 11-kor alvó állapotba küldi, reggel 7-re pedig készen áll.
+
+A művelet előtt egy perccel egy kis emlékeztetőkártya számol vissza, és lehetővé teszi, hogy azonnal végrehajtsa, 10 percre elhalassza vagy leállítsa a műveletet.
+
+A PowerNapp követi a Windows Beállítások alkalmazás megjelenését (kártyák, kapcsolók, legördülő panelek, világos és sötét téma), színes ikonokkal. Használható billentyűzettel és a Narrátorral, és minden monitoron és DPI-beállítás mellett éles marad. 35 nyelven érhető el, az alkalmazásban nyelvválasztóval.
+
+A PowerNapp ingyenes és nyílt forráskódú (GPL-3.0).
+
+# Short description
+Állítsa le, indítsa újra vagy altassa el a számítógépet ütemezés szerint. A munkát a Windows Feladatütemezője végzi, így a PowerNapp bezárva 0 MB-ot használ. Időzítővel fel is ébreszti a gépet. Úgy néz ki, mint a Windows Beállítások.
+
+# Features
+Leállítás, újraindítás, alvó állapot, hibernálás, kijelentkezés, zárolás vagy a kijelző kikapcsolása
+Napi, heti, visszaszámlálásos vagy tétlenség alapú ütemezés
+A számítógép felébresztése alvó állapotból vagy hibernálásból időzítővel
+Bezárva 0 MB: a munkát a Windows Feladatütemezője végzi, újraindítás után is
+Körülbelül 0,1 MB értesítési területi ikonnal, 2,3 MB megnyitott ablakkal
+A Windows Beállítások megjelenése színes ikonokkal, világos és sötét témával
+1 perces emlékeztető: végrehajtás most, szundi 10 percre vagy leállítás
+Billentyűzet, Narrátor és monitoronkénti DPI támogatása
+35 nyelv nyelvválasztóval
+Ingyenes és nyílt forráskódú (GPL-3.0)
+
+# Keywords
+leállítási időzítő
+alvó állapot időzítő
+leállítás ütemezése
+számítógép kikapcsolása időzítve
+automatikus leállítás
+számítógép ébresztése
+feladatütemező
+
+# What's new
+A PowerNapp mostantól 35 nyelven érhető el, az alkalmazásban nyelvválasztóval.

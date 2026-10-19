@@ -1,0 +1,39 @@
+# Description
+PowerNapp mematikan, memulakan semula atau menidurkan PC anda mengikut jadual, dalam apl yang kelihatan seperti disertakan bersama Windows 11. Saiznya kira-kira 160 KB, tiada kebergantungan, dan setelah anda menutupnya, ia langsung tidak menggunakan memori.
+
+Jadual disimpan sebagai tugas Penjadual Tugas Windows, jadi ia terus berfungsi selepas but semula dan ketika apl ditutup. Matikan ikon dulang dan tiada bahagian PowerNapp yang masih berjalan: 0 MB. Dengan ikon dulang dihidupkan, ia menggunakan kira-kira 0.1 MB, dan dengan tetingkap terbuka kira-kira 2.3 MB.
+
+Pilih tindakan (matikan, mulakan semula, tidur, hibernasi, daftar keluar, kunci atau matikan paparan) dan bila ia patut berlaku: pada masa tertentu setiap hari, pada hari pilihan dalam seminggu, selepas kiraan detik, atau apabila PC melahu. Untuk tidur dan hibernasi, PowerNapp juga boleh membangunkan PC dengan pemasa, contohnya tidur pada 11 malam dan sedia pada 7 pagi.
+
+Seminit sebelum tindakan, kad peringatan kecil membuat kiraan detik dan membolehkan anda menjalankannya sekarang, menundanya selama 10 minit atau menghentikannya.
+
+PowerNapp mengikut rupa apl Seting Windows (kad, togol, flyout, tema cerah dan gelap), dengan ikon berwarna penuh. Ia berfungsi dengan papan kekunci dan Narator serta kekal tajam pada setiap monitor dan seting DPI. Ia tersedia dalam 35 bahasa, dengan pemilih bahasa dalam apl.
+
+PowerNapp adalah percuma dan sumber terbuka (GPL-3.0).
+
+# Short description
+Matikan, mulakan semula atau tidurkan PC anda mengikut jadual. Penjadual Tugas Windows yang melakukan kerja, jadi PowerNapp menggunakan 0 MB apabila ditutup. Ia juga boleh membangunkan PC dengan pemasa. Rupanya seperti Seting Windows.
+
+# Features
+Matikan, mulakan semula, tidur, hibernasi, daftar keluar, kunci atau matikan paparan
+Jadual harian, mingguan, kiraan detik atau melahu
+Bangunkan PC daripada tidur atau hibernasi dengan pemasa
+Menggunakan 0 MB apabila ditutup: Penjadual Tugas Windows yang melakukan kerja, malah selepas but semula
+Kira-kira 0.1 MB dengan ikon dulang, 2.3 MB dengan tetingkap terbuka
+Rupa seperti Seting Windows, dengan ikon berwarna penuh serta tema cerah dan gelap
+Peringatan 1 minit dengan jalankan sekarang, tunda 10 minit dan berhenti
+Sokongan papan kekunci, Narator dan DPI setiap monitor
+35 bahasa dengan pemilih bahasa
+Percuma dan sumber terbuka (GPL-3.0)
+
+# Keywords
+pemasa tutup PC
+jadual shutdown
+shutdown automatik
+pemasa tidur
+matikan komputer
+pemasa bangun
+penjadual tugas
+
+# What's new
+PowerNapp kini tersedia dalam 35 bahasa, dengan pemilih bahasa dalam apl.

@@ -1,0 +1,39 @@
+# Description
+PowerNapp sammuttaa tietokoneen, käynnistää sen uudelleen tai siirtää sen lepotilaan aikataulun mukaan, ja sovellus näyttää siltä kuin se olisi tullut Windows 11:n mukana. Se on noin 160 kt:n kokoinen, sillä ei ole riippuvuuksia, ja kun suljet sen, se ei käytä muistia lainkaan.
+
+Aikataulu on Windowsin Tehtävien ajoituksen tehtävä, joten se toimii uudelleenkäynnistysten jälkeenkin ja silloin, kun sovellus on suljettu. Kun poistat ilmaisinalueen kuvakkeen käytöstä, PowerNappista ei jää mitään käyntiin: 0 Mt. Kuvakkeen kanssa se käyttää noin 0,1 Mt ja ikkuna avattuna noin 2,3 Mt.
+
+Valitse toiminto (sammutus, uudelleenkäynnistys, lepotila, horrostila, uloskirjautuminen, lukitus tai näytön sammutus) ja milloin se tapahtuu: tiettyyn aikaan joka päivä, valittuina viikonpäivinä, lähtölaskennan jälkeen tai kun tietokone on ollut käyttämättä. Lepo- ja horrostilaa käytettäessä PowerNapp voi myös herättää tietokoneen ajastimella, esimerkiksi lepotilaan klo 23 ja valmiina klo 7.
+
+Minuuttia ennen toimintoa pieni muistutuskortti laskee aikaa ja antaa sinun suorittaa toiminnon heti, torkuttaa 10 minuuttia tai pysäyttää sen.
+
+PowerNapp noudattaa Windowsin Asetukset-sovelluksen ulkoasua (kortit, valitsimet, ponnahdusvalikot, vaalea ja tumma teema) ja käyttää värikkäitä kuvakkeita. Se toimii näppäimistöllä ja Lukijan kanssa ja pysyy terävänä jokaisella näytöllä ja DPI-asetuksella. Se on saatavilla 35 kielellä, ja kielen voi valita sovelluksessa.
+
+PowerNapp on ilmainen ja avoimen lähdekoodin sovellus (GPL-3.0).
+
+# Short description
+Sammuta, käynnistä uudelleen tai siirrä tietokone lepotilaan aikataulun mukaan. Työn tekee Windowsin Tehtävien ajoitus, joten suljettuna PowerNapp käyttää 0 Mt. Se voi myös herättää tietokoneen ajastimella. Näyttää Windowsin asetuksilta.
+
+# Features
+Sammutus, uudelleenkäynnistys, lepotila, horrostila, uloskirjautuminen, lukitus tai näytön sammutus
+Päivittäinen tai viikoittainen aikataulu, lähtölaskenta tai käyttämättömyys
+Tietokoneen herätys lepo- tai horrostilasta ajastimella
+0 Mt suljettuna: Windowsin Tehtävien ajoitus hoitaa työn myös uudelleenkäynnistysten jälkeen
+Noin 0,1 Mt ilmaisinalueen kuvakkeen kanssa, 2,3 Mt ikkuna avattuna
+Windowsin asetusten ulkoasu, värikkäät kuvakkeet sekä vaalea ja tumma teema
+1 minuutin muistutus: suorita heti, torku 10 minuuttia tai pysäytä
+Tuki näppäimistölle, Lukijalle ja näyttökohtaiselle DPI:lle
+35 kieltä ja kielen valinta sovelluksessa
+Ilmainen ja avoin lähdekoodi (GPL-3.0)
+
+# Keywords
+sammutusajastin
+ajastettu sammutus
+lepotila-ajastin
+tietokoneen sammutus
+automaattinen sammutus
+herätysajastin
+tehtävien ajoitus
+
+# What's new
+PowerNapp on nyt saatavilla 35 kielellä, ja kielen voi valita sovelluksessa.
