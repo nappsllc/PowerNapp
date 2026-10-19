@@ -29,6 +29,27 @@ Set-ItemProperty $runkey PowerOff "`"$old`" --tray"
 Start-Process $old -ArgumentList '--tray'; Start-Sleep -Seconds 2
 Check 'PowerOff 1.0.1 is set up and running' { (TaskExists 'PowerOff') -and (TaskExists 'PowerOff wake') -and @(Get-Process poweroff -ErrorAction SilentlyContinue).Count -ge 1 }
 
+# A task that cannot be moved (here 'PowerOff daily' edited to a COM handler: no command to point at
+# PowerNapp) must not be lost: --migrate exits nonzero, the installer keeps PowerOff (its uninstaller
+# would delete the task) and migrated=1 is not written. Then the task goes and the real upgrade runs.
+Section 'Upgrade from PowerOff 1.0.1: a task that cannot be moved'
+$bad = "$T\results\bad-task.xml"
+Set-Content $bad -Encoding Unicode @'
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <Settings><Enabled>false</Enabled></Settings>
+  <Actions><ComHandler><ClassId>{0F87369F-A4E5-4CFC-BD3E-73E6154572DD}</ClassId></ComHandler></Actions>
+</Task>
+'@
+schtasks /create /tn 'PowerOff daily' /xml $bad /f | Out-Null
+Check 'setup with an unmovable task: exits 0, PowerOff kept with its task, not marked migrated' {
+    $p = Start-Process "$T\PowerNapp-setup.exe" -ArgumentList '/S' -PassThru -Wait
+    $kept = (Test-Path $old) -and (Test-Path "$env:LOCALAPPDATA\Programs\PowerOff\uninstall.exe")
+    Note "exit $($p.ExitCode), PowerOff kept=$kept, 'PowerOff daily'=$(TaskExists 'PowerOff daily'), migrated=$(Ini 'migrated'), moved: PowerNapp=$(TaskExists 'PowerNapp') wake=$(TaskExists 'PowerNapp wake')"
+    $p.ExitCode -eq 0 -and $kept -and (TaskExists 'PowerOff daily') -and -not (Ini 'migrated') -and (TaskExists 'PowerNapp') -and (TaskExists 'PowerNapp wake') }
+Check '--migrate exits 1 while a task cannot be moved' { $c = RunCli @('--migrate'); Note "exit $c"; $c -eq 1 }
+schtasks /delete /tn 'PowerOff daily' /f | Out-Null
+
 Section 'Installer'
 Check 'silent install exits 0' { $p = Start-Process "$T\PowerNapp-setup.exe" -ArgumentList '/S' -PassThru -Wait; Note "exit $($p.ExitCode)"; $p.ExitCode -eq 0 }
 Check 'files installed' { (Test-Path $exe) -and (Test-Path "$env:LOCALAPPDATA\Programs\PowerNapp\uninstall.exe") }

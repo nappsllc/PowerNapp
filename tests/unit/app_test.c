@@ -23,9 +23,67 @@ static void task_aliases(void)
     CHECK(!task_from_arg(L"bogus", &t));
 }
 
+/* ---- migration from PowerOff 1.x on fake Task Scheduler calls ---- */
+static const wchar_t *g_fake_have[4];   /* old tasks that exist */
+static const wchar_t *g_fake_fail;      /* the new name whose registration fails */
+static wchar_t g_fake_deleted[4][32], g_fake_registered[4][32];
+static int g_fake_ndel, g_fake_nreg;
+static bool g_fake_nocmd;               /* old tasks have no <Command> */
+static bool fake_read(const wchar_t *name, TaskInfo *ti)
+{
+    for (int i = 0; i < 4; i++)
+        if (g_fake_have[i] && !wcscmp(g_fake_have[i], name)) {
+            StringCchCopyW(ti->xml, 8192, g_fake_nocmd
+                ? L"<Task><Actions><ComHandler><ClassId>{00000000-0000-0000-0000-000000000000}</ClassId></ComHandler></Actions></Task>"
+                : L"<Task><Actions><Exec><Command>C:\\old\\poweroff.exe</Command>"
+                  L"<Arguments>--wake</Arguments></Exec></Actions></Task>");
+            return true;
+        }
+    return false;
+}
+static bool fake_reg(const wchar_t *name, const wchar_t *xml)
+{
+    if (g_fake_fail && !wcscmp(name, g_fake_fail)) return false;
+    if (!wcsstr(xml, L"<Command>C:\\new\\powernapp.exe</Command>")) return false;
+    StringCchCopyW(g_fake_registered[g_fake_nreg++], 32, name);
+    return true;
+}
+static void fake_del(const wchar_t *name) { StringCchCopyW(g_fake_deleted[g_fake_ndel++], 32, name); }
+static bool fake_deleted(const wchar_t *name)
+{
+    for (int i = 0; i < g_fake_ndel; i++) if (!wcscmp(g_fake_deleted[i], name)) return true;
+    return false;
+}
+static bool fake_run(const wchar_t *a, const wchar_t *b, const wchar_t *fail)
+{
+    static const TsCalls fake = { fake_read, fake_reg, fake_del };
+    g_fake_have[0] = a; g_fake_have[1] = b; g_fake_have[2] = g_fake_have[3] = NULL;
+    g_fake_fail = fail; g_fake_ndel = g_fake_nreg = 0;
+    return migrate_tasks(&fake, L"C:\\new\\powernapp.exe");
+}
+
+static void migration_keeps_unmoved_tasks(void)
+{
+    /* every task moves: success, the old ones are gone */
+    CHECK(fake_run(L"PowerOff", L"PowerOff wake", NULL));
+    CHECK(g_fake_nreg == 2 && fake_deleted(L"PowerOff") && fake_deleted(L"PowerOff wake"));
+    /* nothing to move: success */
+    CHECK(fake_run(NULL, NULL, NULL));
+    CHECK(g_fake_nreg == 0 && g_fake_ndel == 0);
+    /* the wake task cannot be registered: failure, and its old task is kept */
+    CHECK(!fake_run(L"PowerOff", L"PowerOff wake", WTS_WAKE));
+    CHECK(fake_deleted(L"PowerOff") && !fake_deleted(L"PowerOff wake"));
+    /* an old task with no command to point at the new exe (edited by hand): failure, kept */
+    g_fake_nocmd = true;
+    CHECK(!fake_run(L"PowerOff daily", NULL, NULL));
+    CHECK(g_fake_nreg == 0 && !fake_deleted(L"PowerOff daily"));
+    g_fake_nocmd = false;
+}
+
 int main(void)
 {
     task_aliases();
+    migration_keeps_unmoved_tasks();
     printf(g_fail ? "%d check(s) FAILED\n" : "all checks passed\n", g_fail);
     return g_fail;
 }

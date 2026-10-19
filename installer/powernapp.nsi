@@ -73,10 +73,17 @@ Section "Install"
     nsExec::Exec 'taskkill /IM poweroff.exe /F'
     Pop $0
     Sleep 300
-    ExecWait '"$INSTDIR\powernapp.exe" --migrate'
+    StrCpy $0 "not run"
+    ExecWait '"$INSTDIR\powernapp.exe" --migrate' $0
+    ; nonzero: a scheduled task could not be moved and still runs PowerOff. Its uninstaller would
+    ; delete that task, so PowerOff stays installed (PowerNapp tries the move again when it starts).
+    StrCmp $0 "0" 0 poweroff_kept
     ExecWait '"$LOCALAPPDATA\Programs\PowerOff\uninstall.exe" /S _?=$LOCALAPPDATA\Programs\PowerOff'
     Delete "$LOCALAPPDATA\Programs\PowerOff\uninstall.exe"
     RMDir "$LOCALAPPDATA\Programs\PowerOff"
+    Goto no_poweroff
+  poweroff_kept:
+    DetailPrint "PowerOff kept installed: not every scheduled task could be moved (powernapp.exe --migrate: $0)"
   no_poweroff:
 SectionEnd
 

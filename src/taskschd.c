@@ -389,10 +389,41 @@ static void wcs_replace_all(wchar_t *s, size_t n, const wchar_t *from, const wch
     StringCchCopyW(s, n, tmp);
 }
 
-static void migrate_from_poweroff(void) {
+/* Task Scheduler calls the migration makes (tests pass fakes) */
+typedef struct {
+    bool (*read)(const wchar_t *name, TaskInfo *ti);
+    bool (*reg)(const wchar_t *name, const wchar_t *xml);
+    void (*del)(const wchar_t *name);
+} TsCalls;
+
+/* PowerOff 1.x's tasks re-created under the new names, same triggers and settings, running exe_x
+   (XML-escaped). An old task is deleted only once its new one is registered. True when every old
+   task found was moved (none found counts). */
+static bool migrate_tasks(const TsCalls *ts, const wchar_t *exe_x) {
+    static const wchar_t *OLD[] = { L"PowerOff", L"PowerOff wake", L"PowerOff daily", L"PowerOff startup" };
+    static const wchar_t *NEW[] = { WTS_NAME, WTS_WAKE, WTS_DAILY, WTS_STARTUP };
+    static TaskInfo ti;
+    static wchar_t xml[8192];
+    bool ok = true;
+    for (int i = 0; i < 4; i++) {
+        if (!ts->read(OLD[i], &ti)) continue;
+        wcs_replace_all(ti.xml, 8192, L"PowerOff", L"PowerNapp"); /* author, description */
+        wchar_t *c = wcsstr(ti.xml, L"<Command>"), *e = c ? wcsstr(c, L"</Command>") : NULL;
+        if (c && e) {
+            StringCchPrintfW(xml, 8192, L"%.*ls<Command>%ls%ls", (int)(c - ti.xml), ti.xml, exe_x, e);
+            if (ts->reg(NEW[i], xml)) { ts->del(OLD[i]); continue; }
+        }
+        ok = false; /* kept: the old task still works with PowerOff */
+    }
+    return ok;
+}
+
+/* True when PowerOff 1.x's tasks are all moved (or it ran before): only then is migrated=1 written,
+   and only then may the installer remove PowerOff (its uninstaller deletes the old tasks). */
+static bool migrate_from_poweroff(void) {
     wchar_t path[MAX_PATH], dir[MAX_PATH], base[MAX_PATH], old[MAX_PATH];
     ini_path(path, MAX_PATH);
-    if (GetPrivateProfileIntW(L"PowerNapp", L"migrated", 0, path)) return;
+    if (GetPrivateProfileIntW(L"PowerNapp", L"migrated", 0, path)) return true;
     StringCchCopyW(dir, MAX_PATH, path);
     wchar_t *bs = wcsrchr(dir, L'\\');
     if (bs) { *bs = L'\0'; CreateDirectoryW(dir, NULL); }
@@ -406,23 +437,12 @@ static void migrate_from_poweroff(void) {
             WritePrivateProfileSectionW(L"PowerNapp", sec, path);
     }
 
-    /* tasks: same triggers and settings, new name, this exe */
-    static const wchar_t *OLD[] = { L"PowerOff", L"PowerOff wake", L"PowerOff daily", L"PowerOff startup" };
-    static const wchar_t *NEW[] = { WTS_NAME, WTS_WAKE, WTS_DAILY, WTS_STARTUP };
-    static TaskInfo ti;
+    /* tasks: a task that could not be moved stays as it was; the next start tries again */
+    static const TsCalls real = { ts_read, ts_register, ts_delete };
     wchar_t exe[MAX_PATH], exe_x[MAX_PATH * 2];
     app_exe(exe, MAX_PATH);
     xml_escape(exe, exe_x, MAX_PATH * 2);
-    for (int i = 0; i < 4; i++) {
-        if (!ts_read(OLD[i], &ti)) continue;
-        wcs_replace_all(ti.xml, 8192, L"PowerOff", L"PowerNapp"); /* author, description */
-        wchar_t *c = wcsstr(ti.xml, L"<Command>"), *e = c ? wcsstr(c, L"</Command>") : NULL;
-        if (c && e) {
-            static wchar_t xml[8192];
-            StringCchPrintfW(xml, 8192, L"%.*ls<Command>%ls%ls", (int)(c - ti.xml), ti.xml, exe_x, e);
-            if (ts_register(NEW[i], xml)) ts_delete(OLD[i]);
-        }
-    }
+    bool ok = migrate_tasks(&real, exe_x);
 
     /* startup entry */
     HKEY hk;
@@ -433,5 +453,6 @@ static void migrate_from_poweroff(void) {
         RegCloseKey(hk);
         if (had) set_startup(true);
     }
-    WritePrivateProfileStringW(L"PowerNapp", L"migrated", L"1", path);
+    if (ok) WritePrivateProfileStringW(L"PowerNapp", L"migrated", L"1", path);
+    return ok;
 }

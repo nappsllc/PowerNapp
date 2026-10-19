@@ -246,8 +246,7 @@ int wmain(int argc, wchar_t **argv) {
         }
     }
     if (has_flag(argc, argv, L"--migrate")) { /* the installer, upgrading from PowerOff 1.x */
-        migrate_from_poweroff();
-        return 0;
+        return migrate_from_poweroff() ? 0 : 1; /* 1: a task was not moved, the installer keeps PowerOff */
     }
     if (has_flag(argc, argv, L"--uninstall")) {
         ts_delete(WTS_DAILY);
