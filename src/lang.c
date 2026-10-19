@@ -362,7 +362,7 @@ static const wchar_t *lang_item_face(const LangItem *it, const wchar_t *def_tag,
     return own != plain ? own : ui;
 }
 
-/* The title bar's Language button caption, from what is loaded, without listing the folder: the
+/* The footer's Language picker caption, from what is loaded, without listing the folder: the
    loaded language's own name, whether it was chosen or followed from Windows (or stands in for a saved
    language whose file is gone). "Windows default (...)" is only the dropdown's first entry (lang_items). */
 static void lang_caption(const wchar_t *setting, wchar_t *out, size_t n)

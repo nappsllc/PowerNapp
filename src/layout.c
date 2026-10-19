@@ -228,19 +228,18 @@ static void measure_ctls(int content) {
     g_dw = max_i(S(44), b + S(8) > a ? a : b + S(8));
 }
 
-/* The title bar's Language button (design px): padding, the globe, the gap to the name, padding.
- * Width: the name (device px) plus those, at most room -- the space between the app caption and the
- * caption buttons -- and never under the globe with its padding. *fits: false when the name has to
- * ellipsize (--check-fit reports it). */
-#define TLANG_PAD 8
-#define TLANG_ICON 16
-#define TLANG_GAP 6
-#define TLANG_H 32
+/* The footer's Language picker (design px), a link like About: the globe in a 16 px box, 6 px to the
+ * name. Width: the name (device px) plus those, at most room -- what the footer leaves beside About and
+ * a 24 px gap -- and never under the globe. *fits: false when the name has to ellipsize (--check-fit
+ * reports it). */
+#define FLANG_ICON 16
+#define FLANG_GAP 6
+#define FOOT_GAP 24 /* at least this between the picker and About */
 
-static int title_lang_w(int text, int room, bool *fits) {
-    int w = S(TLANG_PAD + TLANG_ICON + TLANG_GAP + TLANG_PAD) + text;
+static int foot_lang_w(int text, int room, bool *fits) {
+    int w = S(FLANG_ICON + FLANG_GAP) + text;
     if (fits) *fits = w <= room;
-    return w <= room ? w : max_i(room, S(TLANG_PAD + TLANG_ICON + TLANG_PAD));
+    return w <= room ? w : max_i(room, S(FLANG_ICON));
 }
 
 /* the app caption's text box starts here: 16 px margin, the 16 px icon, 12 px */
@@ -311,11 +310,17 @@ static void layout(HWND hwnd) {
     if (wake_applies() && G.wake_on) G.rc_wake_time = opt_row(content);
     else SetRectEmpty(&G.rc_wake_time);
 
-    /* footer links, 20 px below the last card: Power settings left, About right */
+    /* footer, 20 px below the last card: the Language picker at the leading end (left, or right in a
+       mirrored window), About at the trailing end */
     g_cy += S(20 - GAP);
-    int lw1 = tw(TR(L_LINK_POWER)), lw2 = tw(TR(L_LINK_ABOUT));
-    G.rc_rel1 = (RECT){ px, g_cy, px + lw1, g_cy + S(20) };
-    G.rc_rel2 = (RECT){ px + content - lw2, g_cy, px + content, g_cy + S(20) };
+    {
+        wchar_t t[96];
+        get_text(G.combo_lang, t, 96);
+        int aw = tw(TR(L_LINK_ABOUT));
+        int lw = foot_lang_w(tw(t), content - aw - S(FOOT_GAP), NULL);
+        G.rc_flang = (RECT){ px, g_cy, px + lw, g_cy + S(20) };
+        G.rc_about = (RECT){ px + content - aw, g_cy, px + content, g_cy + S(20) };
+    }
     g_cy += S(20 + 28);                    /* bottom page padding */
 
     G.client_h = g_cy;
@@ -358,26 +363,13 @@ static void layout(HWND hwnd) {
     ShowWindow(G.wake_btn, wake_applies() && G.wake_on ? SW_SHOW : SW_HIDE);
     place_right(G.wake_btn, &G.rc_wake_time, g_sw, 32);
 
-    /* title bar Language button: 32 px tall, centered in the bar, 4 px left of the caption buttons (in a
-       mirrored window that is right of them, on the left), as wide as the name, never over "PowerNapp" */
-    {
-        wchar_t t[96];
-        get_text(G.combo_lang, t, 96);
-        int right = w - S(46 * 3 + 4);
-        int room = right - (S(TITLE_TEXT_X) + text_px(G.f_sub, APP_NAME) + S(12));
-        int bw = title_lang_w(text_px(G.f_sub, t), room, NULL);
-        int top = (S(TITLE_H) - S(TLANG_H)) / 2;
-        G.rc_tlang = (RECT){ right - bw, top, right, top + S(TLANG_H) };
-        move_ctl(G.combo_lang, G.rc_tlang.left, top, bw, S(TLANG_H));
-    }
-
     /* hero start button: 120 (or its text + 40) x 32, 20 px from the right */
     move_ctl(G.btn_start, G.rc_hero.right - S(20) - g_bw, (G.rc_hero.top + G.rc_hero.bottom - S(32)) / 2,
         g_bw, S(32));
 
-    /* footer links: padded like the other controls, so the focus ring fits around the text */
-    move_ctl(G.rel_power, G.rc_rel1.left, G.rc_rel1.top, G.rc_rel1.right - G.rc_rel1.left, S(20));
-    move_ctl(G.rel_about, G.rc_rel2.left, G.rc_rel2.top, G.rc_rel2.right - G.rc_rel2.left, S(20));
+    /* footer: padded like the other controls, so the focus ring fits around the globe and the text */
+    move_ctl(G.combo_lang, G.rc_flang.left, G.rc_flang.top, G.rc_flang.right - G.rc_flang.left, S(20));
+    move_ctl(G.rel_about, G.rc_about.left, G.rc_about.top, G.rc_about.right - G.rc_about.left, S(20));
 
     size_client(hwnd, w, G.client_h); /* height follows the content */
 }

@@ -71,7 +71,6 @@
     X(OPT_OFF,           "opt.off",            L"Off") \
     X(LANGUAGE_TITLE,    "language.title",     L"Language") \
     X(LANGUAGE_DEFAULT,  "language.default",   L"Windows default (%ls)") \
-    X(LINK_POWER,        "link.power",         L"Power settings") \
     X(LINK_ABOUT,        "link.about",         L"About") \
     X(ACC_COUNTDOWN,     "acc.countdown",      L"Countdown") \
     X(ACC_IDLE,          "acc.idle",           L"Idle time") \
@@ -83,7 +82,6 @@
     X(ACC_TRAY,          "acc.tray",           L"Off: close exits; Windows runs the task") \
     X(ACC_WAKE,          "acc.wake",           L"Wake the PC from sleep every day") \
     X(ACC_HERO,          "acc.hero",           L"%ls. %ls") \
-    X(ACC_POWER,         "acc.power",          L"Opens Windows Settings: sleep, screen timeout, power mode") \
     X(ACC_ABOUT,         "acc.about",          L"%ls, version %ls") \
     X(TRAY_DELEGATED,    "tray.delegated",     L"Scheduled in Windows Task Scheduler") \
     X(TRAY_SHOW,         "tray.show",          L"Show window") \

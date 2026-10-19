@@ -83,13 +83,13 @@ typedef struct {
     HWND main;
     /* interactive children */
     HWND combo_action, combo_mode, combo_cd, combo_idle;
-    HWND combo_lang;                  /* the title bar's Language button */
+    HWND combo_lang;                  /* the footer's Language picker */
     HWND time_btn;                    /* Time row: opens the time picker flyout */
     HWND day[7];
     HWND tray;                        /* tray icon owner, exists only while the icon is shown */
     HWND tg_remind, tg_force, tg_auto, tg_tray, tg_wake;
     HWND wake_btn;                    /* Wake time row: same picker */
-    HWND btn_start, rel_power, rel_about;
+    HWND btn_start, rel_about;
     /* fonts */
     HFONT f_hero, f_row, f_sub, f_hdr;
     /* cached brushes for WM_CTLCOLOR* */
@@ -97,8 +97,7 @@ typedef struct {
     /* layout rects (client coords) */
     RECT rc_sched_hdr, rc_hero, rc_task_hdr, rc_action, rc_sched, rc_time, rc_days;
     RECT rc_opts_hdr, rc_remind, rc_force, rc_auto, rc_tray, rc_wake, rc_wake_time;
-    RECT rc_tlang;                    /* the title bar's Language button (its drawn body) */
-    RECT rc_rel1, rc_rel2; /* footer links */
+    RECT rc_flang, rc_about;          /* footer: the Language picker and About (their drawn bodies) */
     int client_h;
     /* state */
     bool ready, dark;
@@ -124,7 +123,7 @@ enum {
     ID_TIME = 210, ID_WAKE_TIME,
     ID_DAY0 = 220, /* ..226 */
     ID_TG_REMIND = 230, ID_TG_FORCE, ID_TG_AUTO, ID_TG_TRAY, ID_TG_WAKE,
-    ID_START = 240, ID_REL_POWER = 250, ID_REL_ABOUT,
+    ID_START = 240, ID_REL_ABOUT = 251,
     IDM_SHOW = 1001, IDM_START, IDM_NOW, IDM_EXIT,
 };
 #define WM_TRAY (WM_APP + 1)

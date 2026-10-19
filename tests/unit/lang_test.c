@@ -201,7 +201,7 @@ static void resolve_rules(void)
 }
 
 /* a saved language whose file is gone resolves exactly like Windows default (preferred UI languages:
-   exact, then base, then English), and the title bar's Language button reads that language's own name */
+   exact, then base, then English), and the footer's Language picker reads that language's own name */
 static void saved_missing_follows_windows(void)
 {
     wchar_t tag[16], c[128];
@@ -230,7 +230,7 @@ static void saved_missing_follows_windows(void)
     g_lang_prefs_test = NULL;
 }
 
-/* the title bar's Language button: the loaded language's own name (no folder listing), whether it was
+/* the footer's Language picker: the loaded language's own name (no folder listing), whether it was
    chosen or followed from Windows -- never "Windows default (...)", which only the dropdown's first entry says */
 static void picker_caption(void)
 {

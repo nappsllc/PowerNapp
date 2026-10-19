@@ -54,7 +54,7 @@ static void paint_title(HDC hdc) {
     RECT cr;
     GetClientRect(G.main, &cr);
     COLORREF fg = G.inactive ? T_T2 : T_T1;
-    RECT tr = { S(TITLE_TEXT_X), 0, G.rc_tlang.left - S(12), S(TITLE_H) }; /* up to the Language button */
+    RECT tr = { S(TITLE_TEXT_X), 0, cr.right - S(46 * 3 + 8), S(TITLE_H) };
     text_at(hdc, APP_NAME, tr, G.f_sub, fg, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     static const wchar_t glyph[4] = { 0, 0xE921, 0xE922, 0xE8BB }; /* ChromeMinimize/Maximize/Close */
     for (int i = 1; i <= 3; i++) {
@@ -156,7 +156,6 @@ static void acc_sync_all(void) {
     acc_desc(G.btn_start, v); /* name is the button text: Start / Cancel */
     acc_control(G.combo_lang, TR(L_LANGUAGE_TITLE), ROLE_SYSTEM_COMBOBOX, NULL);
     get_text(G.combo_lang, v, 128); acc_value(G.combo_lang, v);
-    acc_control(G.rel_power, TR(L_LINK_POWER), ROLE_SYSTEM_LINK, TR(L_ACC_POWER));
     StringCchPrintfW(v, 128, TR(L_ACC_ABOUT), APP_NAME, APP_VERSION);
     acc_control(G.rel_about, TR(L_LINK_ABOUT), ROLE_SYSTEM_PUSHBUTTON, v);
 }
@@ -279,7 +278,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 it[i].color = 0;
                 it[i].font = lang_item_font(i); /* each name in a face that has its script */
             }
-            fly_open(hwnd, id, it, g_lang_n, sel, &brc, true); /* below the title bar button */
+            fly_open(hwnd, id, it, g_lang_n, sel, &brc, true); /* above the footer picker */
             return 0;
         }
         case ID_COMBO_ACTION: case ID_COMBO_MODE: case ID_COMBO_CD: case ID_COMBO_IDLE: {
@@ -378,9 +377,6 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
             }
             layout(hwnd); /* the Wake time row appears or goes */
             InvalidateRect(hwnd, NULL, FALSE);
-            return 0;
-        case ID_REL_POWER:
-            ShellExecuteW(NULL, L"open", L"ms-settings:powersleep", NULL, NULL, SW_SHOW);
             return 0;
         case ID_REL_ABOUT:
             about_open();
@@ -485,7 +481,7 @@ static void draw_ctl(HDC hdc, HWND h, int id) {
     if (id == ID_COMBO_ACTION || id == ID_COMBO_MODE || id == ID_COMBO_CD || id == ID_COMBO_IDLE)
         paint_combo_btn(hdc, h);
     else if (id == ID_COMBO_LANG)
-        paint_title_btn(hdc, h);
+        paint_foot_lang(hdc, h);
     else if (id == ID_TIME) {
         paint_time_btn(hdc, h, G.rt.plan.h, G.rt.plan.m);
     } else if (id == ID_WAKE_TIME) {
@@ -504,8 +500,6 @@ static void draw_ctl(HDC hdc, HWND h, int id) {
         paint_toggle(hdc, h, G.wake_on);
     else if (id == ID_START)
         paint_start_btn(hdc, h, G.rt.active);
-    else if (id == ID_REL_POWER)
-        paint_link(hdc, h, TR(L_LINK_POWER));
     else if (id == ID_REL_ABOUT)
         paint_link(hdc, h, TR(L_LINK_ABOUT));
 }
@@ -524,8 +518,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         acc_init();
         DWORD obtn = WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW; /* Tab-navigable */
 
-        /* created in reading order: that is the Tab order (the title bar's Language button first) */
-        G.combo_lang = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_LANG, G.f_row);
+        /* created in reading order: that is the Tab order (the footer's Language picker, then About, last) */
         G.btn_start = mk_child(hwnd, L"BUTTON", TR(L_BTN_START), obtn, ID_START, G.f_row);
         /* combo texts are set by update_combo_texts() below */
         G.combo_action = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_ACTION, G.f_row);
@@ -545,7 +538,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         G.tg_tray = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_TRAY, G.f_row);
         G.tg_wake = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_WAKE, G.f_row);
         G.wake_btn = mk_child(hwnd, L"BUTTON", L"", obtn, ID_WAKE_TIME, G.f_row);
-        G.rel_power = mk_child(hwnd, L"BUTTON", L"", obtn, ID_REL_POWER, G.f_row);
+        G.combo_lang = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_LANG, G.f_row);
         G.rel_about = mk_child(hwnd, L"BUTTON", L"", obtn, ID_REL_ABOUT, G.f_row);
 
         G.ready = true;
@@ -652,9 +645,6 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
             ScreenToClient(hwnd, &pt);
             int b = cap_btn_at(pt); /* client x is mirrored in RTL: the buttons are then on the left */
-            RECT lr = { 0 };
-            if (G.ready) lr = ctl_rect_in(hwnd, G.combo_lang);
-            if (PtInRect(&lr, pt)) return HTCLIENT; /* the Language button is a control, not title bar */
             if (pt.y < S(TITLE_H)) return b ? CAP_HT[b] : HTCAPTION;
         }
         return hit;
@@ -684,7 +674,6 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_ACTIVATE:
         G.inactive = LOWORD(wp) == WA_INACTIVE;
         invalidate_title();
-        if (G.combo_lang) InvalidateRect(G.combo_lang, NULL, FALSE); /* dims with the caption */
         if (G.inactive) { /* remember the focused control, as dialogs do */
             HWND f = GetFocus();
             if (f && IsChild(hwnd, f)) G.last_focus = f;
@@ -1108,18 +1097,18 @@ static int check_fit(void) {
             g_cw, g_sw, g_dw, g_bw, g_ow);
         g_fit_n++;
     }
-    { /* the title bar's Language button: the whole name, clear of the "PowerNapp" caption and the
-         caption buttons (an ellipsized name is also reported by its paint above) */
+    { /* the footer's Language picker: the whole name, at least FOOT_GAP clear of About, inside the page
+         padding (an ellipsized name is also reported by its paint above) */
         wchar_t t[96];
         get_text(G.combo_lang, t, 96);
-        int cap_r = S(TITLE_TEXT_X) + text_px(G.f_sub, APP_NAME);
-        int room = S(PAGE_W - 46 * 3 - 4) - (cap_r + S(12));
+        int content = S(PAGE_W) - 2 * S(PAGE_X);
         bool fits;
-        title_lang_w(text_px(G.f_sub, t), room, &fits);
-        if (!fits || G.rc_tlang.left < cap_r + S(12) || G.rc_tlang.right > S(PAGE_W - 46 * 3) ||
-                G.rc_tlang.top < 0 || G.rc_tlang.bottom > S(TITLE_H)) {
-            wprintf(L"title bar: Language button \"%ls\" at %d..%d does not fit between the caption (ends %d) and the caption buttons (start %d)\n",
-                t, G.rc_tlang.left, G.rc_tlang.right, cap_r, S(PAGE_W - 46 * 3));
+        int lw = foot_lang_w(tw(t), content - tw(TR(L_LINK_ABOUT)) - S(FOOT_GAP), &fits);
+        if (!fits || G.rc_flang.right - G.rc_flang.left != lw || G.rc_flang.left != S(PAGE_X) ||
+                G.rc_flang.right + S(FOOT_GAP) > G.rc_about.left || G.rc_about.right > S(PAGE_W - PAGE_X)) {
+            wprintf(L"footer: Language picker \"%ls\" at %d..%d (needs %d px) does not fit before About at %d..%d\n",
+                t, G.rc_flang.left, G.rc_flang.right, S(FLANG_ICON + FLANG_GAP) + tw(t),
+                G.rc_about.left, G.rc_about.right);
             g_fit_n++;
         }
     }

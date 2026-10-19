@@ -121,21 +121,55 @@ static void korean_wraps_at_spaces(void)
     DeleteDC(dc);
 }
 
-/* the title bar's Language button: 8 px padding, 16 px globe, 6 px gap, the name, 8 px padding; never
-   wider than the room between the app caption and the caption buttons (the name then ellipsizes) */
-static void title_lang_width(void)
+/* the footer's Language picker, link style: the 16 px globe, 6 px gap, the name; never wider than the
+   room the footer leaves beside About (the name then ellipsizes, and --check-fit reports it) */
+static void foot_lang_width(void)
 {
     int dpi = g_dpi;
     bool fits = false;
     g_dpi = 96;
-    CHECK(title_lang_w(50, 300, &fits) == 88 && fits);
-    CHECK(title_lang_w(262, 300, &fits) == 300 && fits);       /* exactly the room */
-    CHECK(title_lang_w(263, 300, &fits) == 300 && !fits);      /* one px more: capped, reported */
-    CHECK(title_lang_w(400, 20, &fits) == 32 && !fits);        /* no room at all: still the globe */
-    CHECK(title_lang_w(50, 300, NULL) == 88);
+    CHECK(foot_lang_w(50, 300, &fits) == 72 && fits);
+    CHECK(foot_lang_w(278, 300, &fits) == 300 && fits);        /* exactly the room */
+    CHECK(foot_lang_w(279, 300, &fits) == 300 && !fits);       /* one px more: capped, reported */
+    CHECK(foot_lang_w(400, 10, &fits) == 16 && !fits);         /* no room at all: still the globe */
+    CHECK(foot_lang_w(50, 300, NULL) == 72);
     g_dpi = 144;
-    CHECK(title_lang_w(75, 450, &fits) == 75 + 57 && fits);    /* padding and globe scale, text is device px */
-    CHECK(title_lang_w(500, 450, &fits) == 450 && !fits);
+    CHECK(foot_lang_w(75, 450, &fits) == 75 + 33 && fits);     /* globe and gap scale, text is device px */
+    CHECK(foot_lang_w(500, 450, &fits) == 450 && !fits);
+    g_dpi = dpi;
+}
+
+/* the Language list opens above the footer picker, 4 px over it, left-aligned with it (right-aligned in
+   right-to-left), inside the work area; fewer rows (then it scrolls) when the space above is short */
+static void fly_above_placement(void)
+{
+    int dpi = g_dpi, rows = 0;
+    RECT work = { 0, 0, 1920, 1040 }, sr = { 500, 700, 580, 720 };
+    POINT pt;
+    g_dpi = 96;
+    pt = fly_above(&sr, 208, 37, &work, false, &rows);
+    CHECK(rows == 12 && pt.x == 500 && pt.y == 700 - 4 - (12 * 36 + 4));
+    pt = fly_above(&sr, 208, 37, &work, true, &rows);          /* right-to-left: trailing edges line up */
+    CHECK(rows == 12 && pt.x == 580 - 208 && pt.y == 260);
+    pt = fly_above(&sr, 208, 3, &work, false, &rows);          /* a short list: just its rows */
+    CHECK(rows == 3 && pt.y == 700 - 4 - (3 * 36 + 4));
+    RECT hi = { 500, 300, 580, 320 };                          /* little room above: 8 rows, still inside */
+    pt = fly_above(&hi, 208, 37, &work, false, &rows);
+    CHECK(rows == 8 && pt.y == 300 - 4 - (8 * 36 + 4) && pt.y >= work.top);
+    RECT wk2 = { 0, 100, 1920, 1040 }, hi2 = { 500, 400, 580, 420 }; /* work area not at 0 (top taskbar) */
+    pt = fly_above(&hi2, 208, 37, &wk2, false, &rows);
+    CHECK(rows == 8 && pt.y == 104);
+    RECT top = { 500, 20, 580, 40 };                           /* no room at all: clamped to the top */
+    pt = fly_above(&top, 208, 37, &work, false, &rows);
+    CHECK(pt.y == work.top);
+    RECT rgt = { 1800, 700, 1880, 720 }, lft = { 20, 700, 100, 720 };
+    pt = fly_above(&rgt, 208, 37, &work, false, &rows);        /* kept inside on the right */
+    CHECK(pt.x == 1920 - 208);
+    pt = fly_above(&lft, 208, 37, &work, true, &rows);         /* and on the left */
+    CHECK(pt.x == 0);
+    g_dpi = 144;
+    pt = fly_above(&sr, 312, 37, &work, false, &rows);         /* 54 px rows, 6 px gaps */
+    CHECK(rows == 12 && pt.x == 500 && pt.y == 700 - 6 - (12 * 54 + 6));
     g_dpi = dpi;
 }
 
@@ -194,7 +228,8 @@ static void combo_keys_ignore_repeat(void)
 
 int main(void)
 {
-    title_lang_width();
+    foot_lang_width();
+    fly_above_placement();
     time_columns_read_ltr();
     combo_keys_ignore_repeat();
     korean_wraps_at_spaces();

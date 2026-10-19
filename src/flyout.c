@@ -61,10 +61,27 @@ static int fly_width(const RECT *btn_rc, const FlyItem *items, int count) {
     return w;
 }
 
-/* below: drop down under the control, aligned with its trailing edge (the title bar's Language
-   button, at the window's trailing end); otherwise over it, the selected item on the control */
+/* The list opened above its control (sr, screen px), for the footer's Language picker at the window's
+ * bottom: 4 px over it, left-aligned with it (right-aligned in right-to-left, where the footer mirrors),
+ * kept inside the work area. *rows: as many items as fit between the work area's top and the control
+ * (at most FLY_ROWS); the rest scroll. Returns the popup's top-left corner. */
+static POINT fly_above(const RECT *sr, int w, int count, const RECT *work, bool rtl, int *rows) {
+    int ih = S(36);
+    int n = count < FLY_ROWS ? count : FLY_ROWS;
+    int fit = (sr->top - S(4) - work->top - S(4)) / ih;
+    if (n > fit && fit > 0) n = fit;
+    *rows = n;
+    POINT pt = { rtl ? sr->right - w : sr->left, sr->top - S(4) - (n * ih + S(4)) };
+    if (pt.y < work->top) pt.y = work->top;
+    if (pt.x + w > work->right) pt.x = work->right - w;
+    if (pt.x < work->left) pt.x = work->left;
+    return pt;
+}
+
+/* above: open over the footer's Language picker (fly_above); otherwise over the control, the
+   selected item on it */
 static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, int sel,
-        const RECT *btn_rc, bool below) {
+        const RECT *btn_rc, bool above) {
     fly_close();
     FLY.owner = owner;
     FLY.combo_id = combo_id;
@@ -82,21 +99,27 @@ static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, 
     MapWindowPoints(owner, NULL, (POINT *)&sr, 2);
     /* over the control from its leading edge: the left one, or the right one in right-to-left */
     POINT pt = { lang_rtl() ? sr.right + S(4) - w : sr.left - S(4), sr.top };
-    if (below) { pt.x = lang_rtl() ? sr.left : sr.right - w; pt.y = sr.bottom + S(4); }
-    HMONITOR mon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+    HMONITOR mon = MonitorFromRect(&sr, MONITOR_DEFAULTTONEAREST);
     MONITORINFO mi;
     mi.cbSize = sizeof(mi);
     GetMonitorInfoW(mon, &mi);
-    int fit = (mi.rcWork.bottom - mi.rcWork.top - S(4)) / ih;
-    FLY.rows = count < FLY_ROWS ? count : FLY_ROWS;
-    if (FLY.rows > fit && fit > 0) FLY.rows = fit;
-    FLY.top = fly_clamp_top(sel - FLY.rows / 2);
-    int h = FLY.rows * ih + S(4);
-    if (!below) pt.y -= (sel - FLY.top) * ih + S(6);
-    if (pt.y + h > mi.rcWork.bottom) pt.y = mi.rcWork.bottom - h;
-    if (pt.y < mi.rcWork.top) pt.y = mi.rcWork.top;
-    if (pt.x + w > mi.rcWork.right) pt.x = mi.rcWork.right - w;
-    if (pt.x < mi.rcWork.left) pt.x = mi.rcWork.left;
+    int h;
+    if (above) {
+        pt = fly_above(&sr, w, count, &mi.rcWork, lang_rtl(), &FLY.rows);
+        FLY.top = fly_clamp_top(sel - FLY.rows / 2);
+        h = FLY.rows * ih + S(4);
+    } else {
+        int fit = (mi.rcWork.bottom - mi.rcWork.top - S(4)) / ih;
+        FLY.rows = count < FLY_ROWS ? count : FLY_ROWS;
+        if (FLY.rows > fit && fit > 0) FLY.rows = fit;
+        FLY.top = fly_clamp_top(sel - FLY.rows / 2);
+        h = FLY.rows * ih + S(4);
+        pt.y -= (sel - FLY.top) * ih + S(6);
+        if (pt.y + h > mi.rcWork.bottom) pt.y = mi.rcWork.bottom - h;
+        if (pt.y < mi.rcWork.top) pt.y = mi.rcWork.top;
+        if (pt.x + w > mi.rcWork.right) pt.x = mi.rcWork.right - w;
+        if (pt.x < mi.rcWork.left) pt.x = mi.rcWork.left;
+    }
     FLY.wnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_TOPMOST | wnd_ex_dir(), FLY_CLASS, NULL,
         WS_POPUP, pt.x, pt.y, w, h, NULL, NULL, GetModuleHandleW(NULL), NULL);
     if (!FLY.wnd) return;
