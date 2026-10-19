@@ -53,17 +53,9 @@ static void fly_close(void) {
 
 /* design: 208 wide, or the control's width + 8, or the widest item + its 2 x 16 px padding */
 static int fly_width(const RECT *btn_rc, const FlyItem *items, int count) {
-    int w = btn_rc->right - btn_rc->left + S(8);
-    HDC dc = GetDC(NULL);
-    HGDIOBJ o = SelectObject(dc, G.f_row);
-    for (int i = 0; i < count; i++) {
-        SIZE sz = { 0 };
-        GetTextExtentPoint32W(dc, items[i].label, lstrlenW(items[i].label), &sz);
-        if (sz.cx + S(32) > w) w = sz.cx + S(32);
-    }
-    SelectObject(dc, o);
-    ReleaseDC(NULL, dc);
-    return w < S(208) ? S(208) : w;
+    int w = max_i(S(208), btn_rc->right - btn_rc->left + S(8));
+    for (int i = 0; i < count; i++) w = max_i(w, text_px(G.f_row, items[i].label) + S(32));
+    return w;
 }
 
 static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, int sel,

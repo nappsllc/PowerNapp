@@ -21,26 +21,16 @@ static struct { HWND wnd; int hover, focus, w, h, dy, cw, lw; } AB; /* w h: size
 /* Sized to the language: as wide as its longest line (400 in the design), taller when the
  * description needs more than 3 lines, Contact us as wide as its text + 40. */
 static void ab_measure(void) {
-    HDC dc = GetDC(NULL);
-    HGDIOBJ o = SelectObject(dc, G.f_row);
     wchar_t vs[64];
     StringCchPrintfW(vs, 64, TR(L_ABOUT_VERSION), APP_VERSION);
     const wchar_t *line[] = { TR(L_ABOUT_LINK), TR(L_ABOUT_CONTACT), vs, TR(L_ABOUT_ASK), TR(L_ABOUT_COPYRIGHT) };
     int w = S(AB_W - 48);
-    for (int i = 0; i < 5; i++) {
-        SIZE sz = { 0 };
-        GetTextExtentPoint32W(dc, line[i], lstrlenW(line[i]), &sz);
-        if (i == 0) AB.lw = sz.cx;
-        else if (i == 1) AB.cw = sz.cx + S(40) > S(120) ? sz.cx + S(40) : S(120);
-        if (sz.cx > w) w = sz.cx;
-    }
-    RECT m = { 0, 0, w, 0 };
-    DrawTextW(dc, TR(L_ABOUT_DESC), -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
-    AB.dy = m.bottom > S(60) ? m.bottom - S(60) : 0;
+    for (int i = 0; i < 5; i++) w = max_i(w, text_px(G.f_row, line[i]));
+    AB.lw = text_px(G.f_row, line[0]);
+    AB.cw = max_i(S(120), text_px(G.f_row, line[1]) + S(40));
+    AB.dy = max_i(0, text_ext(G.f_row, TR(L_ABOUT_DESC), w) - S(60));
     AB.w = w + S(48);
     AB.h = S(AB_H) + AB.dy;
-    SelectObject(dc, o);
-    ReleaseDC(NULL, dc);
 }
 
 static RECT ab_btn(int i) {

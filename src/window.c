@@ -1008,6 +1008,12 @@ static int check_fit(void) {
         for (HWND c = GetWindow(hwnd, GW_CHILD); c; c = GetWindow(c, GW_HWNDNEXT))
             if (GetWindowLongW(c, GWL_STYLE) & WS_VISIBLE) draw_ctl(hdc, c, GetDlgCtrlID(c));
     }
+    if (!_wcsicmp(lang_tag(), L"en") && (g_cw != S(200) || g_lw != S(200) || g_sw != S(242) ||
+            g_dw != S(44) || g_bw != S(120) || g_ow != S(34))) { /* English keeps the design exactly */
+        wprintf(L"English: not the design widths (combo %d, language %d, time %d, day %d, start %d, on/off %d)\n",
+            g_cw, g_lw, g_sw, g_dw, g_bw, g_ow);
+        g_fit_n++;
+    }
     /* every dropdown, opened from its control */
     static wchar_t lbl[NCDS + NIDLES][32];
     HWND owner[5] = { G.combo_action, G.combo_mode, G.combo_cd, G.combo_idle, G.combo_lang };

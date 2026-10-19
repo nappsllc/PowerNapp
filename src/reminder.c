@@ -38,24 +38,15 @@ static void rm_label(int i, wchar_t *out, size_t n) { /* 1 "<Action> now", 2 Sno
 /* Sized to the language: buttons 152 / 112 / 112 or their text + 32, 8 apart, 24 margins (the card
  * widens to hold them); the description wraps, the card growing by its extra lines. */
 static void rm_measure(void) {
-    HDC dc = GetDC(NULL);
-    HGDIOBJ o = SelectObject(dc, RM.f_text);
     wchar_t l[96];
     RM.x[1] = S(24);
     for (int i = 1; i <= 3; i++) { /* x[i]: button i's left edge; x[4]: past the last one's gap */
-        SIZE sz = { 0 };
-        int d = S(i == 1 ? 152 : 112);
         rm_label(i, l, 96);
-        GetTextExtentPoint32W(dc, l, lstrlenW(l), &sz);
-        RM.x[i + 1] = RM.x[i] + (sz.cx + S(32) > d ? sz.cx + S(32) : d) + S(8);
+        RM.x[i + 1] = RM.x[i] + max_i(S(i == 1 ? 152 : 112), text_px(RM.f_text, l) + S(32)) + S(8);
     }
-    RM.w = RM.x[4] + S(16) > S(RM_W) ? RM.x[4] + S(16) : S(RM_W);
-    RECT m = { 0, 0, RM.w - S(48), 0 };
-    DrawTextW(dc, RM_WHAT(RM.task), -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
-    RM.dy = m.bottom > S(20) ? m.bottom - S(20) : 0;
+    RM.w = max_i(S(RM_W), RM.x[4] + S(16));
+    RM.dy = max_i(0, text_ext(RM.f_text, RM_WHAT(RM.task), RM.w - S(48)) - S(20));
     RM.h = S(RM_H) + RM.dy;
-    SelectObject(dc, o);
-    ReleaseDC(NULL, dc);
 }
 
 static RECT rm_btn(int i) {

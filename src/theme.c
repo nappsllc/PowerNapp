@@ -171,6 +171,19 @@ static void fill_rect_c(HDC hdc, const RECT *rc, COLORREF fill) {
     DeleteObject(br);
 }
 
+/* text measuring, in one memory DC kept for the process (screen-compatible: the same metrics) */
+static HDC g_mdc;
+static int text_ext(HFONT f, const wchar_t *t, int wrap) { /* wrap 0: width; else height wrapped at wrap px */
+    if (!g_mdc) g_mdc = CreateCompatibleDC(NULL);
+    HGDIOBJ o = SelectObject(g_mdc, f);
+    RECT m = { 0, 0, wrap, 0 };
+    DrawTextW(g_mdc, t, -1, &m, (wrap ? DT_WORDBREAK : DT_SINGLELINE) | DT_CALCRECT | DT_NOPREFIX);
+    SelectObject(g_mdc, o);
+    return wrap ? m.bottom : m.right;
+}
+static int text_px(HFONT f, const wchar_t *t) { return text_ext(f, t, 0); }
+static int max_i(int a, int b) { return a > b ? a : b; }
+
 /* --check-fit: every text drawn is measured against its box; one line per string that doesn't fit */
 static bool g_fit, g_fit_skip; /* skip: a subtitle, which may ellipsize */
 static int g_fit_n;
@@ -185,7 +198,7 @@ static void fit_check(HDC hdc, const wchar_t *s, const RECT *rc, UINT flags) {
     if (m.right <= w && !tall) return;
     DWORD k = 2166136261u; /* each string once */
     for (const wchar_t *p = s; *p; p++) k = (k ^ *p) * 16777619u;
-    for (int i = 0; i < g_fit_n; i++) if (seen[i] == k) return;
+    for (int i = 0; i < g_fit_n && i < 256; i++) if (seen[i] == k) return;
     if (g_fit_n < 256) seen[g_fit_n] = k;
     g_fit_n++;
     int i = 0;

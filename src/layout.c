@@ -138,16 +138,6 @@ static RECT card_row_h(int w, int h) {
 static RECT card_row(HWND hwnd, int w) { (void)hwnd; return card_row_h(w, ROW_H); }
 static RECT opt_row(int w) { return card_row_h(w, OPT_H); }
 
-static int text_w(HWND hwnd, HFONT f, const wchar_t *t) {
-    HDC dc = GetDC(hwnd);
-    HGDIOBJ o = SelectObject(dc, f);
-    SIZE sz = { 0 };
-    GetTextExtentPoint32W(dc, t, lstrlenW(t), &sz);
-    SelectObject(dc, o);
-    ReleaseDC(hwnd, dc);
-    return sz.cx;
-}
-
 /* Wake up only matters for actions a timer can wake the PC from */
 static bool wake_applies(void) {
     return G.rt.plan.task == T_SLEEP || G.rt.plan.task == T_HIBERNATE;
@@ -174,11 +164,12 @@ static void place_right(HWND h, const RECT *row, int w, int hh) {
     move_ctl(h, row->right - S(16) - w, (row->top + row->bottom - S(hh)) / 2, w, S(hh));
 }
 
-/* Control widths from their text, device px: the design's width, or wider where a language
- * needs it (combos: widest item + 48, up to what the row's title leaves). Set by layout(). */
+/* Control widths from their text, device px: the design's width, or wider only where a language
+ * needs it (combos: text + 40 for the chevron and padding, up to what the row's title leaves). Every
+ * English text fits the design widths, so English keeps the design exactly. Set by layout(). */
 static int g_cw, g_sw, g_lw, g_bw, g_ow, g_dw, g_apw; /* combos, time slot, Language, Start, On/Off, day, AM/PM */
 
-static int max_i(int a, int b) { return a > b ? a : b; }
+static int tw(const wchar_t *t) { return text_px(G.f_row, t); }
 
 /* design width d, or text + pad; at most what a row with this title leaves (never under d) */
 static int ctl_w(int d, int text, int pad, int content, int title) {
@@ -187,36 +178,36 @@ static int ctl_w(int d, int text, int pad, int content, int title) {
     return w > cap ? max_i(S(d), cap) : w;
 }
 
-static void measure_ctls(HWND hwnd, int content) {
+static void measure_ctls(int content) {
     wchar_t t[96];
     int a = 0, b = 0;
     for (int i = 0; i < NTASKS + NGUI_MODES; i++) /* TASK_* then MODE_*, adjacent in strings.h */
-        a = max_i(a, text_w(hwnd, G.f_row, TR((StrId)(L_TASK_SHUTDOWN + i))));
-    g_cw = ctl_w(200, a, 48, content,
-        max_i(text_w(hwnd, G.f_row, TR(L_ACTION_TITLE)), text_w(hwnd, G.f_row, TR(L_SCHED_TITLE))));
+        a = max_i(a, tw(TR((StrId)(L_TASK_SHUTDOWN + i))));
+    g_cw = ctl_w(200, a, 40, content, max_i(tw(TR(L_ACTION_TITLE)), tw(TR(L_SCHED_TITLE))));
     a = 0;
     for (int i = 0; i < NCDS + NIDLES; i++) {
         dur_label(i < NCDS ? CDS[i] : IDLES[i - NCDS], t, 96);
-        a = max_i(a, text_w(hwnd, G.f_row, t));
+        a = max_i(a, tw(t));
     }
     for (int pm = 0; pm < 2; pm++) {
         ampm(pm, t, 96);
-        b = max_i(b, text_w(hwnd, G.f_row, t));
+        b = max_i(b, tw(t));
     }
     g_apw = max_i(S(80), b + S(16));
-    a = max_i(a + S(48), S(162) + g_apw);
-    g_sw = ctl_w(242, a, 0, content,
-        max_i(text_w(hwnd, G.f_row, TR(L_TIME_TITLE)), text_w(hwnd, G.f_row, TR(L_OPT_WAKE_TIME))));
+    g_sw = ctl_w(242, max_i(a + S(40), S(162) + g_apw), 0, content,
+        max_i(tw(TR(L_TIME_TITLE)), tw(TR(L_OPT_WAKE_TIME))));
     get_text(G.combo_lang, t, 96);
-    g_lw = ctl_w(200, text_w(hwnd, G.f_row, t), 48, content, text_w(hwnd, G.f_row, TR(L_LANGUAGE_TITLE)));
-    g_bw = S(40) + max_i(text_w(hwnd, G.f_hdr, TR(L_BTN_START)), text_w(hwnd, G.f_hdr, TR(L_BTN_CANCEL)));
-    g_bw = max_i(S(120), g_bw);
-    g_ow = max_i(S(34), max_i(text_w(hwnd, G.f_row, TR(L_OPT_ON)), text_w(hwnd, G.f_row, TR(L_OPT_OFF))));
-    g_dw = S(44);
+    g_lw = ctl_w(200, tw(t), 40, content, tw(TR(L_LANGUAGE_TITLE)));
+    g_bw = max_i(S(120), S(40) + max_i(text_px(G.f_hdr, TR(L_BTN_START)), text_px(G.f_hdr, TR(L_BTN_CANCEL))));
+    g_ow = max_i(S(34), max_i(tw(TR(L_OPT_ON)), tw(TR(L_OPT_OFF))));
+    /* day buttons: the widest name + 4 px each side; the 7 of them at most what "Repeat on" leaves */
+    b = 0;
     for (int i = 0; i < 7; i++) {
         day_name(i, false, t, 96);
-        g_dw = max_i(g_dw, text_w(hwnd, G.f_row, t) + S(16));
+        b = max_i(b, tw(t));
     }
+    a = (content - S(18 + 18 + 6 * 4 + 16) - tw(TR(L_DAYS_TITLE))) / 7;
+    g_dw = max_i(S(44), b + S(8) > a ? a : b + S(8));
 }
 
 /* resize the window so its client area is w x h device px (frame added as it is) */
@@ -238,7 +229,7 @@ static void layout(HWND hwnd) {
     }
     int w = crc.right; /* client width */
     int px = S(PAGE_X), content = w - px * 2;
-    measure_ctls(hwnd, content);
+    measure_ctls(content);
 
     g_cy = S(TITLE_H + 8);
     G.rc_sched_hdr = (RECT){ px, g_cy, px + content, g_cy + S(20) };
@@ -269,7 +260,7 @@ static void layout(HWND hwnd) {
 
     /* footer links, 20 px below the last card: Power settings left, About right */
     g_cy += S(20 - GAP);
-    int lw1 = text_w(hwnd, G.f_row, TR(L_LINK_POWER)), lw2 = text_w(hwnd, G.f_row, TR(L_LINK_ABOUT));
+    int lw1 = tw(TR(L_LINK_POWER)), lw2 = tw(TR(L_LINK_ABOUT));
     G.rc_rel1 = (RECT){ px, g_cy, px + lw1, g_cy + S(20) };
     G.rc_rel2 = (RECT){ px + content - lw2, g_cy, px + content, g_cy + S(20) };
     g_cy += S(20 + 28);                    /* bottom page padding */
