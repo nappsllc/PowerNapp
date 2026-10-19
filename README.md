@@ -30,6 +30,8 @@ uses no memory at all.**
   crashed — there's nothing left running that could crash.
 - ♿ **Accessible and sharp everywhere.** Keyboard, Narrator, light/dark,
   per-monitor DPI.
+- 🌍 **Speaks 35 languages**, right-to-left included, and follows your
+  regional format: 12- or 24-hour clock, week starting on your first day.
 
 ---
 
@@ -68,11 +70,36 @@ minutes.
   be woken by a timer. Needs *Allow wake timers* on in the power plan
   (it is by default when plugged in).
 
+### Languages
+
+English plus 34 translations: Arabic, Bulgarian, Chinese (Simplified and
+Traditional), Croatian, Czech, Danish, Dutch, Finnish, French, German,
+Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean,
+Malay, Norwegian Bokmål, Polish, Portuguese (Brazil and Portugal),
+Romanian, Russian, Serbian (Latin), Slovak, Spanish, Swedish, Thai,
+Turkish, Ukrainian and Vietnamese.
+
+- **Language** (under Options) lists *Windows default* and every language
+  by its own name. Windows default follows your Windows display language
+  (falling back to English); picking another switches the window at once,
+  no restart, and is remembered.
+- Arabic and Hebrew mirror every window: title bar buttons and controls on
+  the left, the reminder card bottom-left.
+- **The clock and the week follow the Windows regional format**, in every
+  language: 12-hour with AM/PM or 24-hour (the time picker drops its AM/PM
+  column), and *Repeat on* starts the week on your first day of the week.
+- Translations are plain UTF-8 text files in a `lang` folder next to the
+  exe (`lang\de.txt`, …), shipped by the installer, the Store package and
+  the portable zip. `lang\en.txt` is the template: copy it to
+  `lang\<tag>.txt`, set `@name`, translate the values. A missing key falls
+  back to English.
+
 ### The window
 
 - One page, laid out like a Windows 11 Settings page: **Schedule** (the
   hero card: what will happen, when, how long is left, Start / Cancel),
-  **Task** (Action, Schedule, Time, Repeat on), **Options**, and footer
+  **Task** (Action, Schedule, Time, Repeat on), **Options** (including
+  Language), and footer
   links to **Power settings** (opens the real Windows page) and **About**.
 - WinUI-style toggle switches, dropdowns with the accent selection pill,
   the Windows 11 time picker flyout, ContentDialog-style About box, 48 px
@@ -157,6 +184,10 @@ Download `PowerNapp-setup.exe` from
 [GitHub releases](https://github.com/nappsllc/PowerNapp/releases/latest).
 It installs per user, **no admin rights**, to
 `%LOCALAPPDATA%\Programs\PowerNapp` and adds a Start menu shortcut.
+
+**Portable:** `PowerNapp-portable.zip` holds `powernapp.exe` and the `lang`
+folder; unzip both side by side and run the exe (settings go to
+`%APPDATA%\PowerNapp\`).
 
 Uninstall from Settings > Apps. That also removes PowerNapp's scheduled
 tasks (`PowerNapp`, `PowerNapp wake`, `PowerNapp daily`), its startup entry
@@ -267,15 +298,21 @@ The generated files are committed, so builds don't need Edge.
 
 `tests/sandbox/` runs end-to-end checks in a fresh Windows Sandbox (needs the
 Windows Sandbox feature): install and uninstall, the window, keyboard, Narrator
-names, 150% scaling, Task Scheduler staying in sync, a real 5-minute countdown
-with the reminder and snooze, a time picked a minute ahead, and a forced
-shutdown of the sandbox at the end.
+names, 150% scaling, the regional format, the language picker and right-to-left
+(with test-only pseudo-languages), Task Scheduler staying in sync, a real
+5-minute countdown with the reminder and snooze, a time picked a minute ahead,
+and a forced shutdown of the sandbox at the end.
 
 ```bat
-powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 60 checks, ~11 min
+powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 86 checks, ~11 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         :: Store package, ~1 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  :: README screenshots
+powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots -Languages all
+                                                  :: + window, Action, reminder, About per language
 ```
+
+`tools\check-lang.ps1` checks the language files (keys, placeholders,
+encoding, lengths); `-Listing` checks the Store listings.
 
 `docs/design.html` is the design the app implements (open it in a browser).
 

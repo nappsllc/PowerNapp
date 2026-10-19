@@ -3,16 +3,19 @@
 #   powershell -File tests\sandbox\Run-Sandbox.ps1                     # end-to-end suite (~11 min)
 #   powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         # Store package (~1 min)
 #   powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  # README screenshots
+#   ... -Suite screenshots -Languages all   # plus main window, Action flyout, About and reminder card per language
 #
 # Needs the Windows Sandbox feature. Build first: build.bat and makensis (main, screenshots),
 # or tools\make-msix.ps1 (msix). Files are staged in %TEMP%\powernapp-sandbox and mapped into
 # the sandbox as C:\Test; results (results.md, screenshots) land in its results folder.
 # The main suite ends with a real forced shutdown of the sandbox, run by PowerNapp itself.
-param([ValidateSet('main', 'msix', 'screenshots')][string]$Suite = 'main', [int]$TimeoutMinutes = 25)
+param([ValidateSet('main', 'msix', 'screenshots')][string]$Suite = 'main', [int]$TimeoutMinutes = 25,
+      [string]$Languages = '')   # screenshots only: all, or a comma-separated list of tags
 $ErrorActionPreference = 'Stop'
 $root  = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $stage = Join-Path $env:TEMP 'powernapp-sandbox'
 $script = @{ main = 'run-tests.ps1'; msix = 'msix-tests.ps1'; screenshots = 'screenshots.ps1' }[$Suite]
+$scriptArgs = if ($Suite -eq 'screenshots' -and $Languages) { " -Languages $Languages" } else { '' }
 
 if (Get-Process WindowsSandboxRemoteSession -ErrorAction SilentlyContinue) { throw 'Windows Sandbox is already running: close it first' }
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
@@ -51,7 +54,7 @@ $wsb = Join-Path $stage 'powernapp.wsb'
     </MappedFolder>
   </MappedFolders>
   <LogonCommand>
-    <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File C:\Test\$script</Command>
+    <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File C:\Test\$script$scriptArgs</Command>
   </LogonCommand>
 </Configuration>
 "@ | Set-Content -Encoding UTF8 $wsb
