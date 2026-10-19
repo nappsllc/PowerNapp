@@ -1,9 +1,9 @@
 # Description
-PowerNapp stänger av, startar om eller försätter datorn i viloläge enligt ett schema, i en app som ser ut som om den hörde till Windows 11. Den är cirka 160 kB, har inga beroenden och när du stänger den använder den inget minne alls.
+PowerNapp stänger av, startar om eller försätter datorn i strömsparläge enligt ett schema, i en app som ser ut som om den hörde till Windows 11. Den är cirka 160 kB, har inga beroenden och när du stänger den använder den inget minne alls.
 
 Schemat är en aktivitet i Schemaläggaren i Windows, så det fortsätter att fungera efter omstarter och med appen stängd. Stäng av ikonen i meddelandefältet så körs ingenting av PowerNapp: 0 MB. Med ikonen i meddelandefältet använder appen cirka 0,1 MB, och med fönstret öppet cirka 2,3 MB.
 
-Välj en åtgärd (stäng av, starta om, viloläge, strömsparläge, logga ut, lås eller stäng av skärmen) och när den ska ske: vid en viss tid varje dag, på valda veckodagar, efter en nedräkning eller när datorn varit inaktiv. För viloläge och strömsparläge kan PowerNapp också väcka datorn med en timer, till exempel viloläge klockan 23 och redo klockan 7.
+Välj en åtgärd (stäng av, starta om, strömsparläge, viloläge, logga ut, lås eller stäng av skärmen) och när den ska ske: vid en viss tid varje dag, på valda veckodagar, efter en nedräkning eller när datorn varit inaktiv. För strömsparläge och viloläge kan PowerNapp också väcka datorn med en timer, till exempel strömsparläge klockan 23 och redo klockan 7.
 
 En minut före åtgärden räknar ett litet påminnelsekort ned. Där kan du köra åtgärden direkt, snooza i 10 minuter eller stoppa den.
 
@@ -12,12 +12,12 @@ PowerNapp följer utseendet i appen Inställningar i Windows (kort, reglage, utf
 PowerNapp är gratis och öppen källkod (GPL-3.0).
 
 # Short description
-Stäng av, starta om eller försätt datorn i viloläge enligt ett schema. Schemaläggaren i Windows gör jobbet, så PowerNapp använder 0 MB när den är stängd. Kan också väcka datorn med en timer. Ser ut som Inställningar i Windows.
+Stäng av, starta om eller försätt datorn i strömsparläge enligt ett schema. Schemaläggaren i Windows gör jobbet, så PowerNapp använder 0 MB när den är stängd. Kan också väcka datorn med en timer. Ser ut som Inställningar i Windows.
 
 # Features
-Stäng av, starta om, viloläge, strömsparläge, logga ut, lås eller stäng av skärmen
+Stäng av, starta om, strömsparläge, viloläge, logga ut, lås eller stäng av skärmen
 Dagliga och veckovisa scheman, nedräkning eller inaktivitet
-Väck datorn från viloläge eller strömsparläge med en timer
+Väck datorn från strömsparläge eller viloläge med en timer
 Använder 0 MB när appen är stängd: Schemaläggaren i Windows gör jobbet, även efter omstarter
 Cirka 0,1 MB med ikonen i meddelandefältet, 2,3 MB med fönstret öppet
 Ser ut som Inställningar i Windows, med fullfärgsikoner samt ljust och mörkt tema
@@ -33,7 +33,7 @@ schemalägg avstängning
 väck datorn timer
 stäng av datorn automatiskt
 schemaläggaren
-viloläge timer
+strömsparläge timer
 
 # What's new
 PowerNapp finns nu på 35 språk, med en språkväljare i appen.

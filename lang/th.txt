@@ -2,7 +2,7 @@
 # PowerNapp Thai
 
 task.shutdown = ปิดเครื่อง
-task.restart = รีสตาร์ท
+task.restart = เริ่มระบบใหม่
 task.sleep = สลีป
 task.hibernate = ไฮเบอร์เนต
 task.logoff = ลงชื่อออก
@@ -91,7 +91,7 @@ tray.sleep_now = สลีปเดี๋ยวนี้
 tray.exit = ออก
 tray.exit_keep = ออก (Windows เก็บงานไว้)
 rm.shutdown = PowerNapp จะปิดเครื่องพีซีเมื่อนับถอยหลังเสร็จสิ้น
-rm.restart = PowerNapp จะรีสตาร์ทพีซีเมื่อนับถอยหลังเสร็จสิ้น
+rm.restart = PowerNapp จะเริ่มระบบพีซีใหม่เมื่อนับถอยหลังเสร็จสิ้น
 rm.sleep = PowerNapp จะทำให้พีซีเข้าสู่โหมดสลีปเมื่อนับถอยหลังเสร็จสิ้น
 rm.hibernate = PowerNapp จะไฮเบอร์เนตพีซีเมื่อนับถอยหลังเสร็จสิ้น
 rm.logoff = PowerNapp จะลงชื่อคุณออกเมื่อนับถอยหลังเสร็จสิ้น
@@ -106,7 +106,7 @@ rm.acc_name = %ls ในอีก %d วินาที
 rm.acc_desc = %ls ปุ่ม: %ls เดี๋ยวนี้, เลื่อน 10 นาที, หยุด กด Escape เพื่อหยุด
 about.title = เกี่ยวกับ PowerNapp
 about.version = เวอร์ชัน %ls
-about.desc = แอปเล็กๆ ที่ปิดเครื่อง รีสตาร์ท หรือสั่งให้พีซีเข้าสู่โหมดสลีปตามกำหนดการ ตัวจัดกำหนดการงานของ Windows เป็นผู้ทำงาน จึงไม่ใช้หน่วยความจำเลยเมื่อปิดแอป
+about.desc = แอปเล็กๆ ที่ปิดเครื่อง เริ่มระบบใหม่ หรือสั่งให้พีซีเข้าสู่โหมดสลีปตามกำหนดการ ตัวจัดกำหนดการงานของ Windows เป็นผู้ทำงาน จึงไม่ใช้หน่วยความจำเลยเมื่อปิดแอป
 about.ask = มีคำถาม ข้อกังวล หรืองานที่อยากเสนอไหม
 about.copyright = © 2026 PowerNapps (โดย Denis Platonov) ลอสแอนเจลิส
 about.contact = ติดต่อเรา
