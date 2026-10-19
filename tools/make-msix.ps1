@@ -20,6 +20,7 @@ param(
     [string]$Name = 'PowerNapps.PowerNapp',
     [string]$Publisher = 'CN=PowerNapps',
     [string]$PublisherDisplayName = 'PowerNapps',
+    [string]$DisplayName = 'PowerNapp',     # must be a name reserved in Partner Center
     [string]$Version = '2.0.0.0',          # the Store requires the last part to be 0
     [string]$CertPfx = '',
     [string]$CertPassword = '',
@@ -147,7 +148,7 @@ Write-Host "languages: $(if ($descs.Count) { $descs.Keys -join ' ' } else { 'en-
          IgnorableNamespaces="uap uap3 desktop rescap">
   <Identity Name="$(& $esc $Name)" Publisher="$(& $esc $Publisher)" Version="$Version" ProcessorArchitecture="x64" />
   <Properties>
-    <DisplayName>PowerNapp</DisplayName>
+    <DisplayName>$(& $esc $DisplayName)</DisplayName>
     <PublisherDisplayName>$(& $esc $PublisherDisplayName)</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>$description</Description>
@@ -160,7 +161,7 @@ $resources
   </Resources>
   <Applications>
     <Application Id="PowerNapp" Executable="powernapp.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="PowerNapp" Description="$description"
+      <uap:VisualElements DisplayName="$(& $esc $DisplayName)" Description="$description"
           BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" />
       <Extensions>
         <!-- Task Scheduler can't start an exe inside WindowsApps: the app's tasks run this alias -->

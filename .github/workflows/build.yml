@@ -54,8 +54,10 @@ jobs:
           MSIX_NAME: ${{ vars.MSIX_NAME }}
           MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
           MSIX_PUBLISHER_NAME: ${{ vars.MSIX_PUBLISHER_NAME }}
+          MSIX_DISPLAY_NAME: ${{ vars.MSIX_DISPLAY_NAME }}
         run: |
           $a = @{}
+          if ($env:MSIX_DISPLAY_NAME) { $a.DisplayName = $env:MSIX_DISPLAY_NAME }
           if ($env:MSIX_NAME) { $a.Name = $env:MSIX_NAME }
           if ($env:MSIX_PUBLISHER) { $a.Publisher = $env:MSIX_PUBLISHER }
           if ($env:MSIX_PUBLISHER_NAME) { $a.PublisherDisplayName = $env:MSIX_PUBLISHER_NAME }
