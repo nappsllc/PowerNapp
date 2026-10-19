@@ -11,6 +11,11 @@
 #
 # The tile and taskbar assets are generated from powernapp.ico into assets\msix the first time
 # (or with -RegenerateAssets) and committed, so the build itself needs no image tools.
+#
+# Languages: the package ships lang\*.txt next to the exe. Each store\listing\<tag>.txt gives
+# the package description in that language (its "# Short description" section), written to
+# strings\<tag>\resources.resw as AppDescription, and one <Resource Language> per listing, so the
+# Store shows those languages as supported. With no listings yet: English only, plain text.
 param(
     [string]$Name = 'PowerNapps.PowerNapp',
     [string]$Publisher = 'CN=PowerNapps',
@@ -18,6 +23,7 @@ param(
     [string]$Version = '2.0.0.0',          # the Store requires the last part to be 0
     [string]$CertPfx = '',
     [string]$CertPassword = '',
+    [string]$ListingDir = '',              # default store\listing (tests point it elsewhere)
     [switch]$RegenerateAssets
 )
 $ErrorActionPreference = 'Stop'
@@ -27,6 +33,7 @@ $layout = Join-Path $root 'build\msix'
 $out    = Join-Path $root 'PowerNapp.msix'
 $exe    = Join-Path $root 'powernapp.exe'
 if (-not (Test-Path $exe)) { throw 'powernapp.exe not found: run build.bat first' }
+if (-not $ListingDir) { $ListingDir = Join-Path $root 'store\listing' }
 
 # newest Windows SDK that has the packaging tools
 $sdk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64\makeappx.exe" |
@@ -86,8 +93,50 @@ if (Test-Path $layout) { Remove-Item -Recurse -Force $layout }
 New-Item -ItemType Directory -Force (Join-Path $layout 'Assets') | Out-Null
 Copy-Item $exe $layout
 Copy-Item (Join-Path $assets '*.png') (Join-Path $layout 'Assets')
+# translations: only the repo's lang\*.txt (the pseudo-languages under tests\ never ship)
+New-Item -ItemType Directory -Force (Join-Path $layout 'lang') | Out-Null
+Copy-Item (Join-Path $root 'lang\*.txt') (Join-Path $layout 'lang')
 
 $esc = { param($s) [Security.SecurityElement]::Escape($s) }
+
+# ------------------------------------------------------------------ description per listing language
+$descs = [ordered]@{}
+foreach ($f in @(Get-ChildItem $ListingDir -Filter *.txt -ErrorAction SilentlyContinue | Sort-Object Name)) {
+    $tag = $f.BaseName
+    if ($tag -notmatch '^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$') { throw "store listing ${f}: '$tag' is not a language tag" }
+    $in = $false; $text = @()
+    foreach ($l in [IO.File]::ReadAllLines($f.FullName, [Text.Encoding]::UTF8)) {
+        if ($l -match '^#\s') { $in = $l -match '^#\s*Short description\s*$'; continue }
+        if ($in -and $l.Trim()) { $text += $l.Trim() }
+    }
+    if (-not $text) { throw "store listing ${f}: no '# Short description' text" }
+    $descs[$tag] = $text -join ' '
+}
+$default = 'en-US'
+if ($descs.Count) {
+    # the default language: English if listed, else the first listing
+    $default = @($descs.Keys | Where-Object { $_ -eq 'en' -or $_ -like 'en-*' }) + @($descs.Keys) | Select-Object -First 1
+    foreach ($tag in $descs.Keys) {
+        $dir = Join-Path $layout "strings\$tag"
+        New-Item -ItemType Directory -Force $dir | Out-Null
+        @"
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="AppDescription" xml:space="preserve"><value>$(& $esc $descs[$tag])</value></data>
+</root>
+"@ | Set-Content -Encoding UTF8 (Join-Path $dir 'resources.resw')
+    }
+    $description = 'ms-resource:AppDescription'
+    $resources = (@($default) + @($descs.Keys | Where-Object { $_ -ne $default }) | ForEach-Object { "    <Resource Language=`"$_`" />" }) -join "`r`n"
+} else {
+    $description = 'Shut down, restart or sleep your PC on a schedule.'
+    $resources = '    <Resource Language="en-us" />'
+}
+Write-Host "languages: $(if ($descs.Count) { $descs.Keys -join ' ' } else { 'en-us (no store\listing yet)' }); lang files: $(@(Get-ChildItem (Join-Path $layout 'lang')).Count)"
+
+# ------------------------------------------------------------------ manifest
 @"
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -101,17 +150,17 @@ $esc = { param($s) [Security.SecurityElement]::Escape($s) }
     <DisplayName>PowerNapp</DisplayName>
     <PublisherDisplayName>$(& $esc $PublisherDisplayName)</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
-    <Description>Shut down, restart or sleep your PC on a schedule.</Description>
+    <Description>$description</Description>
   </Properties>
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
   </Dependencies>
   <Resources>
-    <Resource Language="en-us" />
+$resources
   </Resources>
   <Applications>
     <Application Id="PowerNapp" Executable="powernapp.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="PowerNapp" Description="Shut down, restart or sleep your PC on a schedule."
+      <uap:VisualElements DisplayName="PowerNapp" Description="$description"
           BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" />
       <Extensions>
         <!-- Task Scheduler can't start an exe inside WindowsApps: the app's tasks run this alias -->
@@ -129,12 +178,16 @@ $esc = { param($s) [Security.SecurityElement]::Escape($s) }
 </Package>
 "@ | Set-Content -Encoding UTF8 (Join-Path $layout 'AppxManifest.xml')
 
-# resource index, so Windows picks the scale / targetsize variants
+# resource index, so Windows picks the scale / targetsize variants and the description's language
 $pricfg = Join-Path $root 'build\priconfig.xml'
-& "$sdk\makepri.exe" createconfig /cf $pricfg /dq en-US /pv 10.0.0 /o | Out-Null
+& "$sdk\makepri.exe" createconfig /cf $pricfg /dq $default /pv 10.0.0 /o | Out-Null
 if ($LASTEXITCODE) { throw 'makepri createconfig failed' }
+# one package holds every language: keep the strings in resources.pri, not per-language resource packs
+(Get-Content $pricfg) | Where-Object { $_ -notmatch 'autoResourcePackage qualifier="Language"' } | Set-Content -Encoding UTF8 $pricfg
 & "$sdk\makepri.exe" new /pr $layout /cf $pricfg /mn (Join-Path $layout 'AppxManifest.xml') /of (Join-Path $layout 'resources.pri') /o | Out-Null
 if ($LASTEXITCODE) { throw 'makepri new failed' }
+# the strings now live in resources.pri; the .resw sources don't ship
+if (Test-Path (Join-Path $layout 'strings')) { Remove-Item -Recurse -Force (Join-Path $layout 'strings') }
 
 # ------------------------------------------------------------------ pack (and optionally sign)
 & "$sdk\makeappx.exe" pack /o /d $layout /p $out | Select-Object -Last 1

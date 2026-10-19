@@ -62,6 +62,21 @@ jobs:
           if ($env:GITHUB_REF_TYPE -eq 'tag') { $a.Version = $env:GITHUB_REF_NAME.TrimStart('v') + '.0' }
           & ./tools/make-msix.ps1 @a
 
+      - name: Build portable zip (exe + lang)
+        shell: pwsh
+        run: |
+          $d = 'build/portable'   # the translations only: the pseudo-languages live under tests/
+          New-Item -ItemType Directory -Force "$d/lang" | Out-Null
+          Copy-Item powernapp.exe $d
+          Copy-Item lang/*.txt "$d/lang"
+          Compress-Archive -Path "$d/*" -DestinationPath PowerNapp-portable.zip -Force
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $z = [IO.Compression.ZipFile]::OpenRead("$PWD/PowerNapp-portable.zip")
+          $names = $z.Entries.FullName -replace '\\', '/'; $z.Dispose()
+          $names
+          if ($names -notcontains 'powernapp.exe' -or -not ($names -like 'lang/*.txt')) { throw 'zip is missing powernapp.exe or lang/*.txt' }
+          if ($names -like '*qps-*') { throw 'pseudo-languages must not ship' }
+
       - uses: actions/upload-artifact@v4
         with:
           name: PowerNapp
@@ -69,6 +84,7 @@ jobs:
             powernapp.exe
             PowerNapp-setup.exe
             PowerNapp.msix
+            PowerNapp-portable.zip
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -78,3 +94,4 @@ jobs:
             powernapp.exe
             PowerNapp-setup.exe
             PowerNapp.msix
+            PowerNapp-portable.zip

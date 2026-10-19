@@ -51,6 +51,9 @@ public static class H {
   public static int Hit(IntPtr h, int x, int y) { return (int)SendMessage(h, 0x84, IntPtr.Zero, MK(x, y)); }
   // regional format: set through the API (keeps Windows' locale cache in step), then tell running apps
   [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern bool SetLocaleInfoW(uint lcid, uint type, string data);
+  [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] static extern int GetLocaleInfoW(uint lcid, uint type, System.Text.StringBuilder data, int n);
+  // the user's effective value (the registry value may be absent: then it is the locale's default)
+  public static string LocaleInfo(uint type) { var b = new System.Text.StringBuilder(128); return GetLocaleInfoW(0x400, type, b, 128) > 0 ? b.ToString() : null; }
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern IntPtr SendMessageTimeoutW(IntPtr h, uint m, IntPtr w, string l, uint f, uint t, out IntPtr r);
   public static void IntlChanged() { IntPtr r; SendMessageTimeoutW((IntPtr)0xffff, 0x1A, IntPtr.Zero, "intl", 2, 3000, out r); }
   public static IntPtr Focus(IntPtr main) { uint p; uint t = GetWindowThreadProcessId(main, out p); var g = new GTI(); g.cb = Marshal.SizeOf(g); GetGUIThreadInfo(t, ref g); return g.f; }

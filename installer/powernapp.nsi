@@ -48,6 +48,10 @@ Section "Install"
   !insertmacro CLOSE_RUNNING
   SetOutPath "$INSTDIR"
   File "..\powernapp.exe"
+  ; translations: lang\<tag>.txt next to the exe (English is built in)
+  SetOutPath "$INSTDIR\lang"
+  File "..\lang\*.txt"
+  SetOutPath "$INSTDIR"
   WriteUninstaller "$INSTDIR\uninstall.exe"
   CreateShortcut "$SMPROGRAMS\${APP}.lnk" "$INSTDIR\powernapp.exe" "" "$INSTDIR\powernapp.exe" 0 \
     SW_SHOWNORMAL "" "Shut down, restart or sleep the PC on a schedule"
@@ -93,6 +97,8 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\${APP}.lnk"
   Delete "$INSTDIR\powernapp.exe"
   Delete "$INSTDIR\uninstall.exe"
+  Delete "$INSTDIR\lang\*.txt"
+  RMDir "$INSTDIR\lang"
   RMDir "$INSTDIR"
   RMDir /r "$APPDATA\PowerNapp"   ; settings (powernapp.ini)
   DeleteRegKey HKCU "${UNINST_KEY}"

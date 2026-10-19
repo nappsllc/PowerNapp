@@ -22,6 +22,7 @@ if ($Suite -eq 'msix') {
     $layout = Join-Path $root 'build\msix'
     if (-not (Test-Path (Join-Path $layout 'AppxManifest.xml'))) { throw 'build\msix not found: run tools\make-msix.ps1 first' }
     Copy-Item -Recurse $layout (Join-Path $stage 'layout')
+    Copy-Item (Join-Path $PSScriptRoot 'qps-ploc.txt') $stage   # added to the registered layout, never to the package
 } else {
     foreach ($f in 'powernapp.exe', 'PowerNapp-setup.exe') {
         if (-not (Test-Path (Join-Path $root $f))) { throw "$f not found: run build.bat and makensis first" }

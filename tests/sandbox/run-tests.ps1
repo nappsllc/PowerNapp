@@ -32,6 +32,12 @@ Check 'PowerOff 1.0.1 is set up and running' { (TaskExists 'PowerOff') -and (Tas
 Section 'Installer'
 Check 'silent install exits 0' { $p = Start-Process "$T\PowerNapp-setup.exe" -ArgumentList '/S' -PassThru -Wait; Note "exit $($p.ExitCode)"; $p.ExitCode -eq 0 }
 Check 'files installed' { (Test-Path $exe) -and (Test-Path "$env:LOCALAPPDATA\Programs\PowerNapp\uninstall.exe") }
+Check 'lang\ installed next to the exe: every repo translation (de.txt among them), no pseudo-languages' {
+    $want = @(Get-ChildItem "$T\lang" -Filter *.txt | ForEach-Object Name | Sort-Object)
+    $got = @(Get-ChildItem "$env:LOCALAPPDATA\Programs\PowerNapp\lang" -Filter *.txt -ErrorAction SilentlyContinue | ForEach-Object Name | Sort-Object)
+    $de = if ($want -contains 'de.txt') { $got -contains 'de.txt' } else { 'n/a (no de.txt in the repo yet)' }
+    Note "$($got.Count) of $($want.Count) files, de.txt=$de"
+    $got.Count -gt 0 -and -not (Compare-Object $want $got) -and $de -and -not ($got -like 'qps-*') }
 Check 'Start menu shortcut points at the exe' { $s = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk); Note $s.TargetPath; $s.TargetPath -eq $exe }
 Check 'Settings > Apps entry' { $k = Get-ItemProperty $ukey; Note "$($k.DisplayName) $($k.DisplayVersion)"; $k.DisplayName -eq 'PowerNapp' -and $k.UninstallString }
 Check 'upgrade: settings carried over' { Note "task=$(Ini 'task') h=$(Ini 'h') m=$(Ini 'm')"; (Ini 'task') -eq '2' -and (Ini 'h') -eq '22' -and (Ini 'm') -eq '15' }
@@ -118,10 +124,12 @@ StopApp
 Section 'Regional format (24-hour clock, week from Sunday)'
 $intl = 'HKCU:\Control Panel\International'
 $LC = @{ sShortTime = 0x79; sTimeFormat = 0x1003; iFirstDayOfWeek = 0x100C }   # LOCALE_SSHORTTIME, _STIMEFORMAT, _IFIRSTDAYOFWEEK
-$saved = @{}; foreach ($k in $LC.Keys) { $saved[$k] = (Get-ItemProperty $intl).$k }
+# the user's effective values before the test (a value missing from the registry reads as the locale default)
+$saved = @{}; foreach ($k in $LC.Keys) { $saved[$k] = [H]::LocaleInfo($LC[$k]) }
 function SetIntl($v) { foreach ($k in $v.Keys) { [H]::SetLocaleInfoW(0x400, $LC[$k], $v[$k]) | Out-Null; Set-ItemProperty $intl $k $v[$k] }; [H]::IntlChanged(); Start-Sleep -Milliseconds 700 }
 function FirstDayBtn { 220..226 | Sort-Object { [H]::Left([H]::GetDlgItem($main, $_)) } | Select-Object -First 1 }
 Log "regional format before: $(($saved.Keys | ForEach-Object { "$_=$($saved[$_])" }) -join ', ')"
+try {
 SetIntl @{ sShortTime = 'HH:mm'; sTimeFormat = 'HH:mm'; iFirstDayOfWeek = '6' }
 SetIni 'task' 5; SetIni 'mode' 5; SetIni 'h' 23; SetIni 'm' 0; SetIni 'days' 127
 $main = StartApp
@@ -143,17 +151,18 @@ SetIntl @{ sShortTime = 'h:mm tt'; sTimeFormat = 'h:mm:ss tt'; iFirstDayOfWeek =
 Check 'live change: time button reads 12:00 AM, the first day button is Monday' {
     $v = [H]::Uia([H]::GetDlgItem($main, 210), 30045); $id = FirstDayBtn; $n = [H]::Uia([H]::GetDlgItem($main, $id), 30005)
     Note "value=$v, leftmost $id '$n'"; $v -eq '12:00 AM' -and $id -eq 220 -and $n -eq 'Monday' }
-StopApp
-SetIntl $saved
-Check 'regional format restored' { $now = (Get-ItemProperty $intl); $ok = $true; foreach ($k in $saved.Keys) { if ($now.$k -ne $saved[$k]) { $ok = $false; Note "$k=$($now.$k)" } }; $ok }
+} finally {   # restore exactly the values from before, whatever failed above
+    StopApp
+    SetIntl $saved
+}
+Check 'regional format restored' { $now = Get-ItemProperty $intl; $ok = $true; foreach ($k in $saved.Keys) { $e = [H]::LocaleInfo($LC[$k]); if ($e -ne $saved[$k] -or $now.$k -ne $saved[$k]) { $ok = $false; Note "$k=$e (registry '$($now.$k)') want '$($saved[$k])'" } }; $ok }
 
 # ----------------------------------------------------------------------------- language picker
-# The installer doesn't ship lang\ yet: put the repo's files and the pseudo-language (tests\sandbox\qps-ploc.txt,
-# accented English ~40% longer, @name = Pseudo) next to the installed exe.
+# The installer ships lang\; add the test-only pseudo-language (tests\sandbox\qps-ploc.txt, accented English
+# ~40% longer, @name = Pseudo) next to the installed exe.
 Section 'Language picker'
 $langDir = Join-Path (Split-Path $exe) 'lang'
-New-Item -ItemType Directory -Force $langDir | Out-Null
-Copy-Item "$T\lang\*" $langDir -Force; Copy-Item "$T\qps-ploc.txt" $langDir -Force
+Copy-Item "$T\qps-ploc.txt" $langDir -Force
 $pseudo = @{}; foreach ($l in Get-Content "$T\qps-ploc.txt" -Encoding UTF8) { if ($l -match '^([a-z_.]+) = (.*)$') { $pseudo[$Matches[1]] = $Matches[2] } }
 function LangValue { [H]::Uia([H]::GetDlgItem([H]::F('PowerNappWnd'), 205), 30045) }
 # open the picker, End (its value announces the last entry), then Enter picks it / Esc closes
@@ -372,6 +381,7 @@ Check 'before: PowerNapp daily task + Run key exist' { (TaskExists 'PowerNapp da
 Check 'silent uninstall exits 0' { $p = Start-Process "$env:LOCALAPPDATA\Programs\PowerNapp\uninstall.exe" -ArgumentList '/S' -PassThru -Wait; Start-Sleep -Seconds 3; Note "exit $($p.ExitCode)"; $p.ExitCode -eq 0 }
 Check 'files, shortcut and Apps entry removed' { -not (Test-Path $exe) -and -not (Test-Path $lnk) -and -not (Test-Path $ukey) }
 Check 'scheduled tasks removed' { -not (TaskExists 'PowerNapp') -and -not (TaskExists 'PowerNapp daily') -and -not (TaskExists 'PowerNapp wake') }
+Check 'lang folder and install folder removed' { $d = Split-Path $exe; Note "left: $(@(Get-ChildItem $d -Recurse -Name -ErrorAction SilentlyContinue) -join ', ')"; -not (Test-Path "$d\lang") -and -not (Test-Path $d) }
 Check 'Run key and settings removed' { -not (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run').PowerNapp -and -not (Test-Path (Split-Path $ini)) }
 
 # ----------------------------------------------------------------------------- done; shut down with PowerNapp
