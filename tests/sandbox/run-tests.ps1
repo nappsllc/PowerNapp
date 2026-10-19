@@ -278,6 +278,8 @@ StopApp; SetIni 'lang' ''
 
 # The tray-only process stays tiny in any language: Task Manager's "Memory" column (private working
 # set) once it has settled, with a translation loaded (de, ja) and following Windows (English here).
+# The first launch is the session's first notification icon from the app: shell32 then does work on a
+# thread-pool thread 2-3 s after the startup trim (~380 KB), which the app trims again.
 Section 'Tray-only memory'
 foreach ($l in '', 'de', 'ja', 'en') {
     StopApp; SetIni 'lang' $l; SetIni 'tray' 1; Start-Sleep -Seconds 2
