@@ -185,28 +185,44 @@ static int text_px(HFONT f, const wchar_t *t) { return text_ext(f, t, 0); }
 static int max_i(int a, int b) { return a > b ? a : b; }
 
 /* --check-fit: every text drawn is measured against its box; one line per string that doesn't fit */
-static bool g_fit;
+static bool g_fit, g_fit_exempt; /* exempt: the Days subtitle, which may ellipsize */
 static int g_fit_key = -1; /* composed text being drawn: the string it is made from (StrId), for the report */
 static int g_fit_n;
+/* composed text that doesn't fit, per string it is made from: the widest case, printed by fit_flush */
+static struct { int need, has; wchar_t text[160]; } g_fit_worst[L_COUNT];
+
+static void fit_flush(void) {
+    for (int i = 0; i < L_COUNT; i++)
+        if (g_fit_worst[i].need)
+            wprintf(L"%hs \"%ls\": needs %d px, has %d\n", g_lang_keys[i], g_fit_worst[i].text,
+                g_fit_worst[i].need, g_fit_worst[i].has);
+}
 
 static void fit_check(HDC hdc, const wchar_t *s, const RECT *rc, UINT flags) {
     static DWORD seen[256];
-    if ((flags & DT_NOCLIP) || !*s) return; /* NOCLIP: links and glyphs sized to themselves */
+    if (g_fit_exempt || (flags & DT_NOCLIP) || !*s) return; /* NOCLIP: links and glyphs sized to themselves */
     int w = rc->right - rc->left, h = rc->bottom - rc->top;
     RECT m = { 0, 0, w, 0 };
     DrawTextW(hdc, s, -1, &m, (flags & (DT_SINGLELINE | DT_WORDBREAK)) | DT_CALCRECT | DT_NOPREFIX);
     bool tall = (flags & DT_WORDBREAK) && m.bottom > h;
     if (m.right <= w && !tall) return;
+    if (g_fit_key >= 0 && g_fit_key < L_COUNT && !tall) { /* composed: once per string it is made from */
+        if (!g_fit_worst[g_fit_key].need) g_fit_n++;
+        if (m.right > g_fit_worst[g_fit_key].need) {
+            g_fit_worst[g_fit_key].need = m.right;
+            g_fit_worst[g_fit_key].has = w;
+            StringCchCopyW(g_fit_worst[g_fit_key].text, 160, s);
+        }
+        return;
+    }
     DWORD k = 2166136261u; /* each string once */
     for (const wchar_t *p = s; *p; p++) k = (k ^ *p) * 16777619u;
-    if (g_fit_key >= 0) k = 0x80000000u | (DWORD)g_fit_key; /* composed (a countdown ticks): once per string it is made from */
     for (int i = 0; i < g_fit_n && i < 256; i++) if (seen[i] == k) return;
     if (g_fit_n < 256) seen[g_fit_n] = k;
     g_fit_n++;
     int i = 0;
     while (i < L_COUNT && TR((StrId)i) != s) i++;
     if (i < L_COUNT) wprintf(L"%hs", g_lang_keys[i]);
-    else if (g_fit_key >= 0 && g_fit_key < L_COUNT) wprintf(L"%hs \"%ls\"", g_lang_keys[g_fit_key], s);
     else wprintf(L"\"%ls\"", s); /* composed text */
     if (tall) wprintf(L": needs %d px tall, has %d\n", m.bottom, h);
     else wprintf(L": needs %d px, has %d\n", m.right, w);

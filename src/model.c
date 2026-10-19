@@ -204,8 +204,19 @@ static void days_text(int days, wchar_t *out, size_t n) {
     StringCchPrintfW(out, n, L"%ls", buf[0] ? buf : TR(L_DAYS_NONE));
 }
 
+/* --check-fit measures dynamic text with worst-case values instead of the clock (check_fit) */
+static const wchar_t *g_fit_day;  /* the widest day word ("Today", "Tomorrow", a weekday); NULL = real date */
+static int g_fit_h, g_fit_m;      /* with the widest time */
+static long long g_fit_rem = -1;  /* time left; -1 = real */
+
 /* "Today, 11:30 PM" (or "Today, 23:30") for a local-epoch target */
 static void day_label(long long target, wchar_t *out, size_t n) {
+    if (g_fit_day) {
+        wchar_t ft[32];
+        fmt_time(g_fit_h, g_fit_m, ft, 32);
+        StringCchPrintfW(out, n, TR(L_DAY_AT), g_fit_day, ft);
+        return;
+    }
     int y; unsigned mo, d;
     civil_from_days(target / 86400, &y, &mo, &d);
     int ty; unsigned tmo, td;

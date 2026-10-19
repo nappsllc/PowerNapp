@@ -431,9 +431,9 @@ static void paint_main(HDC hdc, bool title) {
         text_at(hdc, TR(L_DAYS_TITLE), dr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
         RECT dsr = { dr.left, dcy + S(2), dr.right, dcy + S(18) };
         StringCchPrintfW(sub, 128, TR(L_DAYS_SUB), d);
-        g_fit_key = L_DAYS_SUB;
+        g_fit_exempt = true; /* only sums up the day buttons beside it: may ellipsize */
         text_at(hdc, sub, dsr, G.f_sub, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-        g_fit_key = -1;
+        g_fit_exempt = false;
     }
     /* options rows (On/Off labels left of the pill children) */
     static const struct { RECT *rc; IconId ic; StrId t; bool *on; } OPTS[] = {
@@ -1002,6 +1002,41 @@ static int check_fit(void) {
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN,
         -32000, -32000, 640, 700, NULL, NULL, hi, NULL); /* hidden: no WS_VISIBLE, never shown */
     if (!hwnd) return -1;
+    { /* worst cases instead of the clock, so the result doesn't depend on when it runs: the widest
+         time (minute 59, the hour and AM/PM marker that measure widest), the widest day word
+         (Today, Tomorrow or a weekday), the widest countdown and idle choices */
+        static wchar_t day[32];
+        wchar_t t[96];
+        int best = -1;
+        for (int h = 0; h < 24; h++) {
+            fmt_time(h, 59, t, 96);
+            int w = text_px(G.f_row, t);
+            if (w > best) { best = w; g_fit_h = h; }
+        }
+        g_fit_m = 59;
+        p->h = G.wake_h = g_fit_h;
+        p->m = G.wake_m = 59;
+        best = -1;
+        for (int i = 0; i < 9; i++) {
+            if (i < 7) day_name(i, true, t, 96);
+            else StringCchCopyW(t, 96, TR(i == 7 ? L_DAY_TODAY : L_DAY_TOMORROW));
+            int w = text_px(G.f_row, t);
+            if (w > best) { best = w; StringCchCopyW(day, 32, t); }
+        }
+        g_fit_day = day;
+        best = -1;
+        for (int i = 0; i < NCDS; i++) {
+            dur_label(CDS[i], t, 96);
+            int w = text_px(G.f_row, t);
+            if (w > best) { best = w; p->cd = CDS[i]; }
+        }
+        best = -1;
+        for (int i = 0; i < NIDLES; i++) {
+            dur_label(IDLES[i], t, 96);
+            int w = text_px(G.f_row, t);
+            if (w > best) { best = w; p->idle = IDLES[i]; }
+        }
+    }
     HDC sdc = GetDC(NULL), hdc = CreateCompatibleDC(sdc);
     HBITMAP bm = CreateCompatibleBitmap(sdc, S(PAGE_W), S(1200));
     ReleaseDC(NULL, sdc);
@@ -1012,6 +1047,8 @@ static int check_fit(void) {
         p->mode = GUI_MODES[st / NTASKS % NGUI_MODES];
         G.rt.active = k & 1;
         G.rt.fire_at = local_now_secs() + 5400;
+        /* time left at its widest: almost a day (daily), almost a week (weekly), the longest countdown */
+        g_fit_rem = p->mode == M_WEEKLY ? 7 * 86400LL - 1 : p->mode == M_COUNTDOWN ? CDS[NCDS - 1] * 60LL - 1 : 86400LL - 1;
         G.remind_on = G.force_on = G.auto_on = G.tray_on = G.wake_on = k >> 1;
         update_combo_texts();
         layout(hwnd);
@@ -1060,6 +1097,7 @@ static int check_fit(void) {
         rm_measure();
         rm_paint(hdc, 60, 60000);
     }
+    fit_flush();
     SelectObject(hdc, ob);
     DeleteObject(bm);
     DeleteDC(hdc);
