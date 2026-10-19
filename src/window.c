@@ -402,7 +402,7 @@ static void paint_main(HDC hdc, bool title) {
     htr.top = hcy - (th + S(22)) / 2;
     htr.bottom = htr.top + th;
     text_at(hdc, ht, htr, hf, T_T1, DT_LEFT | DT_WORDBREAK);
-    RECT hsr = { htr.left, htr.bottom + S(2), htr.right, htr.bottom + S(22) };
+    RECT hsr = { htr.left, htr.bottom + S(2), htr.right + S(8), htr.bottom + S(22) }; /* up to 8 px from Start */
     /* it carries the countdown: --check-fit counts an ellipsis here as a failure */
     g_fit_key = hero_sub_key();
     text_at(hdc, hs, hsr, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);

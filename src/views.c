@@ -35,7 +35,7 @@ static void hero_strings(wchar_t *title, size_t tn, wchar_t *sub, size_t sn) {
         dur_label(r->plan.idle, d, 96);
         StringCchPrintfW(sub, sn, TR(L_HERO_IDLE), d);
     } else {
-        long long rem = rt_remaining(r);
+        long long rem = g_fit_rem >= 0 ? g_fit_rem : rt_remaining(r);
         long long tgt = local_now_secs() + rem;
         wchar_t dl[64], dur[32];
         day_label(tgt, dl, 64);
@@ -316,7 +316,7 @@ static void paint_row(HDC hdc, const RECT *rc, IconId ic,
     /* design: 14/20 title directly over a 12/16 subtitle, block centered in the row */
     RECT tr = { rc->left + S(18 + 20 + 18), cy - S(18), rc->right - S(16) - ctl_w, cy + S(2) };
     text_at(hdc, title, tr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-    RECT sr = { tr.left, cy + S(2), tr.right, cy + S(18) };
+    RECT sr = { tr.left, cy + S(2), tr.right + S(8), cy + S(18) }; /* up to 8 px from the control */
     /* ellipsized should it ever overflow, but --check-fit counts that as a failure */
     text_at(hdc, sub, sr, G.f_sub, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
 }
