@@ -156,10 +156,15 @@ static void resolve_rules(void)
     write_lang_file(L"fr", fr, strlen(fr));
     lang_resolve(L"fr", tag, 16);
     CHECK(wcscmp(tag, L"fr") == 0);
-    lang_resolve(L"fr-CA", tag, 16);
+    g_lang_prefs_test = L"fr-CA\0";                   /* Windows default: by base language */
+    lang_resolve(L"", tag, 16);
     CHECK(wcscmp(tag, L"fr") == 0);
-    lang_resolve(L"zz", tag, 16);                    /* saved language gone: English */
+    g_lang_prefs_test = L"en-US\0";
+    lang_resolve(L"zz", tag, 16);                    /* saved language gone, Windows in English: English */
     CHECK(wcscmp(tag, L"en") == 0);
+    lang_resolve(L"fr-CA", tag, 16);                 /* no fr-CA file: like Windows default, not by its base */
+    CHECK(wcscmp(tag, L"en") == 0);
+    g_lang_prefs_test = NULL;
     lang_resolve(L"EN-gb", tag, 16);
     CHECK(wcscmp(tag, L"en") == 0);
     LangInfo li[64];
@@ -193,6 +198,36 @@ static void resolve_rules(void)
     swprintf(p, MAX_PATH, L"%ls\\fr.txt", dir); DeleteFileW(p);
     swprintf(p, MAX_PATH, L"%ls\\gr.txt", dir); DeleteFileW(p);
     swprintf(p, MAX_PATH, L"%ls\\so.txt", dir); DeleteFileW(p);
+}
+
+/* a saved language whose file is gone resolves exactly like Windows default (preferred UI languages:
+   exact, then base, then English), and the Language row reads "Windows default (<that language>)" */
+static void saved_missing_follows_windows(void)
+{
+    wchar_t tag[16], c[128];
+    const char *de = "@name = Deutsch\naction.title = Aktion\n";
+    write_lang_file(L"de", de, strlen(de));
+    g_lang_prefs_test = L"de-DE\0en-US\0";
+    lang_resolve(L"zz", tag, 16);
+    CHECK(wcscmp(tag, L"de") == 0);
+    lang_load(tag);
+    lang_caption(L"zz", c, 128);
+    CHECK(wcscmp(c, L"Windows default (Deutsch)") == 0);
+    lang_resolve(L"", tag, 16);                       /* the same as following Windows */
+    CHECK(wcscmp(tag, L"de") == 0);
+    g_lang_prefs_test = L"xh-ZA\0de-AT\0";              /* first preferred has no file: the next one, by base */
+    lang_resolve(L"zz", tag, 16);
+    CHECK(wcscmp(tag, L"de") == 0);
+    g_lang_prefs_test = L"en-GB\0de-DE\0";              /* English first: English */
+    lang_resolve(L"zz", tag, 16);
+    CHECK(wcscmp(tag, L"en") == 0);
+    g_lang_prefs_test = L"xh-ZA\0";                     /* nothing fits: English */
+    lang_resolve(L"zz", tag, 16);
+    CHECK(wcscmp(tag, L"en") == 0);
+    lang_load(L"en");
+    lang_caption(L"zz", c, 128);
+    CHECK(wcscmp(c, L"Windows default (English)") == 0);
+    g_lang_prefs_test = NULL;
 }
 
 /* the Language row's caption comes from the loaded language (no folder listing) */
@@ -426,6 +461,7 @@ int main(void)
     ui_font_faces();
     picker_items();
     picker_caption();
+    saved_missing_follows_windows();
     pseudo_file_complete();
     printf(g_fail ? "%d check(s) FAILED\n" : "all checks passed\n", g_fail);
     return g_fail;

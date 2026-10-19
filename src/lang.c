@@ -26,6 +26,7 @@ static wchar_t *g_lang_blk;                    /* heap block backing g_lang_cur 
 static wchar_t g_lang_tag[LANG_TAG_MAX] = L"en";
 static wchar_t g_lang_name[LANG_NAME_MAX] = L"English"; /* the loaded language's own name (@name) */
 static bool g_lang_rtl;
+static const wchar_t *g_lang_prefs_test;       /* tests: preferred UI languages (multi-string) instead of Windows' */
 
 static const wchar_t *TR(StrId id)
 {
@@ -347,7 +348,7 @@ static int lang_items(const LangInfo *list, int n, const wchar_t *def_tag, LangI
 
 /* The Language row's caption from what is loaded, without listing the folder: the saved choice's
    own name, or "Windows default (<loaded language>)" when following Windows or when the saved
-   language's file is gone (then English is loaded). */
+   language's file is gone (then what Windows default resolves to is loaded). */
 static void lang_caption(const wchar_t *setting, wchar_t *out, size_t n)
 {
     if (setting && setting[0] && _wcsicmp(setting, g_lang_tag) == 0) StringCchCopyW(out, n, g_lang_name);
@@ -405,7 +406,8 @@ static bool lang_match(const wchar_t *pref, const wchar_t **avail, int n, wchar_
 
 /* setting: saved choice ("" = follow Windows). tag receives the language tag to load.
    Cheap enough for the tray process: no file is read here. English needs no folder access, a saved tag
-   whose file exists is taken as is, anything else is matched against the folder's file names. */
+   whose file exists is taken as is; otherwise (following Windows, or the saved language's file is gone)
+   Windows' preferred UI languages are matched against the folder's file names, English if none fits. */
 static void lang_resolve(const wchar_t *setting, wchar_t *tag, size_t n)
 {
     static wchar_t tags[64][LANG_TAG_MAX];
@@ -414,18 +416,15 @@ static void lang_resolve(const wchar_t *setting, wchar_t *tag, size_t n)
     if (n == 0) return;
     StringCchPrintfW(tag, n, L"en"); tag[n - 1] = 0;
     wchar_t buf[512];
-    const wchar_t *prefs;
+    const wchar_t *prefs = buf;
     if (setting && setting[0]) {
         if (_wcsicmp(setting, L"en") == 0 || _wcsnicmp(setting, L"en-", 3) == 0) return;
         if (lang_file_exists(setting)) { StringCchPrintfW(tag, n, L"%ls", setting); tag[n - 1] = 0; return; }
-        buf[0] = 0;
-        StringCchCopyW(buf, 510, setting);
-        buf[wcslen(buf) + 1] = 0;          /* one-entry multi-string */
-        prefs = buf;
-    } else {
+    }
+    if (g_lang_prefs_test) prefs = g_lang_prefs_test;
+    else {
         ULONG num = 0, sz = 512;
         if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, buf, &sz)) return;
-        prefs = buf;
     }
     for (const wchar_t *p = prefs; *p; p += wcslen(p) + 1) {
         if (_wcsicmp(p, L"en") == 0 || _wcsnicmp(p, L"en-", 3) == 0) return;
@@ -435,6 +434,5 @@ static void lang_resolve(const wchar_t *setting, wchar_t *tag, size_t n)
         }
         wchar_t m[LANG_TAG_MAX];
         if (lang_match(p, av, na, m, LANG_TAG_MAX)) { StringCchPrintfW(tag, n, L"%ls", m); tag[n - 1] = 0; return; }
-        if (setting && setting[0]) return;  /* a saved choice that's gone: English (picker shows Windows default) */
     }
 }
