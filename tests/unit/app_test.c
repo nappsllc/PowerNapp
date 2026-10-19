@@ -121,8 +121,27 @@ static void korean_wraps_at_spaces(void)
     DeleteDC(dc);
 }
 
+/* the title bar's Language button: 8 px padding, 16 px globe, 6 px gap, the name, 8 px padding; never
+   wider than the room between the app caption and the caption buttons (the name then ellipsizes) */
+static void title_lang_width(void)
+{
+    int dpi = g_dpi;
+    bool fits = false;
+    g_dpi = 96;
+    CHECK(title_lang_w(50, 300, &fits) == 88 && fits);
+    CHECK(title_lang_w(262, 300, &fits) == 300 && fits);       /* exactly the room */
+    CHECK(title_lang_w(263, 300, &fits) == 300 && !fits);      /* one px more: capped, reported */
+    CHECK(title_lang_w(400, 20, &fits) == 32 && !fits);        /* no room at all: still the globe */
+    CHECK(title_lang_w(50, 300, NULL) == 88);
+    g_dpi = 144;
+    CHECK(title_lang_w(75, 450, &fits) == 75 + 57 && fits);    /* padding and globe scale, text is device px */
+    CHECK(title_lang_w(500, 450, &fits) == 450 && !fits);
+    g_dpi = dpi;
+}
+
 int main(void)
 {
+    title_lang_width();
     korean_wraps_at_spaces();
     task_aliases();
     migration_keeps_unmoved_tasks();

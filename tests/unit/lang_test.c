@@ -201,7 +201,7 @@ static void resolve_rules(void)
 }
 
 /* a saved language whose file is gone resolves exactly like Windows default (preferred UI languages:
-   exact, then base, then English), and the Language row reads "Windows default (<that language>)" */
+   exact, then base, then English), and the title bar's Language button reads that language's own name */
 static void saved_missing_follows_windows(void)
 {
     wchar_t tag[16], c[128];
@@ -212,7 +212,7 @@ static void saved_missing_follows_windows(void)
     CHECK(wcscmp(tag, L"de") == 0);
     lang_load(tag);
     lang_caption(L"zz", c, 128);
-    CHECK(wcscmp(c, L"Windows default (Deutsch)") == 0);
+    CHECK(wcscmp(c, L"Deutsch") == 0);
     lang_resolve(L"", tag, 16);                       /* the same as following Windows */
     CHECK(wcscmp(tag, L"de") == 0);
     g_lang_prefs_test = L"xh-ZA\0de-AT\0";              /* first preferred has no file: the next one, by base */
@@ -226,21 +226,22 @@ static void saved_missing_follows_windows(void)
     CHECK(wcscmp(tag, L"en") == 0);
     lang_load(L"en");
     lang_caption(L"zz", c, 128);
-    CHECK(wcscmp(c, L"Windows default (English)") == 0);
+    CHECK(wcscmp(c, L"English") == 0);
     g_lang_prefs_test = NULL;
 }
 
-/* the Language row's caption comes from the loaded language (no folder listing) */
+/* the title bar's Language button: the loaded language's own name (no folder listing), whether it was
+   chosen or followed from Windows -- never "Windows default (...)", which only the dropdown's first entry says */
 static void picker_caption(void)
 {
     wchar_t c[128];
     lang_load(L"en");
     lang_caption(L"", c, 128);
-    CHECK(wcscmp(c, L"Windows default (English)") == 0);
+    CHECK(wcscmp(c, L"English") == 0);
     lang_caption(L"en", c, 128);
     CHECK(wcscmp(c, L"English") == 0);
     lang_caption(L"qps-ploc", c, 128);               /* saved file gone, English loaded */
-    CHECK(wcscmp(c, L"Windows default (English)") == 0);
+    CHECK(wcscmp(c, L"English") == 0);
     const char *x = "@name = Xx-Sprache\nlanguage.default = Standard (%ls)\n";
     write_lang_file(L"xx", x, strlen(x));
     lang_load(L"xx");
@@ -248,7 +249,7 @@ static void picker_caption(void)
     lang_caption(L"xx", c, 128);
     CHECK(wcscmp(c, L"Xx-Sprache") == 0);
     lang_caption(L"", c, 128);                       /* following Windows, which resolved to xx */
-    CHECK(wcscmp(c, L"Standard (Xx-Sprache)") == 0);
+    CHECK(wcscmp(c, L"Xx-Sprache") == 0);
     const char *y = "action.title = Y\n";              /* no @name: the tag stands in */
     write_lang_file(L"yy", y, strlen(y));
     lang_load(L"yy");

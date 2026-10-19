@@ -58,8 +58,10 @@ static int fly_width(const RECT *btn_rc, const FlyItem *items, int count) {
     return w;
 }
 
+/* below: drop down under the control, aligned with its trailing edge (the title bar's Language
+   button, at the window's trailing end); otherwise over it, the selected item on the control */
 static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, int sel,
-        const RECT *btn_rc) {
+        const RECT *btn_rc, bool below) {
     fly_close();
     FLY.owner = owner;
     FLY.combo_id = combo_id;
@@ -77,6 +79,7 @@ static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, 
     MapWindowPoints(owner, NULL, (POINT *)&sr, 2);
     /* over the control from its leading edge: the left one, or the right one in right-to-left */
     POINT pt = { lang_rtl() ? sr.right + S(4) - w : sr.left - S(4), sr.top };
+    if (below) { pt.x = lang_rtl() ? sr.left : sr.right - w; pt.y = sr.bottom + S(4); }
     HMONITOR mon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
     MONITORINFO mi;
     mi.cbSize = sizeof(mi);
@@ -86,7 +89,7 @@ static void fly_open(HWND owner, int combo_id, const FlyItem *items, int count, 
     if (FLY.rows > fit && fit > 0) FLY.rows = fit;
     FLY.top = fly_clamp_top(sel - FLY.rows / 2);
     int h = FLY.rows * ih + S(4);
-    pt.y -= (sel - FLY.top) * ih + S(6);
+    if (!below) pt.y -= (sel - FLY.top) * ih + S(6);
     if (pt.y + h > mi.rcWork.bottom) pt.y = mi.rcWork.bottom - h;
     if (pt.y < mi.rcWork.top) pt.y = mi.rcWork.top;
     if (pt.x + w > mi.rcWork.right) pt.x = mi.rcWork.right - w;

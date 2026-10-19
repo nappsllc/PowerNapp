@@ -79,8 +79,9 @@ Malay, Norwegian Bokmål, Polish, Portuguese (Brazil and Portugal),
 Romanian, Russian, Serbian (Latin), Slovak, Spanish, Swedish, Thai,
 Turkish, Ukrainian and Vietnamese.
 
-- **Language** (under Options) lists *Windows default* and every language
-  by its own name. Windows default follows your Windows display language
+- **Language** (the globe button in the title bar, showing the current
+  language's own name) lists *Windows default* and every language by its
+  own name. Windows default follows your Windows display language
   (falling back to English); picking another switches the window at once,
   no restart, and is remembered.
 - Arabic and Hebrew mirror every window: title bar buttons and controls on
@@ -98,12 +99,11 @@ Turkish, Ukrainian and Vietnamese.
 
 - One page, laid out like a Windows 11 Settings page: **Schedule** (the
   hero card: what will happen, when, how long is left, Start / Cancel),
-  **Task** (Action, Schedule, Time, Repeat on), **Options** (including
-  Language), and footer
+  **Task** (Action, Schedule, Time, Repeat on), **Options**, and footer
   links to **Power settings** (opens the real Windows page) and **About**.
 - WinUI-style toggle switches, dropdowns with the accent selection pill,
   the Windows 11 time picker flyout, ContentDialog-style About box, 48 px
-  custom title bar, hover highlights, Segoe UI Variable, follows the
+  custom title bar with the Language button, hover highlights, Segoe UI Variable, follows the
   system light/dark theme.
 - The live countdown repaints just its own text — no flicker.
 - **About** has a short description, a **Contact us** button
@@ -308,7 +308,7 @@ powershell -File tests\sandbox\Run-Sandbox.ps1                     :: 86 checks,
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         :: Store package, ~1 min
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  :: README screenshots
 powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots -Languages all
-                                                  :: + window, Action, reminder, About per language
+                                                  :: + window, Action, Language, reminder, About per language
 ```
 
 `tools\check-lang.ps1` checks the language files (keys, placeholders,

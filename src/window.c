@@ -54,7 +54,7 @@ static void paint_title(HDC hdc) {
     RECT cr;
     GetClientRect(G.main, &cr);
     COLORREF fg = G.inactive ? T_T2 : T_T1;
-    RECT tr = { S(16 + 16 + 12), 0, cr.right - S(46 * 3 + 8), S(TITLE_H) };
+    RECT tr = { S(TITLE_TEXT_X), 0, G.rc_tlang.left - S(12), S(TITLE_H) }; /* up to the Language button */
     text_at(hdc, APP_NAME, tr, G.f_sub, fg, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
     static const wchar_t glyph[4] = { 0, 0xE921, 0xE922, 0xE8BB }; /* ChromeMinimize/Maximize/Close */
     for (int i = 1; i <= 3; i++) {
@@ -256,7 +256,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 it[i].ic = (IconId)-1;
                 it[i].color = 0;
             }
-            fly_open(hwnd, id, it, g_lang_n, sel, &brc);
+            fly_open(hwnd, id, it, g_lang_n, sel, &brc, true); /* below the title bar button */
             return 0;
         }
         case ID_COMBO_ACTION: case ID_COMBO_MODE: case ID_COMBO_CD: case ID_COMBO_IDLE: {
@@ -268,7 +268,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                     it[i].ic = TASK_ICON[i];
                     it[i].color = TASK_COLOR[i];
                 }
-                fly_open(hwnd, id, it, NTASKS, (int)G.rt.plan.task, &brc);
+                fly_open(hwnd, id, it, NTASKS, (int)G.rt.plan.task, &brc, false);
             } else if (id == ID_COMBO_MODE) {
                 FlyItem it[NGUI_MODES];
                 for (int i = 0; i < NGUI_MODES; i++) {
@@ -279,7 +279,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 int sel = 0;
                 for (int i = 0; i < NGUI_MODES; i++)
                     if (GUI_MODES[i] == G.rt.plan.mode) sel = i;
-                fly_open(hwnd, id, it, NGUI_MODES, sel, &brc);
+                fly_open(hwnd, id, it, NGUI_MODES, sel, &brc, false);
             } else if (id == ID_COMBO_CD) {
                 FlyItem it[NCDS];
                 static wchar_t lbl[NCDS][32];
@@ -291,7 +291,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 }
                 int sel = 0;
                 for (int i = 0; i < NCDS; i++) if (CDS[i] == G.rt.plan.cd) sel = i;
-                fly_open(hwnd, id, it, NCDS, sel, &brc);
+                fly_open(hwnd, id, it, NCDS, sel, &brc, false);
             } else {
                 FlyItem it[NIDLES];
                 static wchar_t lbl[NIDLES][32];
@@ -303,7 +303,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 }
                 int sel = 0;
                 for (int i = 0; i < NIDLES; i++) if (IDLES[i] == G.rt.plan.idle) sel = i;
-                fly_open(hwnd, id, it, NIDLES, sel, &brc);
+                fly_open(hwnd, id, it, NIDLES, sel, &brc, false);
             }
             return 0;
         }
@@ -454,15 +454,15 @@ static void paint_main(HDC hdc, bool title) {
     if (wake_applies() && G.wake_on) {
         paint_row(hdc, &G.rc_wake_time, IC_CLOCK, TR(L_OPT_WAKE_TIME), NULL, g_sw + S(16));
     }
-    paint_row(hdc, &G.rc_lang, IC_LANG, TR(L_LANGUAGE_TITLE), NULL, g_lw + S(16));
     /* footer links are owner-drawn buttons (see WM_DRAWITEM) */
 }
 
 /* an owner-drawn control, into hdc in its own client coordinates */
 static void draw_ctl(HDC hdc, HWND h, int id) {
-    if (id == ID_COMBO_ACTION || id == ID_COMBO_MODE || id == ID_COMBO_CD || id == ID_COMBO_IDLE ||
-            id == ID_COMBO_LANG)
+    if (id == ID_COMBO_ACTION || id == ID_COMBO_MODE || id == ID_COMBO_CD || id == ID_COMBO_IDLE)
         paint_combo_btn(hdc, h);
+    else if (id == ID_COMBO_LANG)
+        paint_title_btn(hdc, h);
     else if (id == ID_TIME) {
         paint_time_btn(hdc, h, G.rt.plan.h, G.rt.plan.m);
     } else if (id == ID_WAKE_TIME) {
@@ -501,7 +501,8 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         acc_init();
         DWORD obtn = WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW; /* Tab-navigable */
 
-        /* created in reading order: that is the Tab order */
+        /* created in reading order: that is the Tab order (the title bar's Language button first) */
+        G.combo_lang = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_LANG, G.f_row);
         G.btn_start = mk_child(hwnd, L"BUTTON", TR(L_BTN_START), obtn, ID_START, G.f_row);
         /* combo texts are set by update_combo_texts() below */
         G.combo_action = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_ACTION, G.f_row);
@@ -521,7 +522,6 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         G.tg_tray = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_TRAY, G.f_row);
         G.tg_wake = mk_child(hwnd, L"BUTTON", L"", obtn, ID_TG_WAKE, G.f_row);
         G.wake_btn = mk_child(hwnd, L"BUTTON", L"", obtn, ID_WAKE_TIME, G.f_row);
-        G.combo_lang = mk_child(hwnd, L"BUTTON", L"", obtn, ID_COMBO_LANG, G.f_row);
         G.rel_power = mk_child(hwnd, L"BUTTON", L"", obtn, ID_REL_POWER, G.f_row);
         G.rel_about = mk_child(hwnd, L"BUTTON", L"", obtn, ID_REL_ABOUT, G.f_row);
 
@@ -629,6 +629,9 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
             ScreenToClient(hwnd, &pt);
             int b = cap_btn_at(pt); /* client x is mirrored in RTL: the buttons are then on the left */
+            RECT lr = { 0 };
+            if (G.ready) lr = ctl_rect_in(hwnd, G.combo_lang);
+            if (PtInRect(&lr, pt)) return HTCLIENT; /* the Language button is a control, not title bar */
             if (pt.y < S(TITLE_H)) return b ? CAP_HT[b] : HTCAPTION;
         }
         return hit;
@@ -658,6 +661,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_ACTIVATE:
         G.inactive = LOWORD(wp) == WA_INACTIVE;
         invalidate_title();
+        if (G.combo_lang) InvalidateRect(G.combo_lang, NULL, FALSE); /* dims with the caption */
         if (G.inactive) { /* remember the focused control, as dialogs do */
             HWND f = GetFocus();
             if (f && IsChild(hwnd, f)) G.last_focus = f;
@@ -1057,11 +1061,26 @@ static int check_fit(void) {
         for (HWND c = GetWindow(hwnd, GW_CHILD); c; c = GetWindow(c, GW_HWNDNEXT))
             if (GetWindowLongW(c, GWL_STYLE) & WS_VISIBLE) draw_ctl(hdc, c, GetDlgCtrlID(c));
     }
-    if (!_wcsicmp(lang_tag(), L"en") && (g_cw != S(200) || g_lw != S(200) || g_sw != S(242) ||
+    if (!_wcsicmp(lang_tag(), L"en") && (g_cw != S(200) || g_sw != S(242) ||
             g_dw != S(44) || g_bw != S(120) || g_ow != S(34))) { /* English keeps the design exactly */
-        wprintf(L"English: not the design widths (combo %d, language %d, time %d, day %d, start %d, on/off %d)\n",
-            g_cw, g_lw, g_sw, g_dw, g_bw, g_ow);
+        wprintf(L"English: not the design widths (combo %d, time %d, day %d, start %d, on/off %d)\n",
+            g_cw, g_sw, g_dw, g_bw, g_ow);
         g_fit_n++;
+    }
+    { /* the title bar's Language button: the whole name, clear of the "PowerNapp" caption and the
+         caption buttons (an ellipsized name is also reported by its paint above) */
+        wchar_t t[96];
+        get_text(G.combo_lang, t, 96);
+        int cap_r = S(TITLE_TEXT_X) + text_px(G.f_sub, APP_NAME);
+        int room = S(PAGE_W - 46 * 3 - 4) - (cap_r + S(12));
+        bool fits;
+        title_lang_w(text_px(G.f_sub, t), room, &fits);
+        if (!fits || G.rc_tlang.left < cap_r + S(12) || G.rc_tlang.right > S(PAGE_W - 46 * 3) ||
+                G.rc_tlang.top < 0 || G.rc_tlang.bottom > S(TITLE_H)) {
+            wprintf(L"title bar: Language button \"%ls\" at %d..%d does not fit between the caption (ends %d) and the caption buttons (start %d)\n",
+                t, G.rc_tlang.left, G.rc_tlang.right, cap_r, S(PAGE_W - 46 * 3));
+            g_fit_n++;
+        }
     }
     /* every dropdown, opened from its control */
     static wchar_t lbl[NCDS + NIDLES][32];

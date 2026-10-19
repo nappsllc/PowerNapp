@@ -350,13 +350,13 @@ static int lang_items(const LangInfo *list, int n, const wchar_t *def_tag, LangI
     return k;
 }
 
-/* The Language row's caption from what is loaded, without listing the folder: the saved choice's
-   own name, or "Windows default (<loaded language>)" when following Windows or when the saved
-   language's file is gone (then what Windows default resolves to is loaded). */
+/* The title bar's Language button caption, from what is loaded, without listing the folder: the
+   loaded language's own name, whether it was chosen or followed from Windows (or stands in for a saved
+   language whose file is gone). "Windows default (...)" is only the dropdown's first entry (lang_items). */
 static void lang_caption(const wchar_t *setting, wchar_t *out, size_t n)
 {
-    if (setting && setting[0] && _wcsicmp(setting, g_lang_tag) == 0) StringCchCopyW(out, n, g_lang_name);
-    else StringCchPrintfW(out, n, TR(L_LANGUAGE_DEFAULT), g_lang_name);
+    (void)setting;
+    StringCchCopyW(out, n, g_lang_name);
 }
 
 /* The entry for a saved setting: "" or a language that is no longer there -> 0 (Windows default). */

@@ -41,6 +41,11 @@ static bool popup_open(void);      /* dropdown or time picker showing (timepicke
 static bool popup_key(WPARAM vk);  /* hand it a key; true if used */
 static void acc_sync(HWND h);      /* refresh screen-reader state (window.c) */
 
+static bool is_combo(HWND h) { /* a dropdown control: Action, Schedule, countdown, idle, Language */
+    int id = GetDlgCtrlID(h);
+    return id >= ID_COMBO_ACTION && id <= ID_COMBO_LANG;
+}
+
 static LRESULT CALLBACK button_hover_proc(HWND h, UINT m, WPARAM w, LPARAM l) {
     if (m == WM_MOUSEMOVE) {
         if (G.hover_btn != h) {
@@ -70,6 +75,14 @@ static LRESULT CALLBACK button_hover_proc(HWND h, UINT m, WPARAM w, LPARAM l) {
         LRESULT r = CallWindowProcW(g_button_proc, h, m, w, l);
         acc_sync(h); /* the focused state is part of the annotated state */
         return r;
+    } else if (!popup_open() && is_combo(h) && ((m == WM_SYSKEYDOWN && (w == VK_DOWN || w == VK_UP)) ||
+            (m == WM_KEYDOWN && (w == VK_F4 || w == VK_RETURN)))) {
+        /* Alt+Down, F4 and Enter open a dropdown, as in a real combo box (Space: the button's own click) */
+        SendMessageW(GetParent(h), WM_COMMAND, MAKEWPARAM(GetDlgCtrlID(h), BN_CLICKED), (LPARAM)h);
+        return 0;
+    } else if (m == WM_GETDLGCODE && !popup_open() && is_combo(h) && l &&
+            ((MSG *)l)->message == WM_KEYDOWN && ((MSG *)l)->wParam == VK_RETURN) {
+        return CallWindowProcW(g_button_proc, h, m, w, l) | DLGC_WANTMESSAGE; /* Enter: to us, not the dialog code */
     } else if (m == WM_GETDLGCODE && popup_open()) {
         return DLGC_WANTALLKEYS; /* a popup is open: its owner button takes every key */
     } else if (m == WM_KEYDOWN && popup_open()) {
@@ -167,7 +180,7 @@ static void place_right(HWND h, const RECT *row, int w, int hh) {
 /* Control widths from their text, device px: the design's width, or wider only where a language
  * needs it (combos: text + 40 for the chevron and padding, up to what the row's title leaves). Every
  * English text fits the design widths, so English keeps the design exactly. Set by layout(). */
-static int g_cw, g_sw, g_lw, g_bw, g_ow, g_dw, g_apw; /* combos, time slot, Language, Start, On/Off, day, AM/PM */
+static int g_cw, g_sw, g_bw, g_ow, g_dw, g_apw; /* combos, time slot, Start, On/Off, day, AM/PM */
 
 static int tw(const wchar_t *t) { return text_px(G.f_row, t); }
 
@@ -199,8 +212,6 @@ static void measure_ctls(int content) {
     g_apw = max_i(S(80), b + S(16));
     g_sw = ctl_w(242, max_i(a + S(40), S(162) + g_apw), 0, content,
         max_i(tw(TR(L_TIME_TITLE)), tw(TR(L_OPT_WAKE_TIME))));
-    get_text(G.combo_lang, t, 96);
-    g_lw = ctl_w(200, tw(t), 40, content, tw(TR(L_LANGUAGE_TITLE)));
     g_bw = max_i(S(120), S(40) + max_i(text_px(G.f_hdr, TR(L_BTN_START)), text_px(G.f_hdr, TR(L_BTN_CANCEL))));
     g_ow = max_i(S(34), max_i(tw(TR(L_OPT_ON)), tw(TR(L_OPT_OFF))));
     /* day buttons: the widest name + 4 px each side; the 7 of them at most what "Repeat on" leaves */
@@ -212,6 +223,24 @@ static void measure_ctls(int content) {
     a = (content - S(18 + 18 + 6 * 4 + 16) - tw(TR(L_DAYS_TITLE))) / 7;
     g_dw = max_i(S(44), b + S(8) > a ? a : b + S(8));
 }
+
+/* The title bar's Language button (design px): padding, the globe, the gap to the name, padding.
+ * Width: the name (device px) plus those, at most room -- the space between the app caption and the
+ * caption buttons -- and never under the globe with its padding. *fits: false when the name has to
+ * ellipsize (--check-fit reports it). */
+#define TLANG_PAD 8
+#define TLANG_ICON 16
+#define TLANG_GAP 6
+#define TLANG_H 32
+
+static int title_lang_w(int text, int room, bool *fits) {
+    int w = S(TLANG_PAD + TLANG_ICON + TLANG_GAP + TLANG_PAD) + text;
+    if (fits) *fits = w <= room;
+    return w <= room ? w : max_i(room, S(TLANG_PAD + TLANG_ICON + TLANG_PAD));
+}
+
+/* the app caption's text box starts here: 16 px margin, the 16 px icon, 12 px */
+#define TITLE_TEXT_X (16 + 16 + 12)
 
 /* Moves the window up (never above the top) so its bottom is inside the monitor's work area.
  * CW_USEDEFAULT cascades the window for its first, smaller size; grown to the content it could
@@ -277,7 +306,6 @@ static void layout(HWND hwnd) {
     else SetRectEmpty(&G.rc_wake);
     if (wake_applies() && G.wake_on) G.rc_wake_time = opt_row(content);
     else SetRectEmpty(&G.rc_wake_time);
-    G.rc_lang = opt_row(content); /* Language: always the last row */
 
     /* footer links, 20 px below the last card: Power settings left, About right */
     g_cy += S(20 - GAP);
@@ -325,7 +353,19 @@ static void layout(HWND hwnd) {
     place_right(G.tg_wake, &G.rc_wake, S(40), 20);
     ShowWindow(G.wake_btn, wake_applies() && G.wake_on ? SW_SHOW : SW_HIDE);
     place_right(G.wake_btn, &G.rc_wake_time, g_sw, 32);
-    place_right(G.combo_lang, &G.rc_lang, g_lw, 32);
+
+    /* title bar Language button: 32 px tall, centered in the bar, 4 px left of the caption buttons (in a
+       mirrored window that is right of them, on the left), as wide as the name, never over "PowerNapp" */
+    {
+        wchar_t t[96];
+        get_text(G.combo_lang, t, 96);
+        int right = w - S(46 * 3 + 4);
+        int room = right - (S(TITLE_TEXT_X) + text_px(G.f_sub, APP_NAME) + S(12));
+        int bw = title_lang_w(text_px(G.f_sub, t), room, NULL);
+        int top = (S(TITLE_H) - S(TLANG_H)) / 2;
+        G.rc_tlang = (RECT){ right - bw, top, right, top + S(TLANG_H) };
+        move_ctl(G.combo_lang, G.rc_tlang.left, top, bw, S(TLANG_H));
+    }
 
     /* hero start button: 120 (or its text + 40) x 32, 20 px from the right */
     move_ctl(G.btn_start, G.rc_hero.right - S(20) - g_bw, (G.rc_hero.top + G.rc_hero.bottom - S(32)) / 2,

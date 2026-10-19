@@ -60,7 +60,7 @@ static volatile LONG g_cancel_req = 0;
 
 typedef enum {
     IC_POWER, IC_RESTART, IC_MOON, IC_SIGNOUT, IC_LOCK, IC_MONITOR,
-    IC_ALERT, IC_APPS, IC_ROCKET, IC_CALCLK, IC_CLOCK, IC_SUN, IC_HIBER, IC_LANG,
+    IC_ALERT, IC_APPS, IC_ROCKET, IC_CALCLK, IC_CLOCK, IC_SUN, IC_HIBER,
 } IconId;
 
 static IconId TASK_ICON[] = {
@@ -83,7 +83,7 @@ typedef struct {
     HWND main;
     /* interactive children */
     HWND combo_action, combo_mode, combo_cd, combo_idle;
-    HWND combo_lang;                  /* Options > Language */
+    HWND combo_lang;                  /* the title bar's Language button */
     HWND time_btn;                    /* Time row: opens the time picker flyout */
     HWND day[7];
     HWND tray;                        /* tray icon owner, exists only while the icon is shown */
@@ -96,7 +96,8 @@ typedef struct {
     HBRUSH br_ctl;
     /* layout rects (client coords) */
     RECT rc_sched_hdr, rc_hero, rc_task_hdr, rc_action, rc_sched, rc_time, rc_days;
-    RECT rc_opts_hdr, rc_remind, rc_force, rc_auto, rc_tray, rc_wake, rc_wake_time, rc_lang;
+    RECT rc_opts_hdr, rc_remind, rc_force, rc_auto, rc_tray, rc_wake, rc_wake_time;
+    RECT rc_tlang;                    /* the title bar's Language button (its drawn body) */
     RECT rc_rel1, rc_rel2; /* footer links */
     int client_h;
     /* state */

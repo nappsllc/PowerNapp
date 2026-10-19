@@ -105,8 +105,8 @@ static void update_combo_texts(void) {
     set_text(G.combo_idle, d);
 }
 
-/* Options > Language. The caption comes from what is loaded (no folder access, so opening the
- * window costs nothing extra); the entries are listed only when the dropdown opens. */
+/* The title bar's Language button. The caption comes from what is loaded (no folder access, so
+ * opening the window costs nothing extra); the entries are listed only when the dropdown opens. */
 static LangItem g_lang_items[FLY_MAX];
 static int g_lang_n;
 
@@ -359,6 +359,27 @@ static void paint_combo_btn(HDC hdc, HWND btn) {
     text_at(hdc, txt, tr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
     RECT cr = { rc.right - S(24), rc.top, rc.right, rc.bottom };
     chevron_down(hdc, &cr, T_T2);
+}
+
+/* the title bar's Language button: globe + the language's own name, a subtle button like the caption
+   buttons (transparent, their hover and pressed fills), dimmed with the caption when the window is inactive */
+static void paint_title_btn(HDC hdc, HWND btn) {
+    RECT all, rc = ctl_body(btn);
+    GetClientRect(btn, &all);
+    fill_rect_c(hdc, &all, T_WIN);
+    focus_ring(hdc, &rc, 4, T_WIN);
+    bool down = (SendMessageW(btn, BM_GETSTATE, 0, 0) & BST_PUSHED) != 0;
+    if (down || btn == G.hover_btn) {
+        COLORREF f = down ? mix_c(T_WIN, T_T1, 0.03f) : T_SUBTLE;
+        fill_round(hdc, &rc, 4, f, f);
+    }
+    COLORREF fg = G.inactive ? T_T2 : T_T1;
+    RECT gr = { rc.left + S(TLANG_PAD), rc.top, rc.left + S(TLANG_PAD + TLANG_ICON), rc.bottom };
+    glyph_at(hdc, 0xE774, gr, 14, fg); /* Globe */
+    wchar_t txt[128];
+    GetWindowTextW(btn, txt, 128);
+    RECT tr = { gr.right + S(TLANG_GAP), rc.top, rc.right - S(TLANG_PAD), rc.bottom };
+    text_at(hdc, txt, tr, G.f_sub, fg, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
 }
 
 static void paint_day_btn(HDC hdc, HWND btn, bool on) {
