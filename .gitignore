@@ -12,3 +12,4 @@
 /build/
 *.msix
 /tests/unit/out/
+/store-upload/
