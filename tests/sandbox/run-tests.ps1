@@ -174,12 +174,19 @@ function PickLast($vk) { Cmd 205; $f = [H]::F('PowerNappFly'); $h = [H]::ClientH
     [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x23, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300; $last = LangValue
     [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]$vk, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 800
     @{ shown = $f -ne [IntPtr]::Zero; h = $h; last = $last } }
+# open the picker, Home, then Down until its value announces $name (the entries are sorted by name,
+# so a pseudo-language sits among the translations, not at the end); Enter picks it. last = what was picked.
+function PickNamed($name) { Cmd 205; $f = [H]::F('PowerNappFly')
+    [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x24, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 200; $v = LangValue
+    for ($i = 0; $i -lt 60 -and $v -ne $name; $i++) { [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x28, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 100; $v = LangValue }
+    [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x0D, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 800
+    @{ shown = $f -ne [IntPtr]::Zero; last = $v } }
 StopApp; SetIni 'lang' ''; SetIni 'task' 5; SetIni 'mode' 0; SetIni 'h' 23; SetIni 'm' 0; SetIni 'tray' 1
 $main = StartApp
 Check 'picker reads Windows default (English)' { $v = LangValue; $n = [H]::Uia([H]::GetDlgItem($main, 205), 30005); Note "name=$n value=$v"; $v -eq 'Windows default (English)' }
 Check 'choosing Pseudo switches the window without a restart and saves lang=qps-ploc' {
-    $r = PickLast 0x0D; $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005)
-    Note "last entry=$($r.last) start='$b' want '$($pseudo['btn.start'])' lang=$(Ini 'lang') same window=$([H]::F('PowerNappWnd') -eq $main)"
+    $r = PickNamed 'Pseudo'; $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005)
+    Note "picked=$($r.last) start='$b' want '$($pseudo['btn.start'])' lang=$(Ini 'lang') same window=$([H]::F('PowerNappWnd') -eq $main)"
     $r.last -eq 'Pseudo' -and $b -eq $pseudo['btn.start'] -and (Ini 'lang') -eq 'qps-ploc' -and [H]::F('PowerNappWnd') -eq $main }
 Snap 'PowerNappWnd' 'language-pseudo'
 StopApp; $main = StartApp
@@ -207,7 +214,7 @@ Rename-Item "$(Split-Path $exe)\lang-away" 'lang'; SetIni 'lang' ''
 
 # ----------------------------------------------------------------------------- right-to-left
 # tests\sandbox\qps-plocm.txt: the Pseudo strings as a right-to-left language (@rtl = 1, @name = Pseudo Mirrored,
-# the last picker entry). Every window mirrors: caption buttons and controls on the left, the reminder card bottom left.
+# picked by name). Every window mirrors: caption buttons and controls on the left, the reminder card bottom left.
 Section 'Right-to-left (mirrored pseudo-language)'
 Copy-Item "$T\qps-ploc.txt", "$T\qps-plocm.txt" $langDir -Force
 StopApp; SetIni 'lang' 'qps-plocm'; SetIni 'task' 5; SetIni 'mode' 0; SetIni 'h' 23; SetIni 'm' 0; SetIni 'tray' 1; SetIni 'remind' 1
@@ -247,7 +254,7 @@ SetIni 'lang' 'qps-ploc'; $main = StartApp
 Check 'switch to rtl with flyout open: no dropdown left, the window comes back mirrored where it was' {
     $w0 = [H]::Win($main)
     Cmd 200; $f1 = [H]::F('PowerNappFly') -ne [IntPtr]::Zero   # Action dropdown open
-    $r = PickLast 0x0D                                          # the Language dropdown takes over: pick Pseudo Mirrored
+    $r = PickNamed 'Pseudo Mirrored'                            # the Language dropdown takes over: pick Pseudo Mirrored
     $m2 = [H]::F('PowerNappWnd'); $w1 = [H]::Win($m2)
     Note "action dropdown was open=$f1, picked '$($r.last)', dropdown left=$([H]::F('PowerNappFly') -ne [IntPtr]::Zero), mirrored=$(IsRtl $m2), at ($($w1.L),$($w1.T)) was ($($w0.L),$($w0.T)), lang=$(Ini 'lang')"
     $f1 -and $r.last -eq 'Pseudo Mirrored' -and [H]::F('PowerNappFly') -eq [IntPtr]::Zero -and (IsRtl $m2) -and

@@ -74,6 +74,19 @@ Check 'lang=qps-ploc: the packaged app shows the pseudo-language' {
     Start-Sleep -Seconds 1; $m = [H]::F('PowerNappWnd'); Snap 'PowerNappWnd' 'msix-pseudo'
     $b = [H]::Uia([H]::GetDlgItem($m, 240), 30005)
     Note "start='$b' want '$($pseudo['btn.start'])', virtualized ini: $(Test-Path $virt)"; $b -eq $pseudo['btn.start'] }
+# makepri indexes the layout: lang\de.txt must stay a plain file the app reads, not a German-qualified resource
+Check 'lang=de: the packaged app reads lang\de.txt (Start and Language in German)' {
+    $de = @{}; foreach ($l in Get-Content 'C:\PowerNappPkg\lang\de.txt' -Encoding UTF8) { if ($l -match '^([a-z_.]+) = (.*)$') { $de[$Matches[1]] = $Matches[2] } }
+    StopApp
+    $real = $ini; $virt = "$env:LOCALAPPDATA\Packages\$($pkg.PackageFamilyName)\LocalCache\Roaming\PowerNapp\powernapp.ini"
+    foreach ($f in @($real) + @($virt | Where-Object { Test-Path $_ })) { $ini = $f; SetIni 'lang' 'de' }; $ini = $real
+    Start-Process "shell:AppsFolder\$($pkg.PackageFamilyName)!PowerNapp"
+    for ($i = 0; $i -lt 30 -and [H]::F('PowerNappWnd') -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 300 }
+    Start-Sleep -Seconds 1; $m = [H]::F('PowerNappWnd'); Snap 'PowerNappWnd' 'msix-de'
+    # German Start is also "Start": the Language row's name (Sprache) is what tells German from English
+    $b = [H]::Uia([H]::GetDlgItem($m, 240), 30005); $l = [H]::Uia([H]::GetDlgItem($m, 205), 30005)
+    Note "start='$b' want '$($de['btn.start'])', language row='$l' want '$($de['language.title'])'"
+    $de['language.title'] -and $de['language.title'] -ne 'Language' -and $b -eq $de['btn.start'] -and $l -eq $de['language.title'] }
 
 Log "`n**$($script:pass) passed, $($script:fail) failed** - finished $(Get-Date -Format 'HH:mm:ss')"
 Set-Content "$R\DONE" (Get-Date -Format o)
