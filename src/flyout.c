@@ -8,6 +8,7 @@ typedef struct {
     const wchar_t *label;
     IconId ic;
     COLORREF color;
+    HFONT font; /* NULL: the UI's row font; the Language list draws each name in a face for its script */
 } FlyItem;
 
 #define FLY_MAX 48   /* the language list: Windows default + English + every translation */
@@ -52,9 +53,11 @@ static void fly_close(void) {
 }
 
 /* design: 208 wide, or the control's width + 8, or the widest item + its 2 x 16 px padding */
+static HFONT fly_font(const FlyItem *it) { return it->font ? it->font : G.f_row; }
+
 static int fly_width(const RECT *btn_rc, const FlyItem *items, int count) {
     int w = max_i(S(208), btn_rc->right - btn_rc->left + S(8));
-    for (int i = 0; i < count; i++) w = max_i(w, text_px(G.f_row, items[i].label) + S(32));
+    for (int i = 0; i < count; i++) w = max_i(w, text_px(fly_font(&items[i]), items[i].label) + S(32));
     return w;
 }
 
@@ -156,7 +159,7 @@ static void fly_paint(HDC hdc, const RECT *rc) {
         if (i == FLY.sel) /* WinUI selection pill */
             aa_rrect(hdc, (float)ir.left, (float)ir.top + SF(10), SF(3), SF(16), SF(1.5f), T_ACCENT, T_ACCENT, 0);
         RECT tr = { ir.left + S(12), ir.top, ir.right - S(12), ir.bottom };
-        text_at(hdc, FLY.items[i].label, tr, G.f_row, T_T1,
+        text_at(hdc, FLY.items[i].label, tr, fly_font(&FLY.items[i]), T_T1,
             DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
     }
     if (FLY.rows < FLY.count) { /* WinUI's collapsed scroll bar: a thin thumb at the right */

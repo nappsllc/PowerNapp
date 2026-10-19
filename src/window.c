@@ -82,9 +82,31 @@ static void make_ui_fonts(void) { /* at the current DPI, in the language's face 
     G.f_hdr = make_font(g_ui_face, L"Segoe UI", -14, FW_SEMIBOLD); /* section headers */
 }
 
+/* the Language dropdown's other faces (lang_item_face), made when first drawn: CJK names keep their
+   own script's face in every UI language, at the row font's size and weight */
+static struct { const wchar_t *face; HFONT f; } g_item_fonts[4];
+
+static HFONT lang_item_font(int i) {
+    const wchar_t *face = lang_item_face(&g_lang_items[i], g_lang_def, lang_tag());
+    if (face == g_ui_face) return G.f_row;
+    int k = 0;
+    while (k < 4 && g_item_fonts[k].face && g_item_fonts[k].face != face) k++;
+    if (k == 4) return G.f_row;
+    if (!g_item_fonts[k].face) {
+        g_item_fonts[k].f = make_font(face, L"Segoe UI", -14, FW_NORMAL);
+        g_item_fonts[k].face = face;
+    }
+    return g_item_fonts[k].f ? g_item_fonts[k].f : G.f_row;
+}
+
 static void free_ui_fonts(void) {
     HFONT *fonts[] = { &G.f_hero, &G.f_row, &G.f_sub, &G.f_hdr };
     for (int i = 0; i < 4; i++) { if (*fonts[i]) DeleteObject(*fonts[i]); *fonts[i] = NULL; }
+    for (int i = 0; i < 4; i++) {
+        if (g_item_fonts[i].f) DeleteObject(g_item_fonts[i].f);
+        g_item_fonts[i].f = NULL;
+        g_item_fonts[i].face = NULL;
+    }
 }
 
 /* ------------------------------------------------------------------ accessibility state
@@ -255,6 +277,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 it[i].label = g_lang_items[i].label;
                 it[i].ic = (IconId)-1;
                 it[i].color = 0;
+                it[i].font = lang_item_font(i); /* each name in a face that has its script */
             }
             fly_open(hwnd, id, it, g_lang_n, sel, &brc, true); /* below the title bar button */
             return 0;
@@ -262,7 +285,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
         case ID_COMBO_ACTION: case ID_COMBO_MODE: case ID_COMBO_CD: case ID_COMBO_IDLE: {
             RECT brc = ctl_rect_in(hwnd, (HWND)lp);
             if (id == ID_COMBO_ACTION) {
-                FlyItem it[NTASKS];
+                FlyItem it[NTASKS] = { 0 };
                 for (int i = 0; i < NTASKS; i++) {
                     it[i].label = TASK_TR(i);
                     it[i].ic = TASK_ICON[i];
@@ -270,7 +293,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 }
                 fly_open(hwnd, id, it, NTASKS, (int)G.rt.plan.task, &brc, false);
             } else if (id == ID_COMBO_MODE) {
-                FlyItem it[NGUI_MODES];
+                FlyItem it[NGUI_MODES] = { 0 };
                 for (int i = 0; i < NGUI_MODES; i++) {
                     it[i].label = MODE_TR(i);
                     it[i].ic = (IconId)-1;
@@ -281,7 +304,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                     if (GUI_MODES[i] == G.rt.plan.mode) sel = i;
                 fly_open(hwnd, id, it, NGUI_MODES, sel, &brc, false);
             } else if (id == ID_COMBO_CD) {
-                FlyItem it[NCDS];
+                FlyItem it[NCDS] = { 0 };
                 static wchar_t lbl[NCDS][32];
                 for (int i = 0; i < NCDS; i++) {
                     dur_label(CDS[i], lbl[i], 32);
@@ -293,7 +316,7 @@ static LRESULT command(HWND hwnd, WPARAM wp, LPARAM lp) {
                 for (int i = 0; i < NCDS; i++) if (CDS[i] == G.rt.plan.cd) sel = i;
                 fly_open(hwnd, id, it, NCDS, sel, &brc, false);
             } else {
-                FlyItem it[NIDLES];
+                FlyItem it[NIDLES] = { 0 };
                 static wchar_t lbl[NIDLES][32];
                 for (int i = 0; i < NIDLES; i++) {
                     dur_label(IDLES[i], lbl[i], 32);
@@ -1100,6 +1123,7 @@ static int check_fit(void) {
             }
             FLY.items[i].label = t;
             FLY.items[i].ic = (IconId)-1;
+            FLY.items[i].font = f == 4 ? lang_item_font(i) : NULL; /* measured in the face it is drawn in */
         }
         RECT br = ctl_rect_in(hwnd, owner[f]);
         FLY.count = FLY.rows = n;

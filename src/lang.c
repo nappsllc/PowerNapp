@@ -350,6 +350,18 @@ static int lang_items(const LangInfo *list, int n, const wchar_t *def_tag, LangI
     return k;
 }
 
+/* The face a picker entry is drawn in: one that has its own name's script. Each language's name is in
+   that language, so a CJK name takes its script's UI face (ui_font_face) whatever the UI language is;
+   "Windows default (<name>)" goes by the name it carries (def_tag) unless the UI itself is CJK (the
+   label's words are then in the UI's script). Every other entry keeps the UI's face (ui_tag). */
+static const wchar_t *lang_item_face(const LangItem *it, const wchar_t *def_tag, const wchar_t *ui_tag)
+{
+    const wchar_t *plain = ui_font_face(NULL), *ui = ui_font_face(ui_tag);
+    const wchar_t *own = ui_font_face(it->tag[0] ? it->tag : def_tag);
+    if (!it->tag[0] && ui != plain) return ui;
+    return own != plain ? own : ui;
+}
+
 /* The title bar's Language button caption, from what is loaded, without listing the folder: the
    loaded language's own name, whether it was chosen or followed from Windows (or stands in for a saved
    language whose file is gone). "Windows default (...)" is only the dropdown's first entry (lang_items). */

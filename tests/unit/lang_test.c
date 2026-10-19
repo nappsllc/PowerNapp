@@ -428,6 +428,29 @@ static void picker_items(void)
     lang_load(L"en");
 }
 
+/* the Language dropdown draws each entry in a face that has its own name's script: CJK names in
+   their script's UI face (in any UI language: Arabic's Segoe UI drew them as boxes), the rest in the
+   UI's face; "Windows default (<name>)" by the name it carries */
+static void picker_item_faces(void)
+{
+    LangItem it[6] = { { L"", L"Windows default (English)" }, { L"ja", L"x" }, { L"zh-Hans", L"x" },
+                       { L"zh-Hant", L"x" }, { L"ko", L"x" }, { L"de", L"Deutsch" } };
+    const wchar_t *SEGOE = L"Segoe UI Variable Text";
+    CHECK(wcscmp(lang_item_face(&it[1], L"en", L"ar"), L"Yu Gothic UI") == 0);
+    CHECK(wcscmp(lang_item_face(&it[2], L"en", L"ar"), L"Microsoft YaHei UI") == 0);
+    CHECK(wcscmp(lang_item_face(&it[3], L"en", L"ar"), L"Microsoft JhengHei UI") == 0);
+    CHECK(wcscmp(lang_item_face(&it[4], L"en", L"ar"), L"Malgun Gothic") == 0);
+    CHECK(wcscmp(lang_item_face(&it[5], L"en", L"ar"), SEGOE) == 0);
+    CHECK(wcscmp(lang_item_face(&it[0], L"en", L"ar"), SEGOE) == 0);
+    CHECK(wcscmp(lang_item_face(&it[0], L"ja", L"ar"), L"Yu Gothic UI") == 0);   /* "... (日本語)" */
+    CHECK(wcscmp(lang_item_face(&it[0], L"de", L"ja"), L"Yu Gothic UI") == 0);   /* Japanese label */
+    CHECK(wcscmp(lang_item_face(&it[5], L"en", L"ja"), L"Yu Gothic UI") == 0);   /* the UI's face */
+    CHECK(wcscmp(lang_item_face(&it[4], L"en", L"ja"), L"Malgun Gothic") == 0);
+    CHECK(wcscmp(lang_item_face(&it[1], L"en", L"ja"), L"Yu Gothic UI") == 0);
+    CHECK(wcscmp(lang_item_face(&it[1], L"en", L"en"), L"Yu Gothic UI") == 0);
+    CHECK(wcscmp(lang_item_face(&it[5], NULL, NULL), SEGOE) == 0);
+}
+
 static void installed_location(void)
 {
     const wchar_t *la = L"C:\\Users\\Ann\\AppData\\Local";
@@ -461,6 +484,7 @@ int main(void)
     clock_and_day_names();
     ui_font_faces();
     picker_items();
+    picker_item_faces();
     picker_caption();
     saved_missing_follows_windows();
     pseudo_file_complete();
