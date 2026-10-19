@@ -100,8 +100,8 @@ Check 'time picker opens' { Cmd 210; $tp = [H]::F('PowerNappTimePick'); Snap 'Po
 Check 'window is named PowerNapp' { $n = [H]::Uia($main, 30005); Note "name=$n"; $n -eq 'PowerNapp' }
 Check 'v3 layout: compact Options rows, links in the footer' {
     $k = $dpi / 96; $ch = [H]::ClientH($main)
-    # daily, Lock (no Wake up): 56 + 28 + 96 + 4 + 36 + 3x(68+4) + 36 + 5x(48+4) (4 toggles + Language) + 16 + 20 + 28
-    $want = [math]::Round((56 + 28 + 96 + 4 + 36 + 216 + 36 + 260 + 16 + 20 + 28) * $k)
+    # daily, Lock (no Wake up): 56 + 28 + 96 + 4 + 36 + 3x(68+4) + 36 + 4x(48+4) (4 toggles; Language is in the title bar) + 16 + 20 + 28
+    $want = [math]::Round((56 + 28 + 96 + 4 + 36 + 216 + 36 + 208 + 16 + 20 + 28) * $k)
     Note "client height $ch, expected ~$want"; [math]::Abs($ch - $want) -le 4 }
 Check 'About dialog' { Cmd 251; $a = [H]::F('PowerNappAbout'); Snap 'PowerNappAbout' 'about'
     $n = [H]::Uia($a, 30005); $d = [H]::Uia($a, 30094)
@@ -113,9 +113,9 @@ Check 'About dialog' { Cmd 251; $a = [H]::F('PowerNappAbout'); Snap 'PowerNappAb
 # ----------------------------------------------------------------------------- keyboard
 Section 'Keyboard'
 StopApp; $main = StartApp
-Check 'Tab order: Start > Action > Schedule > Time > Remind' {
-    $o = @(); for ($i = 0; $i -lt 5; $i++) { Key 0x09; $o += [H]::GetDlgCtrlID([H]::Focus($main)) }
-    Note ($o -join ' > '); ($o -join ',') -eq '240,200,201,210,230' }
+Check 'Tab order: Language (title bar) > Start > Action > Schedule > Time > Remind' {
+    $o = @(); for ($i = 0; $i -lt 6; $i++) { Key 0x09; $o += [H]::GetDlgCtrlID([H]::Focus($main)) }
+    Note ($o -join ' > '); ($o -join ',') -eq '205,240,200,201,210,230' }
 Check 'Space toggles Force apps to close (and back)' {
     # Tab until Force has the focus: a Tab that lands while another program is briefly in front is undone
     # when the window is activated again (it puts the focus back where it was, as dialogs do)
@@ -200,6 +200,10 @@ function PickLast($vk) { Cmd 205; $f = [H]::F('PowerNappFly'); $h = [H]::ClientH
     @{ shown = $f -ne [IntPtr]::Zero; h = $h; last = $last } }
 # open the picker, Home, then Down until its value announces $name (the entries are sorted by name,
 # so a pseudo-language sits among the translations, not at the end); Enter picks it. last = what was picked.
+# open the picker, Home: the first entry (its value announces it), then Esc closes
+function FirstEntry { Cmd 205; $f = [H]::F('PowerNappFly')
+    [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x24, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 200; $v = LangValue
+    [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300; $v }
 function PickNamed($name) { Cmd 205; $f = [H]::F('PowerNappFly')
     [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x24, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 200; $v = LangValue
     for ($i = 0; $i -lt 60 -and $v -ne $name; $i++) { [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x28, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 100; $v = LangValue }
@@ -207,7 +211,9 @@ function PickNamed($name) { Cmd 205; $f = [H]::F('PowerNappFly')
     @{ shown = $f -ne [IntPtr]::Zero; last = $v } }
 StopApp; SetIni 'lang' ''; SetIni 'task' 5; SetIni 'mode' 0; SetIni 'h' 23; SetIni 'm' 0; SetIni 'tray' 1
 $main = StartApp
-Check 'picker reads Windows default (English)' { $v = LangValue; $n = [H]::Uia([H]::GetDlgItem($main, 205), 30005); Note "name=$n value=$v"; $v -eq 'Windows default (English)' }
+Check 'Windows default: the title bar button reads English, the dropdown first offers Windows default (English)' {
+    $v = LangValue; $n = [H]::Uia([H]::GetDlgItem($main, 205), 30005); $first = FirstEntry
+    Note "name=$n value=$v first entry=$first"; $n -eq 'Language' -and $v -eq 'English' -and $first -eq 'Windows default (English)' }
 Check 'choosing Pseudo switches the window without a restart and saves lang=qps-ploc' {
     $r = PickNamed 'Pseudo'; $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005)
     Note "picked=$($r.last) start='$b' want '$($pseudo['btn.start'])' lang=$(Ini 'lang') same window=$([H]::F('PowerNappWnd') -eq $main)"
@@ -224,10 +230,10 @@ Check 'the reminder card from --fire-now shows the pseudo text' {
     [H]::SendMessage($rm, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Seconds 1; $p.Refresh()
     if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
     Note "name='$n'"; $rm -ne [IntPtr]::Zero -and $n.Contains($pseudo['task.display']) }
-Check 'saved language missing: starts in English, the picker shows Windows default' {
+Check 'saved language missing: starts in English, the title bar button reads English' {
     Remove-Item "$langDir\qps-ploc.txt"; $main = StartApp
     $b = [H]::Uia([H]::GetDlgItem($main, 240), 30005); $v = LangValue; Note "lang=$(Ini 'lang') start=$b picker=$v"
-    $b -eq 'Start' -and $v -eq 'Windows default (English)' }
+    $b -eq 'Start' -and $v -eq 'English' }
 StopApp
 Check 'no lang folder: the picker lists only Windows default and English' {
     Rename-Item $langDir 'lang-away'; $main = StartApp
@@ -235,6 +241,40 @@ Check 'no lang folder: the picker lists only Windows default and English' {
     Note "last entry=$($r.last) flyout height $($r.h) (2 entries: $want)"; $r.shown -and $r.last -eq 'English' -and [math]::Abs($r.h - $want) -le 2 }
 StopApp
 Rename-Item "$(Split-Path $exe)\lang-away" 'lang'; SetIni 'lang' ''
+
+# The Language button sits in the title bar, left of the caption buttons: a control (HTCLIENT) the rest
+# of the bar still drags around it; Space, Enter and Alt+Down open its dropdown below it, right-aligned.
+Section 'Title bar Language button'
+SetIni 'lang' 'de'; $main = StartApp; $k = $dpi / 96
+# the window rect has invisible resize borders at the sides; the client area starts at its top
+function Geo($m) { $w = [H]::Win($m); $bd = [int](($w.R - $w.L - [H]::ClientW($m)) / 2); $b = [H]::Win([H]::GetDlgItem($m, 205)); $p = [int](3 * $k)
+    @{ w = $w; cl = $w.L + $bd; cr = $w.R - $bd; b = $b; bl = $b.L + $p; br = $b.R - $p; bt = $b.T + $p; bb = $b.B - $p; cy = [int](($b.T + $b.B) / 2) } }
+Check 'in the title bar: 32 px tall, 4 px left of minimize, reads Deutsch' {
+    $g = Geo $main; $v = LangValue
+    Note "button $($g.bl)..$($g.br) x $($g.bt - $g.w.T)..$($g.bb - $g.w.T) (client $($g.cl)..$($g.cr)), value=$v"
+    $v -eq 'Deutsch' -and [math]::Abs(($g.cr - [int](142 * $k)) - $g.br) -le 2 -and [math]::Abs(($g.bt - $g.w.T) - [int](8 * $k)) -le 1 -and
+        [math]::Abs(($g.bb - $g.bt) - [int](32 * $k)) -le 1 -and $g.bl -gt $g.cl + [int](120 * $k) }
+Check 'hit-testing: the button is client area, the bar left of it and the caption buttons as before' {
+    $g = Geo $main; $y = $g.w.T + [int](16 * $k)
+    $btn = [H]::Hit($main, [int](($g.bl + $g.br) / 2), $g.cy); $gap = [H]::Hit($main, $g.bl - [int](20 * $k), $y)
+    $min = [H]::Hit($main, $g.cr - [int](115 * $k), $y); $close = [H]::Hit($main, $g.cr - [int](23 * $k), $y)
+    Note "button=$btn left of it=$gap min=$min close=$close (HTCLIENT 1, HTCAPTION 2, HTMINBUTTON 8, HTCLOSE 20)"
+    $btn -eq 1 -and $gap -eq 2 -and $min -eq 8 -and $close -eq 20 }
+function KeyOpen($vk, $sys) { $m = [H]::F('PowerNappWnd')
+    for ($i = 0; $i -lt 10 -and [H]::GetDlgCtrlID([H]::Focus($m)) -ne 205; $i++) { Key 0x09 }
+    if ($sys) { $t = [H]::Focus($m); [H]::PostMessage($t, 0x0104, [IntPtr]$vk, [IntPtr]0x20000001) | Out-Null; [H]::PostMessage($t, 0x0105, [IntPtr]$vk, [IntPtr]0xE0000001) | Out-Null; Start-Sleep -Milliseconds 500 }
+    else { Key $vk; Start-Sleep -Milliseconds 300 }
+    $f = [H]::F('PowerNappFly'); $r = if ($f -ne [IntPtr]::Zero) { [H]::Win($f) } else { $null }
+    @{ f = $f; r = $r } }
+function CloseFly { $f = [H]::F('PowerNappFly'); if ($f -ne [IntPtr]::Zero) { [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300 } }
+Check 'Alt+Down opens the dropdown below the button, right-aligned with it' {
+    $g = Geo $main; $o = KeyOpen 0x28 $true; Snap 'PowerNappFly' 'language-dropdown'
+    if ($o.r) { Note "dropdown $($o.r.L)..$($o.r.R) top $($o.r.T); button $($g.bl)..$($g.br) bottom $($g.bb)" } else { Note 'no dropdown' }
+    CloseFly; $o.r -and [math]::Abs($o.r.R - $g.br) -le 2 -and $o.r.T -ge $g.bb -and $o.r.T -le $g.bb + [int](8 * $k) }
+Check 'Space and Enter open it too' {
+    $s = KeyOpen 0x20 $false; CloseFly; $e = KeyOpen 0x0D $false; CloseFly
+    Note "space=$($s.f -ne [IntPtr]::Zero) enter=$($e.f -ne [IntPtr]::Zero)"; $s.f -ne [IntPtr]::Zero -and $e.f -ne [IntPtr]::Zero }
+StopApp; SetIni 'lang' ''
 
 # The tray-only process stays tiny in any language: Task Manager's "Memory" column (private working
 # set) once it has settled, with a translation loaded (de, ja) and following Windows (English here).
@@ -269,6 +309,14 @@ Check 'caption buttons on the left: close and minimize hit-test there, the right
     $close = [H]::Hit($main, $w.L + [int](30 * $k), $y); $min = [H]::Hit($main, $w.L + [int](123 * $k), $y); $title = [H]::Hit($main, $w.R - [int](30 * $k), $y)
     Note "close=$close min=$min right end=$title (HTCLOSE 20, HTMINBUTTON 8, HTCAPTION 2)"
     $close -eq 20 -and $min -eq 8 -and $title -eq 2 }
+Check 'the Language button is right of the caption buttons, its dropdown below it, left-aligned' {
+    $w = [H]::Win($main); $bd = [int](($w.R - $w.L - [H]::ClientW($main)) / 2); $cl = $w.L + $bd; $p = [int](3 * $k)
+    $b = [H]::Win([H]::GetDlgItem($main, 205)); $bl = $b.L + $p; $br = $b.R - $p
+    $hit = [H]::Hit($main, [int](($bl + $br) / 2), [int](($b.T + $b.B) / 2))
+    Cmd 205; $f = [H]::F('PowerNappFly'); $r = if ($f -ne [IntPtr]::Zero) { [H]::Win($f) } else { $null }
+    if ($f -ne [IntPtr]::Zero) { [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300 }
+    Note "button $bl..$br (client from $cl, caption buttons end $($cl + [int](138 * $k))), hit=$hit, dropdown $(if ($r) { "$($r.L)..$($r.R)" })"
+    [math]::Abs($bl - ($cl + [int](142 * $k))) -le 2 -and $hit -eq 1 -and $r -and [math]::Abs($r.L - $bl) -le 2 }
 Check 'popups are mirrored too: dropdown, time picker, About' {
     Cmd 200; $f = [H]::F('PowerNappFly'); $fr = IsRtl $f; Snap 'PowerNappFly' 'rtl-dropdown'
     [H]::SendMessage($f, $WM_KEYDOWN, [IntPtr]0x1B, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300

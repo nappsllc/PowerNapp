@@ -3,7 +3,7 @@
 #   powershell -File tests\sandbox\Run-Sandbox.ps1                     # end-to-end suite (~11 min)
 #   powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite msix         # Store package (~1 min)
 #   powershell -File tests\sandbox\Run-Sandbox.ps1 -Suite screenshots  # README screenshots
-#   ... -Suite screenshots -Languages all   # plus main window, Action flyout, About and reminder card per language
+#   ... -Suite screenshots -Languages all   # plus main window, Action and Language dropdowns, About and reminder card per language
 #
 # Needs the Windows Sandbox feature. Build first: build.bat and makensis (main, screenshots),
 # or tools\make-msix.ps1 (msix). Files are staged in %TEMP%\powernapp-sandbox and mapped into

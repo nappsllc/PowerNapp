@@ -1,9 +1,10 @@
 # Screenshots, run inside Windows Sandbox (Run-Sandbox.ps1 -Suite screenshots [-Languages all|de,fr,...]).
 # Installs, schedules Sleep at 11 PM with Wake up at 7:00, and captures the English window in each theme
 # (README: screenshot-light.png, screenshot-dark.png). With -Languages: for each language (all = every
-# lang\*.txt the installer shipped), light theme, <tag>\main.png, flyout.png (Action), about.png and
-# reminder.png. Every capture is cropped to the visible window: the main window's invisible resize border
-# (8 px left, right and bottom at 100%) is cut off using DWM's extended frame bounds.
+# lang\*.txt the installer shipped), light theme, <tag>\main.png, flyout.png (Action), language.png (the
+# window with the title bar's Language dropdown open, taken from the screen), about.png and reminder.png.
+# Every capture is cropped to the visible window: the main window's invisible resize border (8 px left,
+# right and bottom at 100%) is cut off using DWM's extended frame bounds.
 param([string]$Languages = '')
 . "$PSScriptRoot\helpers.ps1"
 
@@ -29,6 +30,14 @@ public static class Crop {
       c = src.Clone(new Rectangle(l, t, src.Width - l - r, src.Height - t - b), src.PixelFormat); }
     c.Save(path); c.Dispose();
     return string.Format("cropped l{0} t{1} r{2} b{3}", l, t, r, b);
+  }
+  // the screen under the visible frames of a and b together (a popup open over its window)
+  public static string Screen(IntPtr a, IntPtr b, string path) {
+    RECT x, y;
+    if (DwmGetWindowAttribute(a, 9, out x, 16) != 0 || DwmGetWindowAttribute(b, 9, out y, 16) != 0) return "no frame bounds";
+    int l = Math.Min(x.L, y.L), t = Math.Min(x.T, y.T), r = Math.Max(x.R, y.R), bt = Math.Max(x.B, y.B);
+    using (var bm = new Bitmap(r - l, bt - t)) { using (var g = Graphics.FromImage(bm)) g.CopyFromScreen(l, t, 0, 0, bm.Size); bm.Save(path); }
+    return string.Format("screen {0}x{1}", r - l, bt - t);
   }
 }
 '@
@@ -68,6 +77,9 @@ if ($Languages) {
         Log "- $tag : Start='$([H]::Uia([H]::GetDlgItem($main, 240), 30005))'"
         Shot 'PowerNappWnd' "$d\main.png"
         Cmd 200; Start-Sleep -Milliseconds 500; Shot 'PowerNappFly' "$d\flyout.png"; Esc 'PowerNappFly'
+        Cmd 205; Start-Sleep -Milliseconds 500
+        $f = [H]::F('PowerNappFly'); if ($f -ne [IntPtr]::Zero) { Log "  - language.png $([Crop]::Screen($main, $f, "$d\language.png"))" } else { Log "  - language.png : no dropdown" }
+        Esc 'PowerNappFly'
         Cmd 251; Start-Sleep -Milliseconds 700; Shot 'PowerNappAbout' "$d\about.png"
         $a = [H]::F('PowerNappAbout'); if ($a -ne [IntPtr]::Zero) { [H]::SendMessage($a, $WM_CLOSE, [IntPtr]0, [IntPtr]0) | Out-Null; Start-Sleep -Milliseconds 300 }
         StopApp
