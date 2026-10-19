@@ -898,7 +898,8 @@ static void ensure_tray(void) {
 /* Tray only, the working set is trimmed when startup is done -- but not all of startup runs then:
  * the first notification icon a session sees (the first --tray launch after boot, in any language)
  * has shell32 queue work on a thread-pool thread 2-3 s later (shell32, windows.storage, msctf and
- * COM pages, ~380 KB), which stayed resident. So the trim is repeated 2, 4, 8, 16 and 32 s after. */
+ * COM pages, ~380 KB; seen 2-6 s after start), which stayed resident. So the trim is repeated every
+ * 2 s for the first 16 s, then at 24 and 32 s. */
 static int g_settle = -1; /* seconds since the last startup trim; -1 = not settling */
 
 static void trim_working_set(void) {
@@ -911,9 +912,8 @@ static void CALLBACK timer_proc(HWND h, UINT m, UINT_PTR id, DWORD t) {
     if (g_settle >= 0) {
         g_settle++;
         if (G.main || g_settle > 32) g_settle = -1;       /* the window is back, or settled */
-        else if ((g_settle & (g_settle - 1)) == 0 && g_settle >= 2) {
+        else if (g_settle % 2 == 0 && (g_settle <= 16 || g_settle % 8 == 0))
             SetProcessWorkingSetSize(GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1);
-        }
     }
     if (G.rt.active) tick();
 }
