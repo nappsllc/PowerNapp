@@ -10,7 +10,7 @@
 #define APP_VERSION L"2.0.0"
 #define RELEASES_URL L"https://github.com/nappsllc/PowerNapp/releases/latest"
 #define CONTACT_URL L"mailto:hi@powernapps.net?subject=PowerNapps%20PowerNapp"
-#define SITE_URL L"https://powernapps.net"
+#define SITE_URL L"https://powernapps.net/r/powernapp" /* the site redirects with the campaign tags */
 #define AB_W 400
 #define AB_H 396
 #define AB_FOOT 316  /* footer band top */
