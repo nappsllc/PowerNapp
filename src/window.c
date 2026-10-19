@@ -403,9 +403,10 @@ static void paint_main(HDC hdc, bool title) {
     htr.bottom = htr.top + th;
     text_at(hdc, ht, htr, hf, T_T1, DT_LEFT | DT_WORDBREAK);
     RECT hsr = { htr.left, htr.bottom + S(2), htr.right, htr.bottom + S(22) };
-    g_fit_skip = true; /* subtitles may ellipsize */
+    /* it carries the countdown: --check-fit counts an ellipsis here as a failure */
+    g_fit_key = hero_sub_key();
     text_at(hdc, hs, hsr, G.f_row, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-    g_fit_skip = false;
+    g_fit_key = -1;
     /* section headers: 14 px semibold, as in the design */
     text_at(hdc, TR(L_HDR_SCHEDULE), G.rc_sched_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
     text_at(hdc, TR(L_HDR_TASK), G.rc_task_hdr, G.f_hdr, T_T1, DT_LEFT | DT_SINGLELINE);
@@ -416,8 +417,9 @@ static void paint_main(HDC hdc, bool title) {
         TR(L_ACTION_TITLE), TR(L_ACTION_SUB), g_cw + S(16));
     paint_row(hdc, &G.rc_sched, IC_CALCLK, TR(L_SCHED_TITLE),
         TR(L_SCHED_SUB), g_cw + S(16));
-    time_row_sub(sub, 128);
+    g_fit_key = time_row_sub(sub, 128);
     paint_row(hdc, &G.rc_time, IC_CLOCK, TR(L_TIME_TITLE), sub, g_sw + S(16));
+    g_fit_key = -1;
     /* days row */
     if (p->mode == M_WEEKLY) {
         paint_card(hdc, &G.rc_days);
@@ -429,9 +431,9 @@ static void paint_main(HDC hdc, bool title) {
         text_at(hdc, TR(L_DAYS_TITLE), dr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE);
         RECT dsr = { dr.left, dcy + S(2), dr.right, dcy + S(18) };
         StringCchPrintfW(sub, 128, TR(L_DAYS_SUB), d);
-        g_fit_skip = true;
+        g_fit_key = L_DAYS_SUB;
         text_at(hdc, sub, dsr, G.f_sub, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-        g_fit_skip = false;
+        g_fit_key = -1;
     }
     /* options rows (On/Off labels left of the pill children) */
     static const struct { RECT *rc; IconId ic; StrId t; bool *on; } OPTS[] = {

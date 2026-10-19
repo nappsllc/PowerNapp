@@ -45,22 +45,32 @@ static void hero_strings(wchar_t *title, size_t tn, wchar_t *sub, size_t sn) {
 }
 
 /* Time row sub + right control helpers */
-static void time_row_sub(wchar_t *sub, size_t n) {
+static StrId time_row_sub(wchar_t *sub, size_t n) { /* returns the string it is made from */
     Plan *p = &G.rt.plan;
     wchar_t d[96];
     if (p->mode == M_WEEKLY) {
         StringCchCopyW(sub, n, TR(L_TIME_SUB_WEEKLY));
-    } else if (p->mode == M_COUNTDOWN) {
+        return L_TIME_SUB_WEEKLY;
+    }
+    if (p->mode == M_COUNTDOWN) {
         dur_label(p->cd, d, 96);
         StringCchPrintfW(sub, n, TR(L_TIME_SUB_CD), d);
-    } else if (p->mode == M_IDLE) {
+        return L_TIME_SUB_CD;
+    }
+    if (p->mode == M_IDLE) {
         dur_label(p->idle, d, 96);
         StringCchPrintfW(sub, n, TR(L_TIME_SUB_IDLE), d);
-    } else {
-        long long tgt = next_at(p->h, p->m, 0x7F);
-        day_label(tgt, d, 96);
-        StringCchPrintfW(sub, n, TR(L_TIME_SUB_NEXT), d);
+        return L_TIME_SUB_IDLE;
     }
+    long long tgt = next_at(p->h, p->m, 0x7F);
+    day_label(tgt, d, 96);
+    StringCchPrintfW(sub, n, TR(L_TIME_SUB_NEXT), d);
+    return L_TIME_SUB_NEXT;
+}
+
+/* the string the hero subtitle (hero_strings) is made from */
+static StrId hero_sub_key(void) {
+    return !G.rt.active ? L_HERO_OFF : G.rt.plan.mode == M_IDLE ? L_HERO_IDLE : L_HERO_LEFT;
 }
 
 static void wake_save(void) {
@@ -307,9 +317,8 @@ static void paint_row(HDC hdc, const RECT *rc, IconId ic,
     RECT tr = { rc->left + S(18 + 20 + 18), cy - S(18), rc->right - S(16) - ctl_w, cy + S(2) };
     text_at(hdc, title, tr, G.f_row, T_T1, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
     RECT sr = { tr.left, cy + S(2), tr.right, cy + S(18) };
-    g_fit_skip = true; /* a subtitle may ellipsize */
+    /* ellipsized should it ever overflow, but --check-fit counts that as a failure */
     text_at(hdc, sub, sr, G.f_sub, T_T2, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-    g_fit_skip = false;
 }
 
 static RECT ctl_body(HWND btn) { /* the drawn control inside its padded window */
