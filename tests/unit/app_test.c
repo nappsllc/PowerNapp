@@ -80,8 +80,50 @@ static void migration_keeps_unmoved_tasks(void)
     g_fake_nocmd = false;
 }
 
+/* Korean wrapped text (the About description here) breaks at spaces, never inside a Hangul word */
+static int lines_of(HDC dc, const wchar_t *s, int wrap)
+{
+    RECT one = { 0, 0, wrap, 0 }, all = { 0, 0, wrap, 0 };
+    DrawTextW(dc, L"X", -1, &one, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    DrawTextW(dc, s, -1, &all, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    return one.bottom ? all.bottom / one.bottom : 0;
+}
+static void korean_wraps_at_spaces(void)
+{
+    const wchar_t *ko = L"일정에 따라 PC를 종료하거나 다시 "
+        L"시작하거나 절전 상태로 두는 작은 앱입니다. "
+        L"Windows 작업 스케줄러가 작업을 처리하므로 앱을 "
+        L"닫으면 메모리를 전혀 사용하지 않습니다.";
+    HDC dc = CreateCompatibleDC(NULL);
+    StringCchCopyW(g_lang_tag, LANG_TAG_MAX, L"ko");
+    for (int px = 14; px <= 21; px += 7) {               /* the About font at 96 and 144 DPI */
+        HFONT f = CreateFontW(-px, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Malgun Gothic");
+        HGDIOBJ o = SelectObject(dc, f);
+        for (int wrap = 300 * px / 14; wrap <= 400 * px / 14; wrap += 13) {
+            const wchar_t *d = wrap_words(dc, ko, wrap);
+            bool same = wcslen(d) == wcslen(ko);
+            int nl = 0;
+            for (size_t i = 0; same && ko[i]; i++) {
+                if (d[i] == L'\n' && ko[i] == L' ') nl++;
+                else if (d[i] != ko[i]) same = false;
+            }
+            CHECK(same);                                  /* only spaces became line breaks */
+            int drawn = lines_of(dc, d, wrap);
+            if (drawn != nl + 1) printf("  %d px, wrap %d: GDI draws %d lines, %d broken at spaces\n", px, wrap, drawn, nl + 1);
+            CHECK(drawn == nl + 1);                       /* GDI adds no break of its own */
+        }
+        SelectObject(dc, o);
+        DeleteObject(f);
+    }
+    StringCchCopyW(g_lang_tag, LANG_TAG_MAX, L"ja");    /* other languages: as GDI breaks them */
+    CHECK(wrap_words(dc, ko, 352) == ko);
+    StringCchCopyW(g_lang_tag, LANG_TAG_MAX, L"en");
+    DeleteDC(dc);
+}
+
 int main(void)
 {
+    korean_wraps_at_spaces();
     task_aliases();
     migration_keeps_unmoved_tasks();
     printf(g_fail ? "%d check(s) FAILED\n" : "all checks passed\n", g_fail);

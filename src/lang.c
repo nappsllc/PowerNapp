@@ -53,6 +53,10 @@ static const wchar_t *ui_font_face(const wchar_t *tag)
     return L"Segoe UI Variable Text";
 }
 
+/* Korean separates words with spaces, but GDI's line breaking splits Hangul words between syllables:
+   its wrapped text breaks at spaces only (wrap_words in theme.c) */
+static bool lang_breaks_at_spaces(void) { return _wcsicmp(g_lang_tag, L"ko") == 0; }
+
 /* ---- placeholders: same ORDERED sequence of %ls / %d / %lld as English ---- */
 static bool lang_ph_seq(const wchar_t *s, char *seq, int cap)
 {

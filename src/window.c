@@ -392,11 +392,11 @@ static void paint_main(HDC hdc, bool title) {
     RECT m = { 0, 0, htr.right - htr.left, 0 };
     HFONT hf = G.f_hero;
     SelectObject(hdc, hf);
-    DrawTextW(hdc, ht, -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+    DrawTextW(hdc, wrap_words(hdc, ht, m.right), -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
     if (m.bottom > S(56)) {
         SelectObject(hdc, hf = G.f_hdr);
         m.right = htr.right - htr.left;
-        DrawTextW(hdc, ht, -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+        DrawTextW(hdc, wrap_words(hdc, ht, m.right), -1, &m, DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
     }
     int th = m.bottom < S(28) ? S(28) : m.bottom > S(60) ? S(60) : m.bottom;
     htr.top = hcy - (th + S(22)) / 2;

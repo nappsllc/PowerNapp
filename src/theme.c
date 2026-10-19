@@ -173,10 +173,38 @@ static void fill_rect_c(HDC hdc, const RECT *rc, COLORREF fill) {
 
 /* text measuring, in one memory DC kept for the process (screen-compatible: the same metrics) */
 static HDC g_mdc;
+/* Text to draw with DT_WORDBREAK in a box wrap px wide. Korean puts spaces between words, but GDI
+   breaks Hangul between any two syllables: for it, the lines are broken here, at spaces only (a word
+   wider than the box still wraps where GDI puts it). Other languages: s as is. The result lives until
+   the next call. */
+static const wchar_t *wrap_words(HDC dc, const wchar_t *s, int wrap) {
+    static wchar_t buf[1024];
+    if (!lang_breaks_at_spaces() || wrap <= 0 || wcslen(s) >= 1024) return s;
+    StringCchCopyW(buf, 1024, s);
+    wchar_t *line = buf, *last = NULL; /* last: the latest space where the line still fits */
+    for (wchar_t *p = buf;; p++) {
+        if (*p && *p != L' ' && *p != L'\n') continue;
+        RECT m = { 0, 0, 0, 0 };
+        DrawTextW(dc, line, (int)(p - line), &m, DT_SINGLELINE | DT_CALCRECT | DT_NOPREFIX);
+        if (m.right > wrap && last) { /* up to p does not fit: break at the last space that did */
+            *last = L'\n';
+            line = last + 1;
+            last = NULL;
+            p = line - 1;
+            continue;
+        }
+        if (!*p) break;
+        if (*p == L'\n') { line = p + 1; last = NULL; }
+        else last = p;
+    }
+    return buf;
+}
+
 static int text_ext(HFONT f, const wchar_t *t, int wrap) { /* wrap 0: width; else height wrapped at wrap px */
     if (!g_mdc) g_mdc = CreateCompatibleDC(NULL);
     HGDIOBJ o = SelectObject(g_mdc, f);
     RECT m = { 0, 0, wrap, 0 };
+    if (wrap) t = wrap_words(g_mdc, t, wrap);
     DrawTextW(g_mdc, t, -1, &m, (wrap ? DT_WORDBREAK : DT_SINGLELINE) | DT_CALCRECT | DT_NOPREFIX);
     SelectObject(g_mdc, o);
     return wrap ? m.bottom : m.right;
@@ -203,7 +231,8 @@ static void fit_check(HDC hdc, const wchar_t *s, const RECT *rc, UINT flags) {
     if (g_fit_exempt || (flags & DT_NOCLIP) || !*s) return; /* NOCLIP: links and glyphs sized to themselves */
     int w = rc->right - rc->left, h = rc->bottom - rc->top;
     RECT m = { 0, 0, w, 0 };
-    DrawTextW(hdc, s, -1, &m, (flags & (DT_SINGLELINE | DT_WORDBREAK)) | DT_CALCRECT | DT_NOPREFIX);
+    DrawTextW(hdc, (flags & DT_WORDBREAK) ? wrap_words(hdc, s, w) : s, -1, &m,
+        (flags & (DT_SINGLELINE | DT_WORDBREAK)) | DT_CALCRECT | DT_NOPREFIX);
     bool tall = (flags & DT_WORDBREAK) && m.bottom > h;
     if (m.right <= w && !tall) return;
     if (g_fit_key >= 0 && g_fit_key < L_COUNT && !tall) { /* composed: once per string it is made from */
@@ -238,6 +267,7 @@ static void text_dir(HDC hdc, const wchar_t *s, RECT rc, HFONT font, COLORREF co
        it left to right. So the flag goes on where the wanted order differs from the DC's. */
     DWORD lay = GetLayout(hdc);
     bool mirrored = lay != GDI_ERROR && (lay & LAYOUT_RTL);
+    if (flags & DT_WORDBREAK) s = wrap_words(hdc, s, rc.right - rc.left);
     DrawTextW(hdc, s, -1, &rc, flags | DT_NOPREFIX | (rtl != mirrored ? DT_RTLREADING : 0)); /* "&" is text, not a mnemonic */
 }
 
