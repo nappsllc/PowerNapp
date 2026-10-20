@@ -1,6 +1,6 @@
 """Fill a Partner Center "Export listings" CSV with PowerNapp's Store listings.
 
-    python tools/make-listing-import.py <exported.csv> [screenshots.zip] [out-dir]
+    python tools/make-listing-import.py [--split] <exported.csv> [screenshots.zip] [out-dir]
 
 Reads store/listing/<tag>.txt (sections: # Description, # Short description,
 # Features, # Keywords, # What's new) for every language column in the exported
@@ -9,6 +9,10 @@ copyright, Feature1-20 and SearchTerm1-7, and points DesktopScreenshot1-3 at
 <out-dir name>/<tag>/1.png .. 3.png. The screenshots zip (folders per language, 1.png .. 3.png)
 is unpacked next to the CSV, so in Partner Center choose Import listings and
 select the whole out-dir folder.
+
+--split writes one import folder per language instead (out-dir/<tag>/ with a
+listingData.csv holding only that language's column, plus 1.png .. 3.png), for
+when a single import of every language is too big for Partner Center.
 """
 import csv, os, re, sys, zipfile
 
@@ -40,11 +44,14 @@ def read_listing(path):
 
 
 def main():
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+    split = '--split' in args
+    args = [a for a in args if a != '--split']
+    if not args:
         sys.exit(__doc__)
-    template = sys.argv[1]
-    shots_zip = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, 'store-upload', 'PowerNapp-store-screenshots.zip')
-    out_dir = sys.argv[3] if len(sys.argv) > 3 else os.path.join(ROOT, 'store-upload', 'listings')
+    template = args[0]
+    shots_zip = args[1] if len(args) > 1 else os.path.join(ROOT, 'store-upload', 'PowerNapp-store-screenshots.zip')
+    out_dir = args[2] if len(args) > 2 else os.path.join(ROOT, 'store-upload', 'listings-split' if split else 'listings')
 
     rows = list(csv.reader(open(template, encoding='utf-8-sig', newline='')))
     header = rows[0]
@@ -94,12 +101,23 @@ def main():
             elif (m := re.match(r'^DesktopScreenshot(\d+)$', field)):
                 n = int(m.group(1))
                 # Partner Center wants the path from the imported folder itself: <folder>/<tag>/<n>.png
-                val = f'{folder}/{tag}/{n}.png' if (tag, n) in have_shots else ''
+                path = f'{tag}/{n}.png' if split else f'{folder}/{tag}/{n}.png'
+                val = path if (tag, n) in have_shots else ''
             if val is not None:
                 while len(r) <= col:
                     r.append('')
                 r[col] = val
 
+    if split:
+        # one folder per language: its images sit next to its own CSV
+        for i, tag in enumerate(langs):
+            col = 4 + i
+            os.makedirs(os.path.join(out_dir, tag), exist_ok=True)
+            sub = [r[:4] + [r[col] if len(r) > col else ''] for r in rows]
+            with open(os.path.join(out_dir, tag, 'listingData.csv'), 'w', encoding='utf-8-sig', newline='') as f:
+                csv.writer(f).writerows(sub)
+        print(f'{out_dir}: {len(langs)} folders, {len(have_shots)} screenshots')
+        return
     out_csv = os.path.join(out_dir, 'listingData.csv')
     with open(out_csv, 'w', encoding='utf-8-sig', newline='') as f:
         csv.writer(f).writerows(rows)
